@@ -2,147 +2,88 @@
 import React from 'react';
 import { Chord, ScaleType } from '../types';
 import { analyzeVoiceLeading, getScaleSuggestionForChord } from '../utils/musicTheory';
-import { PitchConstellation } from './Visualizers';
-import { ArrowDown, Zap, Activity, Anchor, MoveRight } from 'lucide-react';
+import { Activity, Layers, ArrowDown } from 'lucide-react';
+import { Typo, Surface, Badge, SectionHeader } from './UI';
 
-interface TheoryAnalysisProps {
-  currentKey: string;
-  scaleType: ScaleType;
-  progression: Chord[];
-}
-
-const TheoryAnalysis: React.FC<TheoryAnalysisProps> = ({ currentKey, scaleType, progression }) => {
-  
-  if (progression.length === 0) {
+export default ({ progression }: { currentKey: string; scaleType: ScaleType; progression: Chord[] }) => {
+  if (!progression.length) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-slate-700 gap-4 opacity-60 p-8">
-        <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center border border-white/5">
-            <Activity size={24} />
-        </div>
-        <div className="text-center max-w-[250px]">
-            <h4 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-1">
-                Analysis Ready
-            </h4>
-            <p className="text-[10px]">
-                Add chords to the timeline to generate a structural breakdown, voice leading paths, and pitch constellations.
-            </p>
-        </div>
+      <div className="h-full flex flex-col items-center justify-center opacity-30 p-8 gap-4 bg-[#0c0c0e]">
+        <Layers size={48} strokeWidth={1} />
+        <Typo variant="label">Timeline Empty</Typo>
       </div>
     );
   }
 
   return (
     <div className="flex flex-col h-full bg-[#0c0c0e]">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-white/5 bg-[#111113] shrink-0 flex items-center justify-between">
-         <h3 className="text-[10px] font-bold uppercase tracking-widest text-slate-400 flex items-center gap-2">
-            <Activity size={14} className="text-[var(--accent)]"/> Structural Report
-         </h3>
-         <span className="text-[9px] font-mono text-slate-600">{progression.length} BARS</span>
-      </div>
+      <SectionHeader title="Structural Analysis" icon={Activity}>
+        <Badge variant="outline">{progression.length} Chords</Badge>
+      </SectionHeader>
 
-      {/* Content Area */}
-      <div className="flex-1 p-6 overflow-y-auto custom-scrollbar bg-[#0e0e10]">
-         <div className="relative space-y-0">
-            {/* Vertical Connecting Line */}
-            <div className="absolute left-[27px] top-8 bottom-8 w-px bg-gradient-to-b from-transparent via-white/10 to-transparent"></div>
-
+      <div className="flex-1 p-6 overflow-y-auto custom-scrollbar relative">
+         {/* Connector Line */}
+         <div className="absolute left-[43px] top-6 bottom-6 w-px bg-gradient-to-b from-white/10 via-white/5 to-transparent" />
+         
+         <div className="space-y-6">
             {progression.map((chord, i) => {
-                const nextChord = progression[i + 1];
-                const voiceLeading = nextChord ? analyzeVoiceLeading(chord, nextChord) : null;
-                const scaleSuggestion = getScaleSuggestionForChord(chord);
-                const isLast = i === progression.length - 1;
-
+                const next = progression[i + 1];
+                const vl = next ? analyzeVoiceLeading(chord, next) : null;
+                const isTonic = chord.romanNumeral.match(/^i|^I/);
+                
                 return (
-                    <div key={i} className="relative mb-8 last:mb-0 animate-in slide-in-from-bottom-4 fade-in duration-500" style={{ animationDelay: `${i * 100}ms` }}>
-                        
-                        <div className="flex gap-6">
-                            {/* Timeline Marker */}
-                            <div className="flex-none flex flex-col items-center z-10">
-                                <div className={`
-                                    w-14 h-14 rounded-full border-2 flex items-center justify-center bg-[#0c0c0e] shadow-xl
-                                    ${chord.romanNumeral.includes('I') || chord.romanNumeral.includes('i') 
-                                        ? 'border-[var(--accent)] text-[var(--accent)]' 
-                                        : 'border-white/10 text-slate-400'}
-                                `}>
-                                    <span className="text-xs font-bold font-mono">{i + 1}</span>
-                                </div>
-                            </div>
-
-                            {/* Analysis Card */}
-                            <div className="flex-1 min-w-0">
-                                <div className="bg-[#18181b] border border-white/5 rounded-xl p-5 hover:border-white/20 transition-all group relative overflow-hidden">
-                                    
-                                    <div className="flex items-start justify-between mb-4 relative z-10">
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <h4 className="text-xl font-bold text-white tracking-tight">{chord.symbol}</h4>
-                                                <span className="px-1.5 py-0.5 bg-white/10 rounded text-[9px] font-bold uppercase text-slate-300">
-                                                    {chord.romanNumeral}
-                                                </span>
-                                            </div>
-                                            <div className="text-[10px] text-slate-500 uppercase tracking-wider font-bold">
-                                                {chord.functionLabel}
-                                            </div>
-                                        </div>
-                                        
-                                        {/* Pitch Constellation Mini - ALWAYS VISIBLE NOW */}
-                                        <div className="bg-black/20 rounded-full p-1 border border-white/5">
-                                            <PitchConstellation 
-                                                notes={chord.notes} 
-                                                root={chord.root} 
-                                                size={70} 
-                                                showLabels={false} 
-                                            />
-                                        </div>
-                                    </div>
-
-                                    {/* Insights Grid */}
-                                    <div className="grid grid-cols-2 gap-2 relative z-10">
-                                        <div className="p-2 bg-black/20 rounded border border-white/5">
-                                            <div className="text-[8px] uppercase text-slate-500 font-bold mb-1">Recommended Scale</div>
-                                            <div className="text-[10px] text-[var(--accent)] font-bold">{scaleSuggestion}</div>
-                                        </div>
-                                        <div className="p-2 bg-black/20 rounded border border-white/5">
-                                            <div className="text-[8px] uppercase text-slate-500 font-bold mb-1">Chord Quality</div>
-                                            <div className="text-[10px] text-slate-300">{chord.emotionalDesc || 'Standard'}</div>
-                                        </div>
-                                    </div>
-
-                                </div>
-
-                                {/* Voice Leading Connection Info */}
-                                {!isLast && voiceLeading && (
-                                    <div className="mt-4 ml-4 flex items-center gap-3 text-[10px] text-slate-500 font-mono">
-                                        <ArrowDown size={12} className="text-slate-600" />
-                                        <div className="flex items-center gap-2 bg-black/20 px-2 py-1 rounded-full border border-white/5">
-                                            <span className={voiceLeading.type === 'smooth' ? 'text-emerald-500' : 'text-amber-500'}>
-                                                {voiceLeading.type === 'smooth' ? '● Smooth Motion' : '● Angular Leap'}
-                                            </span>
-                                            <span className="text-slate-700">|</span>
-                                            <span>Target: {nextChord.symbol}</span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                    <div key={i} className="relative flex gap-6 animate-in slide-in-from-bottom-2 fade-in duration-500" style={{ animationDelay: `${i * 50}ms` }}>
+                        {/* Index Node */}
+                        <div className={`w-9 h-9 mt-0.5 rounded-full flex items-center justify-center border-2 z-10 bg-[#0c0c0e] shrink-0 transition-colors ${isTonic ? 'border-[var(--accent)] text-[var(--accent)] shadow-[0_0_15px_-5px_var(--accent)]' : 'border-[#27272a] text-zinc-500'}`}>
+                            <span className="text-[10px] font-bold font-mono">{i + 1}</span>
                         </div>
+
+                        {/* Card Content */}
+                        <Surface className={`flex-1 p-4 group hover:border-[var(--accent)]/30 transition-colors ${isTonic ? 'bg-[var(--accent)]/5' : ''}`}>
+                             <div className="flex justify-between items-start mb-2">
+                                <div className="flex items-center gap-2">
+                                    <Typo variant="h3">{chord.symbol}</Typo>
+                                    <Badge variant={isTonic ? 'accent' : 'default'}>{chord.romanNumeral}</Badge>
+                                </div>
+                                <span className="text-[10px] uppercase font-bold text-zinc-600">{chord.functionLabel || 'Diatonic'}</span>
+                             </div>
+                             
+                             <div className="flex justify-between items-end">
+                                 <div className="space-y-0.5">
+                                    <Typo variant="label" className="opacity-50">Suggestion</Typo>
+                                    <div className="text-xs text-zinc-300 font-mono">{getScaleSuggestionForChord(chord)}</div>
+                                 </div>
+                                 <div className="text-right space-y-0.5">
+                                    <Typo variant="label" className="opacity-50">Emotion</Typo>
+                                    <div className="text-xs text-zinc-400 italic">"{chord.emotionalDesc}"</div>
+                                 </div>
+                             </div>
+
+                             {/* Voice Leading Info */}
+                             {vl && (
+                                <div className="mt-4 pt-3 border-t border-white/5 flex flex-col gap-2">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                             <ArrowDown size={12} className={vl.type === 'jump' ? 'text-rose-500' : 'text-emerald-500'} />
+                                             <span className={`text-[10px] font-bold uppercase ${vl.type === 'jump' ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                                {vl.contour} Motion
+                                             </span>
+                                        </div>
+                                         <span className="text-[9px] font-mono text-zinc-500">{vl.commonTones} Common Tones</span>
+                                    </div>
+                                    <div className="flex gap-0.5 h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                         {vl.lines.map((l, idx) => (
+                                            <div key={idx} className="flex-1 transition-all" style={{ backgroundColor: l.color, opacity: l.diff === 0 ? 0.3 : 1 }} />
+                                         ))}
+                                    </div>
+                                </div>
+                             )}
+                        </Surface>
                     </div>
                 );
             })}
-
-            {/* End Marker */}
-            {progression.length > 0 && (
-                <div className="flex gap-6 opacity-30">
-                    <div className="w-14 flex justify-center">
-                        <div className="w-2 h-2 bg-white/20 rounded-full"></div>
-                    </div>
-                    <div className="text-[10px] uppercase tracking-widest font-bold text-slate-500 pt-1">End of Sequence</div>
-                </div>
-            )}
          </div>
       </div>
     </div>
   );
 };
-
-export default TheoryAnalysis;

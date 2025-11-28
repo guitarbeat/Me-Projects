@@ -1,290 +1,135 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useState } from 'react';
 import { Chord } from '../types';
-import { getChordExtensions, getChromaticIndex, analyzeHarmonicDensity } from '../utils/musicTheory';
-import { Zap, Music, Binary, ArrowLeftRight, BarChart3 } from 'lucide-react';
+import { getChordExtensions, getChromaticIndex, analyzeHarmonicDensity, CHROMATIC_SHARPS, polarToCartesian } from '../utils/musicTheory';
+import { Zap, Music, Binary, ArrowLeftRight, BarChart3, PieChart, Layers } from 'lucide-react';
+import { Surface, Typo, IconButton, SectionHeader, cn } from './UI';
 
-const CHROMATIC_REF = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 const INTERVALS = ['R', 'm2', 'M2', 'm3', 'M3', 'P4', 'd5', 'P5', 'm6', 'M6', 'm7', 'M7'];
 
-type LabelMode = 'note' | 'interval' | 'number';
-
-interface PitchConstellationProps {
-  notes: string[];
-  root: string;
-  size?: number;
-  showLabels?: boolean;
-  labelMode?: LabelMode;
-}
-
-// --- Pro Pitch Constellation Component ---
-export const PitchConstellation: React.FC<PitchConstellationProps> = React.memo(({ 
-  notes, 
-  root, 
-  size = 280, 
-  showLabels = true,
-  labelMode = 'note'
-}) => {
-  const center = size / 2;
-  const isSmall = size < 120;
-  
-  const radius = size * (isSmall ? 0.35 : 0.32); 
-  const labelRadius = size * (isSmall ? 0.44 : 0.43); 
-  
-  // Dynamic styling based on size
-  const strokeWidthRing = Math.max(1, size * 0.005);
-  const strokeWidthMain = Math.max(1.5, size * 0.008);
-  const dotRadiusActive = Math.max(2, size * 0.022);
-  const dotRadiusInactive = Math.max(1.5, size * 0.015);
-  
-  const fontSizeMain = Math.max(8, size * 0.04);
-  const fontSizeSub = Math.max(7, size * (isSmall ? 0.12 : 0.03));
-
-  // Calculate indices for robust matching (Sharps vs Flats)
-  const rootIndex = getChromaticIndex(root);
-  const activeIndices = notes.map(n => getChromaticIndex(n));
-
-  // Calculate points for all 12 chromatic steps
-  const points = CHROMATIC_REF.map((defaultNote, i) => {
-    const angleDeg = (i * 30) - 90;
-    const angleRad = angleDeg * (Math.PI / 180);
-    
-    // Robust matching: Check by Index, not just name
-    const isActive = activeIndices.includes(i);
-    const isRoot = i === rootIndex;
-    
-    // Use the actual spelling from the input notes if available (e.g., show 'Eb' instead of 'D#')
-    const matchingInputNote = notes.find(n => getChromaticIndex(n) === i);
-    const displayNote = matchingInputNote || defaultNote;
-
-    // Calculate Interval relative to root
-    const intervalIndex = (i - rootIndex + 12) % 12;
-    const intervalLabel = INTERVALS[intervalIndex];
-
-    return {
-      x: center + radius * Math.cos(angleRad),
-      y: center + radius * Math.sin(angleRad),
-      lx: center + labelRadius * Math.cos(angleRad),
-      ly: center + labelRadius * Math.sin(angleRad),
-      note: displayNote,
-      index: i,
-      intervalLabel,
-      isActive,
-      isRoot
-    };
-  });
-
-  // Filter active points for the shape
-  const activePoints = points.filter(p => p.isActive);
-  
-  // Construct Path - Radial Spokes (Center Outwards)
-  const pathData = activePoints.map(p => `M ${center} ${center} L ${p.x} ${p.y}`).join(' ');
+export const PitchConstellation: React.FC<{ notes: string[], root: string, size?: number, showLabels?: boolean, labelMode?: 'note' | 'interval' | 'number' }> = React.memo(({ notes, root, size = 280, showLabels = true, labelMode = 'note' }) => {
+  const c = size / 2, r = size * 0.35;
+  const rootIdx = getChromaticIndex(root);
+  const activeIndices = new Set(notes.map(n => getChromaticIndex(n)));
 
   return (
-    <div className="flex items-center justify-center relative" style={{ width: size, height: size }}>
-      <svg viewBox={`0 0 ${size} ${size}`} width={size} height={size} className={isSmall ? '' : 'drop-shadow-lg'}>
-        {/* Outer Ring */}
-        <circle cx={center} cy={center} r={radius} fill="none" stroke="#334155" strokeWidth={strokeWidthRing} opacity="0.5" />
-        
-        {/* Dotted Label Guide Ring */}
-        {showLabels && !isSmall && (
-             <circle cx={center} cy={center} r={radius * 1.25} fill="none" stroke="#1e293b" strokeWidth={strokeWidthRing} strokeDasharray="4 4" opacity="0.3" />
-        )}
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="overflow-visible select-none" aria-hidden="true">
+      <circle cx={c} cy={c} r={r} fill="none" stroke="#27272a" strokeWidth={1} />
+      <circle cx={c} cy={c} r={r * 0.7} fill="none" stroke="#27272a" strokeWidth={1} strokeDasharray="4 4" />
+      
+      <path d={Array.from(activeIndices).map((i: number) => {
+          const { x, y } = polarToCartesian(c, c, r, i * 30);
+          return `M ${c} ${c} L ${x} ${y}`;
+      }).join(' ')} stroke="var(--accent)" strokeWidth={1.5} strokeOpacity="0.4" />
+      
+      <path d={(() => {
+          const sorted = (Array.from(activeIndices) as number[]).sort((a,b) => a-b);
+          if (sorted.length < 2) return '';
+          return sorted.map((i, idx) => {
+              const { x, y } = polarToCartesian(c, c, r, i * 30);
+              return `${idx === 0 ? 'M' : 'L'} ${x} ${y}`;
+          }).join(' ') + ' Z';
+      })()} fill="var(--accent)" fillOpacity="0.05" stroke="var(--accent)" strokeWidth={1} strokeOpacity="0.3" />
 
-        {/* The Geometric Shape - Radial Spokes */}
-        <path d={pathData} fill="none" stroke="var(--accent)" strokeWidth={strokeWidthMain} strokeLinecap="round" />
-
-        {/* Clock Face Points */}
-        {points.map((p) => (
-          <g key={p.index}>
-             {/* Tick Marks - Only for INACTIVE points */}
-             {!p.isActive && (
-                 <line 
-                    x1={center + (radius - (isSmall ? 2 : 5)) * Math.cos(((p.index * 30) - 90) * Math.PI / 180)}
-                    y1={center + (radius - (isSmall ? 2 : 5)) * Math.sin(((p.index * 30) - 90) * Math.PI / 180)}
-                    x2={center + radius * Math.cos(((p.index * 30) - 90) * Math.PI / 180)}
-                    y2={center + radius * Math.sin(((p.index * 30) - 90) * Math.PI / 180)}
-                    stroke="#475569"
-                    strokeWidth={strokeWidthRing}
-                    opacity={0.6}
-                 />
-             )}
-
-             {/* The Dot */}
-             <circle 
-                cx={p.x} cy={p.y} 
-                r={p.isActive ? (p.isRoot ? dotRadiusActive * 1.5 : dotRadiusActive) : dotRadiusInactive} 
-                fill={p.isActive ? (p.isRoot ? "white" : "var(--accent)") : "#1e293b"} 
-                stroke={p.isActive ? (p.isRoot ? "var(--accent)" : "none") : "#475569"}
-                strokeWidth={p.isActive ? strokeWidthMain : 1}
-             />
-
-             {/* Labels */}
-             {showLabels && (
-               <>
-                 {!isSmall && (
+      {CHROMATIC_SHARPS.map((note, i) => {
+          const isActive = activeIndices.has(i);
+          const isRoot = i === rootIdx;
+          const { x, y } = polarToCartesian(c, c, r, i * 30);
+          const { x: lx, y: ly } = polarToCartesian(c, c, r * 1.18, i * 30);
+          
+          return (
+            <g key={i} className="transition-all duration-300">
+                <circle 
+                    cx={x} cy={y} 
+                    r={isActive ? (isRoot ? 5 : 3.5) : 1.5} 
+                    fill={isActive ? (isRoot ? "white" : "var(--accent)") : "#3f3f46"} 
+                    className="transition-all duration-300"
+                />
+                {isActive && isRoot && <circle cx={x} cy={y} r={8} fill="none" stroke="white" strokeOpacity="0.3" />}
+                
+                {showLabels && isActive && (
                     <text 
-                        x={p.lx} y={p.ly - 6}
-                        textAnchor="middle" dominantBaseline="middle" 
-                        className={`font-bold ${p.isActive ? 'fill-white' : 'fill-slate-500'}`}
-                        style={{ fontSize: fontSizeMain }}
+                        x={lx} y={ly} 
+                        textAnchor="middle" 
+                        dominantBaseline="middle" 
+                        className="text-[10px] font-bold font-mono fill-zinc-300"
                     >
-                        {labelMode === 'note' ? p.note : 
-                         labelMode === 'interval' ? p.intervalLabel : 
-                         p.index}
+                        {labelMode === 'note' ? notes.find(n => getChromaticIndex(n) === i) : labelMode === 'interval' ? INTERVALS[(i - rootIdx + 12) % 12] : i}
                     </text>
-                 )}
-                 {/* Secondary Inner Label (Always Integer Notation for reference, unless Number mode is active) */}
-                 {labelMode !== 'number' && !isSmall && (
-                    <text 
-                        x={p.lx} y={p.ly + 6}
-                        textAnchor="middle" dominantBaseline="middle" 
-                        className={`font-mono font-bold ${p.isActive ? 'fill-[var(--accent)]' : 'fill-slate-600'}`}
-                        style={{ fontSize: fontSizeSub, opacity: 0.6 }}
-                    >
-                        {p.index}
-                    </text>
-                 )}
-               </>
-             )}
-          </g>
-        ))}
-        
-        {/* Center Point */}
-        <circle cx={center} cy={center} r={dotRadiusActive} fill="#1e293b" stroke="var(--accent)" strokeWidth={1} strokeOpacity="0.3" />
-      </svg>
-    </div>
+                )}
+            </g>
+          );
+      })}
+    </svg>
   );
 });
 
 export const UnifiedHarmonicScope: React.FC<{ chord: Chord | null, scaleNotes: string[] }> = ({ chord, scaleNotes }) => {
-    const [labelMode, setLabelMode] = useState<LabelMode>('note');
-
+    const [mode, setMode] = useState<'note' | 'interval' | 'number'>('note');
     if (!chord) return (
-        <div className="h-full flex flex-col items-center justify-center text-slate-600 opacity-50 p-8">
-            <div className="w-16 h-16 border-2 border-dashed border-slate-700 rounded-full flex items-center justify-center mb-4">
-                <Zap size={24} />
-            </div>
-            <p className="text-xs uppercase tracking-widest">Select a chord</p>
+        <div className="h-full flex flex-col items-center justify-center opacity-30 gap-4">
+            <Layers size={48} strokeWidth={1}/>
+            <Typo variant="label">Scope Idle</Typo>
         </div>
     );
 
-    const extensions = getChordExtensions(chord, scaleNotes || []);
+    const ext = getChordExtensions(chord, scaleNotes || []);
     const stats = analyzeHarmonicDensity(chord);
-
+    
     return (
-        <div className="flex flex-col h-full bg-[#0c0c0e] relative">
-            
-            {/* Header */}
-            <div className="p-6 border-b border-white/5 flex items-start justify-between">
-                <div>
-                    <h3 className="text-5xl font-bold text-white tracking-tighter mb-2">{chord.symbol}</h3>
-                    <div className="flex items-center gap-3">
-                        <span className="px-2 py-1 bg-[var(--accent)] text-black text-[10px] font-bold rounded uppercase tracking-wider">
-                            {chord.romanNumeral}
-                        </span>
-                        <span className="text-xs text-slate-400 font-medium uppercase tracking-wide">
-                            {chord.quality} {chord.extension !== 'Triad' && chord.extension}
-                        </span>
-                    </div>
+        <div className="flex flex-col h-full bg-[#09090b]">
+            <SectionHeader title={chord.symbol} icon={PieChart}>
+                <div className="flex gap-1 bg-[#18181b] p-1 rounded-lg border border-white/5">
+                    {[ {id:'note',i:Music}, {id:'interval',i:ArrowLeftRight}, {id:'number',i:Binary} ].map(b => (
+                        <IconButton 
+                            key={b.id} icon={b.i} active={mode === b.id} onClick={() => setMode(b.id as any)} size={14} className="w-7 h-7 rounded"
+                        />
+                    ))}
                 </div>
-                
-                {/* Label Mode Toggle */}
-                <div className="flex flex-col gap-1">
-                     <span className="text-[9px] font-bold uppercase text-slate-500 text-right">View Mode</span>
-                     <div className="flex bg-white/5 p-0.5 rounded-lg">
-                         <button 
-                            onClick={() => setLabelMode('note')}
-                            className={`p-1.5 rounded transition-all ${labelMode === 'note' ? 'bg-[var(--accent)] text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
-                            title="Show Notes"
-                         >
-                             <Music size={14} />
-                         </button>
-                         <button 
-                            onClick={() => setLabelMode('interval')}
-                            className={`p-1.5 rounded transition-all ${labelMode === 'interval' ? 'bg-[var(--accent)] text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
-                            title="Show Intervals"
-                         >
-                             <ArrowLeftRight size={14} />
-                         </button>
-                         <button 
-                            onClick={() => setLabelMode('number')}
-                            className={`p-1.5 rounded transition-all ${labelMode === 'number' ? 'bg-[var(--accent)] text-white shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}
-                            title="Show Numbers"
-                         >
-                             <Binary size={14} />
-                         </button>
-                     </div>
-                </div>
-            </div>
+            </SectionHeader>
 
-            {/* Main Visualization Area */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center">
-                
-                <div className="w-full py-6 border-b border-white/5 bg-[#0c0c0e] flex justify-center">
-                     <PitchConstellation 
-                        notes={chord.notes} 
-                        root={chord.root} 
-                        size={280} 
-                        labelMode={labelMode}
-                    />
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-8">
+                <div className="flex justify-center py-4 relative">
+                    <PitchConstellation notes={chord.notes} root={chord.root} labelMode={mode} size={200} />
                 </div>
                 
-                {/* Harmonic Profile Stats */}
-                <div className="w-full p-6 border-b border-white/5">
-                    <h4 className="text-[9px] font-bold uppercase text-slate-500 mb-4 flex items-center gap-2 tracking-widest">
-                        <BarChart3 size={10} className="text-[var(--accent)]" /> Harmonic Profile
-                    </h4>
-                    <div className="grid grid-cols-3 gap-4">
-                        {[
-                            { label: "Tension", value: stats.tension, color: "bg-rose-500" },
-                            { label: "Brightness", value: stats.brightness, color: "bg-amber-400" },
-                            { label: "Complexity", value: stats.complexity, color: "bg-purple-500" }
-                        ].map((stat) => (
-                            <div key={stat.label} className="flex flex-col gap-1.5">
-                                <div className="flex justify-between text-[9px] uppercase font-bold">
-                                    <span className="text-slate-400">{stat.label}</span>
-                                    <span className="text-white">{stat.value}%</span>
+                <div className="space-y-4">
+                    <Typo variant="label" className="flex gap-2 items-center text-zinc-500"><BarChart3 size={12}/> Analysis</Typo>
+                    <div className="grid grid-cols-1 gap-4">
+                        {[ 
+                           {l:"Tension", v:stats.tension, c:"bg-rose-500"}, 
+                           {l:"Brightness", v:stats.brightness, c:"bg-amber-400"}, 
+                           {l:"Complexity", v:stats.complexity, c:"bg-purple-500"} 
+                        ].map(s => (
+                            <div key={s.l} className="group">
+                                <div className="flex justify-between items-end mb-1.5">
+                                    <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">{s.l}</span>
+                                    <span className="text-[10px] font-mono text-zinc-500">{s.v}%</span>
                                 </div>
-                                <div className="h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                                    <div 
-                                        className={`h-full ${stat.color} transition-all duration-500 ease-out`} 
-                                        style={{ width: `${stat.value}%` }}
-                                    ></div>
+                                <div className="h-1 bg-[#18181b] rounded-full overflow-hidden">
+                                    <div className={`h-full ${s.c} transition-all duration-1000 ease-out`} style={{width:`${s.v}%`}}/>
                                 </div>
                             </div>
                         ))}
                     </div>
                 </div>
 
-                {/* Extensions / Color Notes */}
-                <div className="w-full p-6">
-                    <h4 className="text-[9px] font-bold uppercase text-slate-500 mb-4 flex items-center gap-2 tracking-widest">
-                        <Zap size={10} className="text-[var(--accent)]" /> Color Tones
-                    </h4>
-                    
-                    <div className="grid grid-cols-1 gap-2">
-                        {extensions.length > 0 ? extensions.map(ext => (
-                            <div key={ext.degree} className="flex items-center justify-between p-3 bg-white/5 rounded-lg border border-white/5 group hover:border-white/10 transition-all">
-                                <div className="flex items-center gap-3">
-                                    <span className="w-6 h-6 flex items-center justify-center bg-black/40 rounded text-[10px] font-mono font-bold text-[var(--accent)]">
-                                        {ext.intervalName}
-                                    </span>
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-bold text-slate-200">{ext.note}</span>
-                                        <span className="text-[9px] text-slate-500 uppercase tracking-wide">{ext.descriptor}</span>
-                                    </div>
-                                </div>
-                                <div className="h-1.5 w-1.5 rounded-full bg-[var(--accent)] opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                            </div>
+                <div className="space-y-3">
+                    <Typo variant="label" className="flex gap-2 items-center text-zinc-500"><Zap size={12}/> Color Tones</Typo>
+                    <div className="grid grid-cols-2 gap-2">
+                        {ext.length ? ext.map(e => (
+                            <Surface key={e.degree} className="px-3 py-2 flex justify-between items-center bg-[#18181b] border-transparent">
+                                <span className="font-bold text-[var(--accent)] text-xs font-mono">{e.intervalName}</span>
+                                <Typo variant="body" className="text-xs">{e.note}</Typo>
+                            </Surface>
                         )) : (
-                             <div className="p-4 rounded-lg border border-dashed border-white/10 text-center">
-                                <p className="text-[10px] text-slate-600 uppercase tracking-wide">No colored extensions</p>
-                             </div>
+                            <div className="col-span-2 p-3 border border-dashed border-white/5 rounded-lg text-center">
+                                <Typo variant="mono" className="opacity-30">No upper extensions</Typo>
+                            </div>
                         )}
                     </div>
                 </div>
             </div>
         </div>
     );
-}
+};

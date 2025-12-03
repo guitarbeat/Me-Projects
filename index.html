@@ -9,34 +9,138 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
       :root {
-        --bg-color: #020204; 
-        --accent: #38bdf8; 
+        /* Default Dark Mode (Warm/Vintage) */
+        --bg-main: #141110;
+        --bg-panel: #1c1817;
+        --bg-surface: #292422;
+        --bg-element: #38312e;
+        --bg-glass: rgba(28, 24, 23, 0.9);
+        
+        --text-main: #d8c8b8; /* Provided Beige */
+        --text-muted: #beb3ac; /* Provided Greige */
+        --text-dim: #756a65;
+        
+        --border: #38312e;
+        --border-hover: #5c504a;
+        
+        /* Brighter adaptation of #78211e for dark mode visibility */
+        --accent: #d13a34; 
+
+        /* Motion Guidelines */
+        --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+        --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
       }
+
+      [data-theme='light'] {
+        /* Parchment Light Mode */
+        --bg-main: #d8c8b8; /* Provided Beige */
+        --bg-panel: #e8e0d9;
+        --bg-surface: #f2ede9;
+        --bg-element: #beb3ac; /* Provided Greige */
+        --bg-glass: rgba(216, 200, 184, 0.85);
+
+        --text-main: #2b1d1a;
+        --text-muted: #5e504d;
+        --text-dim: #8a7a75;
+
+        --border: #beb3ac;
+        --border-hover: #78211e;
+        
+        --accent: #78211e; /* Provided Red */
+      }
+
       body {
-        background-color: var(--bg-color);
-        color: #f4f4f5;
+        background-color: var(--bg-main);
+        color: var(--text-main);
         font-family: 'Inter', sans-serif;
         margin: 0;
         height: 100vh;
         overflow: hidden;
+        transition: background-color 0.4s var(--ease-out-expo), color 0.4s var(--ease-out-expo);
       }
       .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
       .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-      .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 10px; }
+      .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 10px; }
       .scrollbar-hide::-webkit-scrollbar { display: none; }
       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+      /* Visual Feedback Utilities */
+      .interact-base {
+        transition-property: transform, opacity, background-color, border-color, box-shadow, color, filter;
+        transition-duration: 300ms;
+        transition-timing-function: var(--ease-out-expo);
+        will-change: transform, opacity;
+        backface-visibility: hidden;
+        transform: translateZ(0); /* Hardware accel */
+      }
+      
+      /* For clickable cards/panels - Lifts up */
+      .interact-lift:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px -10px rgba(0,0,0,0.3);
+        border-color: var(--border-hover);
+        z-index: 10;
+      }
+      .interact-lift:active {
+        transform: translateY(0) scale(0.99);
+        box-shadow: 0 2px 8px -4px rgba(0,0,0,0.1);
+        transition-duration: 150ms;
+      }
+
+      /* For smaller list items - Subtle lift */
+      .interact-lift-sm:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px -4px rgba(0,0,0,0.2);
+        border-color: var(--border-hover);
+        filter: brightness(1.05);
+        z-index: 5;
+      }
+      .interact-lift-sm:active {
+        transform: translateY(0) scale(0.98);
+        box-shadow: none;
+        transition-duration: 100ms;
+      }
+
+      /* For standard buttons - Pushes down slightly */
+      .interact-push:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.1);
+      }
+      .interact-push:active {
+        transform: translateY(1px) scale(0.97);
+        filter: brightness(0.95);
+        transition-duration: 100ms;
+      }
+
+      /* For icon buttons/toggles - Scales up/down */
+      .interact-scale:hover {
+        transform: scale(1.1);
+        color: var(--text-main);
+      }
+      .interact-scale:active {
+        transform: scale(0.9);
+        transition-duration: 100ms;
+      }
+      
+      /* Inputs */
+      .interact-input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 1px var(--accent);
+        transform: translateY(-1px);
+      }
     </style>
     <script type="importmap">
-    {
-      "imports": {
-        "lucide-react": "https://aistudiocdn.com/lucide-react@^0.554.0",
-        "react/": "https://aistudiocdn.com/react@^19.2.0/",
-        "react": "https://aistudiocdn.com/react@^19.2.0",
-        "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
-        "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
-      }
-    }
-    </script>
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client?deps=react@18.2.0",
+    "lucide-react": "https://esm.sh/lucide-react@0.460.0?deps=react@18.2.0",
+    "@google/genai": "https://esm.sh/@google/genai@0.2.1",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "react/": "https://aistudiocdn.com/react@^19.2.1/"
+  }
+}
+</script>
   </head>
   <body>
     <div id="root"></div>

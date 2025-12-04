@@ -1,1 +1,0 @@
-// This file is deprecated and can be deleted. Types are now defined in lib.ts.

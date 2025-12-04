@@ -1,26 +1,31 @@
 
+
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Chord, ScaleType, Note, InstrumentType, generateChordsForScale, audioEngine, getScaleNotes, SPLIT_CONSTANTS, SplitDetent, SplitAccessory } from './lib';
 import { Header, ProgressionStrip, GravityStage, TheoryTools, ComplicationDragBar, cn, MoodSelector, PanelWrapper, Typo, AiAssistant, ErrorBoundary } from './components';
 import { Gauge, Zap, Activity, Music, Layout, Brain } from 'lucide-react';
 
 export default function App() {
+    // --- APP STATE ---
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
     const [key, setKey] = useState<Note>('C');
     const [scale, setScale] = useState<ScaleType>(ScaleType.Major);
     const [bpm, setBpm] = useState(100);
     const [timeSig, setTimeSig] = useState({ num: 4, den: 4 });
     const [progression, setProgression] = useState<Chord[]>([]);
+    
+    // Playback State
     const [isPlaying, setIsPlaying] = useState(false);
     const [playIndex, setPlayIndex] = useState<number|null>(null);
-    const [tab, setTab] = useState('vibe');
     const [inst, setInst] = useState<InstrumentType>('rhodes');
+    
+    // UI State
+    const [tab, setTab] = useState('vibe');
     const [mood, setMood] = useState({ valence: 0.8, arousal: 0.2 }); // Lifted State for AI
     
-    // Split View State (Physics Based)
+    // --- SPLIT VIEW STATE ---
     const [detent, setDetent] = useState<SplitDetent>(SplitDetent.Fraction);
-    const [partition, setPartition] = useState(0); // Offset from center
-    const [overscroll, setOverscroll] = useState(0);
+    const [partition, setPartition] = useState(0); // Offset from center in pixels
     const [isDragging, setIsDragging] = useState(false);
     
     const containerRef = useRef<HTMLDivElement>(null);
@@ -36,11 +41,12 @@ export default function App() {
     // Derived Constants for Calculations
     const containerHeight = containerRef.current?.clientHeight || windowHeight;
     const cardHeight = (containerHeight) / 2 - SPLIT_CONSTANTS.spacing / 2;
-    const { lil, lil2, lil3, notches, snapThreshold } = SPLIT_CONSTANTS;
+    const { lil, lil3, snapThreshold } = SPLIT_CONSTANTS;
     
     // Limits
     const range = cardHeight - lil; // Max distance from center
 
+    // --- DATA GENERATION ---
     const chords = useMemo(() => 
         generateChordsForScale(key, scale, 'triad').map(c => ({...c, duration: timeSig.num})), 
     [key, scale, timeSig.num]);
@@ -48,9 +54,10 @@ export default function App() {
     const contextChord = progression.slice().reverse().find(c => !c.isRest); 
     const scaleNotes = getScaleNotes(key, scale);
 
+    // --- ACTIONS ---
     const play = (c: Chord) => { if (!c.isRest) audioEngine.playChord(c); };
 
-    // Consolidated Progression Handler
+    // Consolidated Progression Handler (Reducer-like pattern)
     const handleProgression = (action: 'add' | 'remove' | 'clear' | 'reorder' | 'resize' | 'quantize', payload?: any) => {
         switch (action) {
             case 'add':
@@ -130,7 +137,9 @@ export default function App() {
     
     const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
 
-    // --- DRAG LOGIC (Ported from Swift) ---
+    // --- DRAG LOGIC ---
+    // Handles the vertical split view resizing with simple clamping.
+    
     const handleDragStart = (e: any) => {
         setIsDragging(true);
     };
@@ -147,43 +156,36 @@ export default function App() {
         } else if ('clientY' in e) {
             clientY = e.clientY;
         } else {
-            return; // Invalid event or no touch points
+            return;
         }
             
         const center = containerHeight / 2;
         const rawOffset = clientY - center;
         
-        // Damped overscroll calculation
-        if (rawOffset < -range) {
-             const extra = -range - rawOffset;
-             setPartition(-range - (extra * 0.5)); // 50% resistance
-             setOverscroll(extra);
-        } else if (rawOffset > range) {
-             const extra = rawOffset - range;
-             setPartition(range + (extra * 0.5));
-             setOverscroll(extra);
-        } else {
-             setPartition(rawOffset);
-             setOverscroll(0);
-        }
+        // Simple clamp
+        setPartition(Math.max(-range, Math.min(range, rawOffset)));
     }, [containerHeight, range]);
 
     const handleDragEnd = useCallback(() => {
         setIsDragging(false);
-        setOverscroll(0); 
         
-        // Snap Logic
+        // Snap Logic: Determine where the partition should land
         setPartition(prevPartition => {
             let newPartition = prevPartition;
             let newDetent: SplitDetent = SplitDetent.Fraction;
             
+            // Snap to Top Mini (Bottom Full)
             if (prevPartition < -range + snapThreshold * range) { 
                 newPartition = -range; 
                 newDetent = SplitDetent.TopMini; 
-            } else if (prevPartition > range - snapThreshold * range) { 
+            } 
+            // Snap to Bottom Mini (Top Full)
+            else if (prevPartition > range - snapThreshold * range) { 
                 newPartition = range; 
                 newDetent = SplitDetent.BottomMini; 
-            } else if (Math.abs(prevPartition) < 40) { 
+            } 
+            // Snap to Center
+            else if (Math.abs(prevPartition) < 40) { 
                 newPartition = 0; 
             }
             setDetent(newDetent);
@@ -207,6 +209,7 @@ export default function App() {
         };
     }, [isDragging, handleDragMove, handleDragEnd]);
 
+    // View Metrics Calculation
     const topHeight = cardHeight + partition;
     const topMinimise = Math.max(0, Math.min(1, (lil3 - topHeight) / lil)); 
     const bottomHeight = containerHeight - topHeight - SPLIT_CONSTANTS.spacing;
@@ -231,14 +234,13 @@ export default function App() {
             data-theme={theme}
             className="relative h-screen w-full bg-black text-[var(--text-main)] overflow-hidden font-sans select-none touch-none"
         >
-            {/* --- TOP VIEW --- */}
+            {/* --- TOP VIEW (Sequencer) --- */}
             <div 
                 className="absolute left-0 right-0 top-0 z-10"
-                style={{ height: topHeight + (overscroll < 0 ? Math.abs(overscroll) * 0.2 : 0) }}
+                style={{ height: topHeight }}
             >
                 <PanelWrapper 
                     minimise={topMinimise} 
-                    overscroll={overscroll} 
                     isFull={hideBottom} 
                     bgColor="var(--bg-panel)" 
                     anchor="top"
@@ -278,14 +280,13 @@ export default function App() {
                 </PanelWrapper>
             </div>
 
-            {/* --- BOTTOM VIEW --- */}
+            {/* --- BOTTOM VIEW (Features) --- */}
             <div 
                 className="absolute left-0 right-0 bottom-0 z-10"
-                style={{ height: bottomHeight + (overscroll > 0 ? overscroll * 0.2 : 0) }}
+                style={{ height: bottomHeight }}
             >
                 <PanelWrapper 
                     minimise={bottomMinimise} 
-                    overscroll={overscroll} 
                     isFull={hideTop} 
                     bgColor="var(--bg-panel)" 
                     anchor="bottom"
@@ -311,7 +312,7 @@ export default function App() {
                 </PanelWrapper>
             </div>
             
-            {/* --- DRAG PILL --- */}
+            {/* --- SPLIT DRAG CONTROL --- */}
             <div 
                 style={{ top: topHeight + SPLIT_CONSTANTS.spacing/2 }}
                 className="absolute left-0 right-0 z-50 transform -translate-y-1/2 pointer-events-none transition-all duration-[50ms]"

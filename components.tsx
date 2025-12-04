@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Play, Square, Gauge, Zap, Activity, Music, Brain, Plus, X, Sparkles, Loader2, PanelLeft, Trash2, Magnet, AlertTriangle, ChevronDown, RefreshCw } from 'lucide-react';
 import { 
@@ -54,10 +52,9 @@ interface ErrorBoundaryState {
  * Catches runtime errors in the component tree (e.g., in the AI panel) to prevent app crashes.
  */
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false };
-  }
+  // Explicitly declare state and props to satisfy TypeScript if inference fails
+  state: ErrorBoundaryState = { hasError: false };
+  readonly props!: Readonly<ErrorBoundaryProps>;
 
   static getDerivedStateFromError(error: any): ErrorBoundaryState { 
     return { hasError: true }; 

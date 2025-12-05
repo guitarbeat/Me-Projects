@@ -2,14 +2,15 @@
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Chord, ScaleType, Note, InstrumentType, generateChordsForScale, audioEngine, getScaleNotes, SPLIT_CONSTANTS, SplitDetent, SplitAccessory } from './lib';
-import { Header, ProgressionStrip, GravityStage, TheoryTools, ComplicationDragBar, cn, MoodSelector, PanelWrapper, Typo, AiAssistant, ErrorBoundary } from './components';
-import { Gauge, Zap, Activity, Music, Layout, Brain } from 'lucide-react';
+import { Header, ProgressionStrip, HarmonicSpace, ComplicationDragBar, cn, MoodSelector, PanelWrapper, Typo } from './components';
+import { Gauge, Zap, Activity, Music, Layout, Wrench } from 'lucide-react';
 
 export default function App() {
     // --- APP STATE ---
     const [theme, setTheme] = useState<'dark' | 'light'>('dark');
     const [key, setKey] = useState<Note>('C');
     const [scale, setScale] = useState<ScaleType>(ScaleType.Major);
+    const [isScaleLocked, setIsScaleLocked] = useState(false);
     const [bpm, setBpm] = useState(100);
     const [timeSig, setTimeSig] = useState({ num: 4, den: 4 });
     const [progression, setProgression] = useState<Chord[]>([]);
@@ -20,17 +21,17 @@ export default function App() {
     const [inst, setInst] = useState<InstrumentType>('rhodes');
     
     // UI State
-    const [tab, setTab] = useState('vibe');
-    const [mood, setMood] = useState({ valence: 0.8, arousal: 0.2 }); // Lifted State for AI
+    const [topView, setTopView] = useState<string>('sequencer');
+    // Mood State: Valence (X), Arousal (Y), Tension (Z - Scroll)
+    const [mood, setMood] = useState({ valence: 0.8, arousal: 0.2, tension: 0.0 }); 
     
     // --- SPLIT VIEW STATE ---
     const [detent, setDetent] = useState<SplitDetent>(SplitDetent.Fraction);
-    const [partition, setPartition] = useState(0); // Offset from center in pixels
+    const [partition, setPartition] = useState(0); 
     const [isDragging, setIsDragging] = useState(false);
     
     const containerRef = useRef<HTMLDivElement>(null);
     
-    // Handle Window Resize for accurate calculations
     const [windowHeight, setWindowHeight] = useState(typeof window !== 'undefined' ? window.innerHeight : 800);
     useEffect(() => {
         const handleResize = () => setWindowHeight(window.innerHeight);
@@ -38,13 +39,11 @@ export default function App() {
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
-    // Derived Constants for Calculations
     const containerHeight = containerRef.current?.clientHeight || windowHeight;
     const cardHeight = (containerHeight) / 2 - SPLIT_CONSTANTS.spacing / 2;
     const { lil, lil3, snapThreshold } = SPLIT_CONSTANTS;
     
-    // Limits
-    const range = cardHeight - lil; // Max distance from center
+    const range = cardHeight - lil; 
 
     // --- DATA GENERATION ---
     const chords = useMemo(() => 
@@ -56,15 +55,26 @@ export default function App() {
 
     // --- ACTIONS ---
     const play = (c: Chord) => { if (!c.isRest) audioEngine.playChord(c); };
+    
+    const updateMood = (v: number, a: number, t?: number) => {
+        // Preserve tension if not provided (e.g., from XY pad)
+        const newTension = t !== undefined ? t : mood.tension;
+        setMood({ valence: v, arousal: a, tension: newTension });
+        audioEngine.setMood(v, a, newTension);
+    };
 
-    // Consolidated Progression Handler (Reducer-like pattern)
+    const handleScaleSelect = (s: ScaleType) => {
+        if (!isScaleLocked) {
+            setScale(s);
+        }
+    };
+
     const handleProgression = (action: 'add' | 'remove' | 'clear' | 'reorder' | 'resize' | 'quantize', payload?: any) => {
         switch (action) {
             case 'add':
                 let newChords: Chord[] = [];
                 let insertIndex = -1;
 
-                // Support both direct Chord/Chord[] payload and { chord, index } payload
                 if (payload && typeof payload === 'object' && ('chord' in payload || 'chords' in payload) && 'index' in payload) {
                      const c = payload.chord || payload.chords;
                      newChords = Array.isArray(c) ? c : [c];
@@ -132,29 +142,29 @@ export default function App() {
 
     const toggle = () => {
         if(isPlaying) { audioEngine.stop(); setIsPlaying(false); setPlayIndex(null); }
-        else { setIsPlaying(true); audioEngine.playProgression(progression, bpm, setPlayIndex, () => { setIsPlaying(false); setPlayIndex(null); }); }
+        else { 
+            audioEngine.setMood(mood.valence, mood.arousal, mood.tension);
+            setIsPlaying(true); 
+            audioEngine.playProgression(progression, bpm, setPlayIndex, () => { setIsPlaying(false); setPlayIndex(null); }); 
+        }
     };
     
     const toggleTheme = () => setTheme(prev => prev === 'dark' ? 'light' : 'dark');
 
-    // --- DRAG LOGIC ---
-    // Handles the vertical split view resizing with simple clamping.
-    
-    const handleDragStart = (e: any) => {
+    const handleDragStart = (e: React.MouseEvent | React.TouchEvent) => {
         setIsDragging(true);
     };
 
-    const handleDragMove = useCallback((e: any) => {
-        // Prevent default on touch to stop scrolling/pull-to-refresh
+    const handleDragMove = useCallback((e: MouseEvent | TouchEvent) => {
         if (e.cancelable && (e.type === 'touchmove' || 'touches' in e)) {
             e.preventDefault();
         }
 
         let clientY = 0;
-        if ('touches' in e && e.touches && e.touches.length > 0) {
-            clientY = e.touches[0].clientY;
+        if ('touches' in e && (e as TouchEvent).touches && (e as TouchEvent).touches.length > 0) {
+            clientY = (e as TouchEvent).touches[0].clientY;
         } else if ('clientY' in e) {
-            clientY = e.clientY;
+            clientY = (e as MouseEvent).clientY;
         } else {
             return;
         }
@@ -162,29 +172,24 @@ export default function App() {
         const center = containerHeight / 2;
         const rawOffset = clientY - center;
         
-        // Simple clamp
         setPartition(Math.max(-range, Math.min(range, rawOffset)));
     }, [containerHeight, range]);
 
     const handleDragEnd = useCallback(() => {
         setIsDragging(false);
         
-        // Snap Logic: Determine where the partition should land
         setPartition(prevPartition => {
             let newPartition = prevPartition;
             let newDetent: SplitDetent = SplitDetent.Fraction;
             
-            // Snap to Top Mini (Bottom Full)
             if (prevPartition < -range + snapThreshold * range) { 
                 newPartition = -range; 
                 newDetent = SplitDetent.TopMini; 
             } 
-            // Snap to Bottom Mini (Top Full)
             else if (prevPartition > range - snapThreshold * range) { 
                 newPartition = range; 
                 newDetent = SplitDetent.BottomMini; 
             } 
-            // Snap to Center
             else if (Math.abs(prevPartition) < 40) { 
                 newPartition = 0; 
             }
@@ -209,7 +214,6 @@ export default function App() {
         };
     }, [isDragging, handleDragMove, handleDragEnd]);
 
-    // View Metrics Calculation
     const topHeight = cardHeight + partition;
     const topMinimise = Math.max(0, Math.min(1, (lil3 - topHeight) / lil)); 
     const bottomHeight = containerHeight - topHeight - SPLIT_CONSTANTS.spacing;
@@ -217,24 +221,13 @@ export default function App() {
     const hideTop = detent === SplitDetent.BottomFull; 
     const hideBottom = detent === SplitDetent.TopFull;
 
-    const accessories: { leading: SplitAccessory[], trailing: SplitAccessory[] } = {
-        leading: [
-            { id: 'vibe', icon: Gauge, action: () => setTab('vibe'), active: tab==='vibe' },
-            { id: 'orbit', icon: Zap, action: () => setTab('orbit'), active: tab==='orbit' }
-        ],
-        trailing: [
-            { id: 'theory', icon: Activity, action: () => setTab('theory'), active: tab==='theory' },
-            { id: 'ai', icon: Brain, action: () => setTab('ai'), active: tab==='ai' }
-        ]
-    };
-
     return (
         <div 
             ref={containerRef} 
             data-theme={theme}
             className="relative h-screen w-full bg-black text-[var(--text-main)] overflow-hidden font-sans select-none touch-none"
         >
-            {/* --- TOP VIEW (Sequencer) --- */}
+            {/* --- TOP VIEW (Sequencer / Harmony) --- */}
             <div 
                 className="absolute left-0 right-0 top-0 z-10"
                 style={{ height: topHeight }}
@@ -258,29 +251,49 @@ export default function App() {
                         <Header 
                             isPlaying={isPlaying} togglePlay={toggle} theme={theme} toggleTheme={toggleTheme} 
                             instrument={inst} setInstrument={(i: InstrumentType) => { setInst(i); audioEngine.setInstrument(i); }}
-                            keyNote={key} setKey={setKey} scale={scale} setScale={setScale} bpm={bpm} setBpm={setBpm}
+                            keyNote={key} scale={scale} bpm={bpm}
+                            view={topView} setView={setTopView}
+                            progressionCount={progression.length}
                         />
-                        <div className="flex-1 min-h-0">
-                             <ProgressionStrip 
-                                progression={progression} 
-                                onRemove={(i) => handleProgression('remove', i)} 
-                                onDropChord={(c, index) => handleProgression('add', { chord: c, index })} 
-                                draggingChord={null} 
-                                availableChords={chords}
-                                onReorder={(from, to) => handleProgression('reorder', { from, to })}
-                                onResize={(index, duration) => handleProgression('resize', { index, duration })}
-                                onClear={() => handleProgression('clear')}
-                                onQuantize={() => handleProgression('quantize')}
-                                timeSignature={timeSig}
-                                onSetTimeSignature={setTimeSig}
-                                activeIndex={playIndex}
-                            />
+                        <div className="flex-1 min-h-0 relative">
+                            {/* Persistent Views (display:none when inactive) to preserve state */}
+                            
+                            {/* 1. Sequencer View */}
+                            <div className={cn("h-full w-full", topView === 'sequencer' ? 'block' : 'hidden')}>
+                                <ProgressionStrip 
+                                    progression={progression} 
+                                    onRemove={(i) => handleProgression('remove', i)} 
+                                    onDropChord={(c, index) => handleProgression('add', { chord: c, index })} 
+                                    draggingChord={null} 
+                                    availableChords={chords}
+                                    onReorder={(from, to) => handleProgression('reorder', { from, to })}
+                                    onResize={(index, duration) => handleProgression('resize', { index, duration })}
+                                    onClear={() => handleProgression('clear')}
+                                    onQuantize={() => handleProgression('quantize')}
+                                    timeSignature={timeSig}
+                                    onSetTimeSignature={setTimeSig}
+                                    activeIndex={playIndex}
+                                />
+                            </div>
+
+                            {/* 2. Harmony View */}
+                            <div className={cn("h-full w-full", topView === 'harmony' ? 'block' : 'hidden')}>
+                                <HarmonicSpace 
+                                    currentKey={key} 
+                                    scaleType={scale} 
+                                    chords={chords} 
+                                    onAddChord={(c: Chord) => handleProgression('add', c)} 
+                                    onChordClick={play} 
+                                    contextChord={contextChord || null} 
+                                    mood={mood}
+                                />
+                            </div>
                         </div>
                     </div>
                 </PanelWrapper>
             </div>
 
-            {/* --- BOTTOM VIEW (Features) --- */}
+            {/* --- BOTTOM VIEW (Vibe Selector Only) --- */}
             <div 
                 className="absolute left-0 right-0 bottom-0 z-10"
                 style={{ height: bottomHeight }}
@@ -291,35 +304,39 @@ export default function App() {
                     bgColor="var(--bg-panel)" 
                     anchor="bottom"
                     overlay={
-                        <div className="flex items-center gap-4 text-white">
+                        <div className="flex items-center justify-center gap-4 text-white w-full">
                              <Layout size={20} className="text-[var(--accent)]" />
-                             <span className="text-sm font-bold capitalize">{tab} Panel</span>
+                             <span className="text-sm font-bold capitalize">Vibe Selector</span>
                         </div>
                     }
                 >
                     <div className="h-full w-full bg-[var(--bg-panel)] overflow-hidden relative">
                          <div className="h-full w-full">
-                            {tab==='vibe' && <MoodSelector theme={theme} currentScale={scale} currentKey={key} onManualScaleSelect={setScale} onTempoChange={setBpm} mood={mood} onMoodChange={(v:number, a:number)=>setMood({valence:v, arousal:a})} />}
-                            {tab==='orbit' && <GravityStage currentKey={key} scaleType={scale} chords={chords} onAddChord={(c: Chord) => handleProgression('add', c)} onChordClick={play} contextChord={contextChord || null} />}
-                            {tab==='theory' && <TheoryTools currentKey={key} scaleType={scale} chords={chords} progression={progression} onAppendChords={(cs: Chord[]) => handleProgression('add', cs)} onSetKey={setKey} onSetScale={setScale} onChordSelect={(c: Chord) => handleProgression('add', c)} onHover={(c: Chord | null) => c && play(c)} scaleNotes={scaleNotes} />}
-                            {tab==='ai' && (
-                                <ErrorBoundary fallback={<div className="h-full flex items-center justify-center text-[var(--text-muted)] text-sm">AI Assistant is currently unavailable.</div>}>
-                                    <AiAssistant mood={mood} currentKey={key} currentScale={scale} progression={progression} onAppendChords={(cs: Chord[]) => handleProgression('add', cs)} />
-                                </ErrorBoundary>
-                            )}
+                            <MoodSelector 
+                                theme={theme} 
+                                currentScale={scale} 
+                                currentKey={key} 
+                                onManualScaleSelect={handleScaleSelect}
+                                onKeyChange={setKey} 
+                                onTempoChange={setBpm} 
+                                mood={mood} 
+                                onMoodChange={updateMood} 
+                                bpm={bpm}
+                                isScaleLocked={isScaleLocked}
+                                toggleScaleLock={() => setIsScaleLocked(!isScaleLocked)}
+                                progression={progression}
+                                activeIndex={playIndex}
+                            />
                         </div>
                     </div>
                 </PanelWrapper>
             </div>
             
-            {/* --- SPLIT DRAG CONTROL --- */}
             <div 
                 style={{ top: topHeight + SPLIT_CONSTANTS.spacing/2 }}
                 className="absolute left-0 right-0 z-50 transform -translate-y-1/2 pointer-events-none transition-all duration-[50ms]"
             >
                 <ComplicationDragBar 
-                    leading={accessories.leading}
-                    trailing={accessories.trailing}
                     onDragStart={handleDragStart}
                     isDragging={isDragging}
                 />

@@ -1,4 +1,4 @@
-import { GoogleGenAI, Type } from "@google/genai";
+
 
 // --- UI & LAYOUT CONSTANTS ---
 
@@ -79,6 +79,8 @@ export interface Chord {
   functionLabel?: string;
   theoryInfo?: string;
   targetChord?: string;
+  targetIndex?: number; // The scale degree this chord resolves to (for visual grouping)
+  tension?: number; // Huron's ITPRA Tension value (0-1)
   // Visual coordinates for the GravityStage
   x?: number;
   y?: number;
@@ -100,31 +102,6 @@ export interface ScaleDef {
   scaleCoordinates: { v: number, a: number }; // Valence/Arousal values
 }
 
-// --- AI TYPES ---
-
-export interface AiSuggestion {
-  root: string;
-  quality: string;
-  extension: string;
-  roman: string;
-  explanation: string;
-  confidence: number;
-}
-
-export interface AiAnalysis {
-    summary: string;
-    emotionalArc: string;
-    harmonicComplexity: string;
-    rating: number; 
-}
-
-export interface HarmonicAffinity {
-  score: number;
-  label: string;
-  color: string;
-  description: string;
-}
-
 // --- MUSIC CONSTANTS ---
 
 export const CHROMATIC_SHARPS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -140,15 +117,15 @@ export const SCALE_DEFS: Record<ScaleType, ScaleDef> = {
   [ScaleType.Major]: { 
     intervals: [0, 2, 4, 5, 7, 9, 11], 
     coords: { x: 0.75, y: 0.6 }, 
-    scaleCoordinates: { v: 0.8, a: 0.2 },
-    palette: { accent: '#38bdf8', background: '#0f172a', gradient: 'linear-gradient(135deg, #e0f2fe 0%, #38bdf8 100%)' }, 
+    scaleCoordinates: { v: 0.8, a: 0.4 }, // Excited/Happy
+    palette: { accent: '#facc15', background: '#0f172a', gradient: 'linear-gradient(135deg, #fef08a 0%, #facc15 100%)' }, 
     emotions: { 0: "Home", 1: "Soft Sorrow", 2: "Bittersweet", 3: "Hopeful", 4: "Tension", 5: "Sad Lift", 6: "Unresolved" }, 
     meta: { title: 'Ionian', desc: 'Bright & Heroic', quote: 'The journey home.', characteristic: 'Major 7th' } 
   },
   [ScaleType.Minor]: { 
     intervals: [0, 2, 3, 5, 7, 8, 10], 
     coords: { x: -0.6, y: -0.7 }, 
-    scaleCoordinates: { v: -0.8, a: -0.2 },
+    scaleCoordinates: { v: -0.6, a: -0.4 }, // Sad/Melancholy
     palette: { accent: '#6366f1', background: '#0a0e14', gradient: 'linear-gradient(135deg, #818cf8 0%, #4f46e5 100%)' }, 
     emotions: { 0: "Sad Home", 1: "Dissonant", 2: "Hopeful", 3: "Deep Sadness", 4: "Dark Tension", 5: "Epic", 6: "Resolved" }, 
     meta: { title: 'Aeolian', desc: 'Deep & Emotional', quote: 'Shadows in the moonlight.', characteristic: 'Flat 6' } 
@@ -156,7 +133,7 @@ export const SCALE_DEFS: Record<ScaleType, ScaleDef> = {
   [ScaleType.Mixolydian]: { 
     intervals: [0, 2, 4, 5, 7, 9, 10], 
     coords: { x: 0.8, y: -0.1 }, 
-    scaleCoordinates: { v: 0.5, a: 0.6 },
+    scaleCoordinates: { v: 0.6, a: 0.1 }, // Hopeful/Relaxed
     palette: { accent: '#f59e0b', background: '#140f0a', gradient: 'linear-gradient(135deg, #fcd34d 0%, #f59e0b 100%)' }, 
     emotions: {}, 
     meta: { title: 'Mixolydian', desc: 'Hopeful & Bluesy', quote: 'Sun breaking through.', characteristic: 'Flat 7' } 
@@ -164,7 +141,7 @@ export const SCALE_DEFS: Record<ScaleType, ScaleDef> = {
   [ScaleType.Lydian]: { 
     intervals: [0, 2, 4, 6, 7, 9, 11], 
     coords: { x: 0.4, y: -0.5 }, 
-    scaleCoordinates: { v: 0.6, a: -0.5 },
+    scaleCoordinates: { v: 0.5, a: -0.2 }, // Dreamy/Calm
     palette: { accent: '#d946ef', background: '#140a12', gradient: 'linear-gradient(135deg, #f5d0fe 0%, #d946ef 100%)' }, 
     emotions: {}, 
     meta: { title: 'Lydian', desc: 'Dreamy & Floating', quote: 'Above the clouds.', characteristic: 'Sharp 4' } 
@@ -172,7 +149,7 @@ export const SCALE_DEFS: Record<ScaleType, ScaleDef> = {
   [ScaleType.Dorian]: { 
     intervals: [0, 2, 3, 5, 7, 9, 10], 
     coords: { x: -0.2, y: -0.2 }, 
-    scaleCoordinates: { v: -0.2, a: 0.1 },
+    scaleCoordinates: { v: -0.2, a: 0.0 }, // Bittersweet/Soulful
     palette: { accent: '#a855f7', background: '#0a0a14', gradient: 'linear-gradient(135deg, #c084fc 0%, #7e22ce 100%)' }, 
     emotions: {}, 
     meta: { title: 'Dorian', desc: 'Soulful & Jazzy', quote: 'Late night introspection.', characteristic: 'Major 6' } 
@@ -180,7 +157,7 @@ export const SCALE_DEFS: Record<ScaleType, ScaleDef> = {
   [ScaleType.Phrygian]: { 
     intervals: [0, 1, 3, 5, 7, 8, 10], 
     coords: { x: -0.6, y: 0.6 }, 
-    scaleCoordinates: { v: -0.5, a: 0.8 },
+    scaleCoordinates: { v: -0.4, a: 0.7 }, // Aggressive/Tense
     palette: { accent: '#ef4444', background: '#140a0a', gradient: 'linear-gradient(135deg, #fca5a5 0%, #991b1b 100%)' }, 
     emotions: {}, 
     meta: { title: 'Phrygian', desc: 'Exotic & Dark', quote: 'Ancient mysteries revealed.', characteristic: 'Flat 2' } 
@@ -188,12 +165,26 @@ export const SCALE_DEFS: Record<ScaleType, ScaleDef> = {
   [ScaleType.Locrian]: { 
     intervals: [0, 1, 3, 5, 6, 8, 10], 
     coords: { x: -0.3, y: 0.9 }, 
-    scaleCoordinates: { v: -0.9, a: 0.5 },
+    scaleCoordinates: { v: -0.8, a: 0.6 }, // Unsettled/Tense
     palette: { accent: '#71717a', background: '#09090b', gradient: 'linear-gradient(135deg, #52525b 0%, #18181b 100%)' }, 
     emotions: {}, 
     meta: { title: 'Locrian', desc: 'Tense & Unstable', quote: 'The edge of reality.', characteristic: 'Flat 5' } 
   },
 };
+
+// [5] Geneva Emotional Music Scales (Ideas)
+// Derived from confirmatory factor analyses of ratings of emotions evoked by various genres of music.
+export const EMOTIONAL_ZONES = [
+    { label: "Joyful", v: 0.8, a: 0.7, desc: "Energetic & Animated" },
+    { label: "Power", v: 0.3, a: 0.8, desc: "Fiery & Heroic" },
+    { label: "Tension", v: -0.5, a: 0.8, desc: "Agitated & Nervous" },
+    { label: "Sadness", v: -0.8, a: -0.4, desc: "Sorrowful" },
+    { label: "Tenderness", v: 0.6, a: -0.5, desc: "Warm & Sensual" },
+    { label: "Peace", v: 0.9, a: -0.7, desc: "Calm & Serene" },
+    { label: "Nostalgia", v: -0.2, a: -0.5, desc: "Sentimental" },
+    { label: "Transcendence", v: 0.5, a: 0.1, desc: "Inspiring" },
+    { label: "Wonder", v: 0.7, a: 0.0, desc: "Amazed" }
+];
 
 // --- LOGIC FUNCTIONS ---
 
@@ -247,6 +238,24 @@ const getRomanNumeral = (degree: number, quality: string): string => {
     return num;
 };
 
+// Huron's ITPRA - Tension Calculation (Heuristic)
+// Assigns a tension value (0-1) based on harmonic function.
+const calculateHarmonicTension = (roman: string, quality: string): number => {
+    const r = (roman || '').toLowerCase(); // Safety check
+    // High Tension (Pre-outcome 'T')
+    if (r.includes('vii') || quality === 'Diminished') return 1.0; // Leading tone
+    if (r.includes('v') || quality === 'Dominant') return 0.8; // Dominant
+    if (r.includes('/')) return 0.9; // Secondary Dominant
+    
+    // Moderate Tension
+    if (r === 'iv' || r === 'ii') return 0.4; // Predominant
+    
+    // Low Tension / Release
+    if (r === 'i' || r === 'vi') return 0.0; // Tonic / Submediant (deceptive resolution)
+    
+    return 0.3;
+};
+
 /**
  * Constructs a Chord object given a root and quality.
  * Handles interval mapping for chords (Major: 0-4-7, Minor: 0-3-7, etc.)
@@ -262,6 +271,7 @@ export const buildChord = (root: Note, quality: Chord['quality'], options?: Part
     if (quality === 'Dominant') intervals = [0, 4, 7, 10];
     
     const notes = intervals.map(i => chromatic[(rootIndex + i) % 12]);
+    const roman = options?.romanNumeral || '?';
     
     return {
         root,
@@ -269,10 +279,11 @@ export const buildChord = (root: Note, quality: Chord['quality'], options?: Part
         extension: '',
         suffix: quality === 'Minor' ? 'm' : quality === 'Diminished' ? 'dim' : '',
         symbol: `${root}${quality === 'Minor' ? 'm' : quality === 'Diminished' ? 'dim' : ''}`,
-        romanNumeral: '?',
+        romanNumeral: roman,
         notes,
         interval: 0,
         duration: 4,
+        tension: calculateHarmonicTension(roman, quality),
         ...options
     };
 };
@@ -294,11 +305,12 @@ export const generateChordsForScale = (root: Note, scale: ScaleType, complexity:
 
 /**
  * Calculates Secondary Dominants (V of V, V of ii, etc.)
- * Used in the Theory Panel.
+ * Returns the targetIndex so the UI can group them near their resolution.
  */
 export const generateSecondaryDominants = (root: Note, scale: ScaleType): Chord[] => {
     const notes = getScaleNotes(root, scale);
-    // V/V, V/ii, V/vi, V/IV
+    // Targets: V/V (to 5th), V/ii (to 2nd), V/vi (to 6th), V/IV (to 4th)
+    // Scale degrees are 0-indexed: V=4, ii=1, vi=5, IV=3
     const targets = [4, 1, 5, 3]; 
     return targets.map(deg => {
         if (deg >= notes.length) return null;
@@ -311,8 +323,9 @@ export const generateSecondaryDominants = (root: Note, scale: ScaleType): Chord[
             extension: '7',
             symbol: `${domRoot}7`,
             romanNumeral: `V7/${getRomanNumeral(deg, getChordQuality(scale, deg))}`,
-            theoryInfo: `Secondary Dominant resolving to ${getRomanNumeral(deg, getChordQuality(scale, deg))}`,
-            emotionalDesc: "Strong Pull"
+            theoryInfo: `Resolves to ${getRomanNumeral(deg, getChordQuality(scale, deg))}`,
+            emotionalDesc: "Strong Pull",
+            targetIndex: deg // KEY: This allows visual grouping
         });
     }).filter(Boolean) as Chord[];
 };
@@ -334,22 +347,150 @@ export const generateBorrowedChords = (root: Note, scale: ScaleType): Chord[] =>
         return buildChord(notes[i], quality, {
             romanNumeral: getRomanNumeral(i, quality),
             theoryInfo: `Borrowed from Parallel ${parallelScale}`,
-            emotionalDesc: "Unexpected Color"
+            emotionalDesc: "Unexpected Color",
+            targetIndex: -1 // No specific orbital target, usually distinct
         });
     });
 };
 
+/**
+ * Returns a list of scale degrees (0-indexed) that are strong harmonic candidates 
+ * for the next chord, based on the current context chord.
+ * Simple common-practice heuristics.
+ */
+export const getHarmonicSuggestions = (contextChord: Chord | null): number[] => {
+    if (!contextChord) return [0]; // Suggest Tonic if empty
+    
+    const r = (contextChord.romanNumeral || '').toLowerCase().replace(/[^ivxlc]/g, '');
+    
+    // Simple harmonic flow map
+    // V -> I (Dominant -> Tonic)
+    // IV -> V or I (Subdominant -> Dominant or Plagal)
+    // ii -> V (Predominant -> Dominant)
+    // vi -> IV or ii (Submediant -> Predominant)
+    // iii -> vi
+    
+    if (r === 'v' || r === 'vii') return [0, 5]; // Resolve to I or vi (deceptive)
+    if (r === 'iv') return [4, 0, 1]; // To V, I, or ii
+    if (r === 'ii') return [4]; // To V
+    if (r === 'vi') return [3, 1]; // To IV or ii
+    if (r === 'iii') return [5]; // To vi
+    if (r === 'i') return [3, 4, 5, 1]; // Anywhere, usually IV or V
+    
+    return [];
+};
+
 export const getCompassLabel = (v: number, a: number) => {
+    // Basic V/A Quadrants
     if (v > 0.3 && a > 0.3) return "EXCITED / JOYFUL";
     if (v > 0.3 && a < -0.3) return "PEACEFUL / SERENE";
-    if (v < -0.3 && a > 0.3) return "ANGRY / TENSE";
-    if (v < -0.3 && a < -0.3) return "SAD / DEPRESSED";
-    if (Math.abs(v) < 0.3 && a > 0.5) return "ALERT";
-    if (Math.abs(v) < 0.3 && a < -0.5) return "SLEEPY";
+    if (v < -0.3 && a > 0.3) return "TENSE / ANGRY";
+    if (v < -0.3 && a < -0.3) return "SAD / MELANCHOLY";
     return "NEUTRAL";
 };
 
-export const getTempoFromArousal = (a: number) => Math.round(100 + (a * 40));
+/**
+ * Analyzes the sentiment of a chord based on its quality, function, and scale context.
+ * Returns Valence (Pos/Neg emotion) and Arousal (Energy/Tension).
+ */
+export const estimateChordSentiment = (chord: Chord, currentKey: Note, scale: ScaleType) => {
+    let v = 0; // Valence: -1 (Negative/Sad) to 1 (Positive/Happy)
+    let a = 0; // Arousal: -1 (Calm/Boring) to 1 (Exciting/Tense)
+
+    // 1. Base Quality Analysis
+    if (chord.quality === 'Major') { v += 0.5; a += 0.1; }
+    else if (chord.quality === 'Minor') { v -= 0.4; a -= 0.1; }
+    else if (chord.quality === 'Diminished') { v -= 0.6; a += 0.6; }
+    else if (chord.quality === 'Augmented') { v += 0.1; a += 0.5; }
+    else if (chord.quality === 'Dominant') { v += 0.3; a += 0.5; }
+
+    // 2. Functional Analysis (Roman Numeral)
+    // Guard against undefined romanNumeral
+    const roman = (chord.romanNumeral || '').toLowerCase();
+    const rClean = roman.replace(/[^ivxlcdm]/g, ''); // strip accidentals or extensions
+
+    // Tonic Function (Stability -> Low Arousal)
+    if (rClean === 'i') { 
+        a -= 0.5; 
+        if (chord.quality === 'Major') v += 0.2; // Resolution home
+    } 
+    
+    // Subdominant Function (Travel/Heroic -> High Valence)
+    if (rClean === 'iv') { v += 0.2; a += 0.1; } 
+    
+    // Dominant Function (Tension -> High Arousal)
+    if (rClean === 'v') { a += 0.4; } 
+    
+    // Deceptive (vi in Major is sadder)
+    if (rClean === 'vi') { v -= 0.2; } 
+    
+    // Leading Tone (vii -> High Tension)
+    if (rClean === 'vii') { a += 0.5; v -= 0.2; }
+
+    // 3. Complexity Modifiers
+    if (roman.includes('/')) {
+        a += 0.3; // Secondary dominant adds tension/surprise
+    }
+    if (chord.extension && ['7', '9', '11', '13'].some(e => chord.extension.includes(e))) {
+        a += 0.1; // Extensions add color/richness
+    }
+
+    // Clamp
+    v = Math.max(-1, Math.min(1, v));
+    a = Math.max(-1, Math.min(1, a));
+
+    return { valence: v, arousal: a };
+};
+
+export const getTempoFromArousal = (a: number) => Math.round(110 + (a * 50));
+
+/**
+ * Maps Valence/Arousal to concise musical features for the HUD.
+ */
+export const getMusicalCharacteristics = (v: number, a: number, t: number = 0) => {
+    // Find closest emotional zone
+    let min = Infinity;
+    let gem = EMOTIONAL_ZONES[0];
+    EMOTIONAL_ZONES.forEach(z => {
+        const d = Math.sqrt(Math.pow(v - z.v, 2) + Math.pow(a - z.a, 2));
+        if (d < min) { min = d; gem = z; }
+    });
+
+    // 1. TEMPO [36]
+    let tempo = 'Moderate';
+    if (a > 0.2) tempo = 'Fast / Agitated';
+    else if (a < -0.2) tempo = 'Slow / Calm';
+
+    // 2. MODE [37]
+    let mode = 'Modal';
+    if (v > 0.1) mode = 'Major (Bright)';
+    else if (v < -0.1) mode = 'Minor (Dark)';
+
+    // 3. LOUDNESS [38]
+    let dynamics = 'Moderate';
+    if (a > 0.3) dynamics = 'Loud / Intense';
+    else if (a < -0.3) dynamics = 'Soft / Gentle';
+
+    // 4. HARMONY [39][40]
+    let harmony = 'Diatonic';
+    if (t > 0.6) harmony = 'Chaotic / Noise';
+    else if (t > 0.3) harmony = 'Unstable / Drift';
+    else if (Math.abs(v) > 0.5 && Math.abs(a) < 0.5) harmony = 'Resolving';
+    else if (v < -0.3 && a > 0.3) harmony = 'Dissonant';
+
+    // 5. STYLE [41]
+    let style = 'Legato';
+    if (a > 0.2) style = 'Staccato';
+
+    return {
+        vibe: gem.label,
+        tempo,
+        mode,
+        dynamics,
+        harmony,
+        texture: style
+    };
+};
 
 /**
  * Helper to layout chords in a circle for the GravityStage component.
@@ -360,7 +501,7 @@ export const generateOrbitalLayout = (chords: Chord[]) => {
     for (let i = 0; i < count; i++) {
         const angle = (i / count) * 2 * Math.PI - (Math.PI / 2); // Start top
         // Distribute in a circle, but vary radius slightly for visual interest
-        const radius = 35 + (i % 2) * 5; 
+        const radius = 35; 
         layout.push({
             ...chords[i],
             x: 50 + Math.cos(angle) * radius,
@@ -374,18 +515,29 @@ export const generateOrbitalLayout = (chords: Chord[]) => {
 
 /**
  * A wrapper class for the Web Audio API.
- * Handles:
- * - Polyphonic chord playback
- * - Oscillator scheduling
- * - Master gain control
- * - Instrument synthesis (Basic shapes + Envelopes)
+ * Uses a Lookahead Scheduler pattern for precise rhythm timing.
  */
 class AudioEngine {
     private ctx: AudioContext | null = null;
     private masterGain: GainNode | null = null;
     private instrument: InstrumentType = 'rhodes';
+    
+    // Scheduling State
     private isPlaying: boolean = false;
-    private currentTimeout: number | null = null;
+    private nextNoteTime: number = 0;
+    private currentChordIndex: number = 0;
+    private timerID: number | null = null;
+    private _progression: Chord[] = [];
+    private _bpm: number = 120;
+    
+    // Dynamic Structural Features
+    private _valence: number = 0;
+    private _arousal: number = 0;
+    private _tension: number = 0;
+
+    // Callbacks
+    private _onStep: ((idx: number) => void) | null = null;
+    private _onComplete: (() => void) | null = null;
 
     private getContext(): AudioContext {
         if (!this.ctx && typeof window !== 'undefined') {
@@ -408,79 +560,169 @@ class AudioEngine {
     }
 
     /**
-     * Plays a single chord immediately.
+     * Updates the emotional state, affecting playback physics in real-time.
      */
-    playChord(chord: Chord, duration: number = 2.0) {
+    setMood(valence: number, arousal: number, tension: number = 0) {
+        this._valence = valence;
+        this._arousal = arousal;
+        this._tension = tension;
+        // Update BPM if we want dynamic tempo, but usually BPM is set explicitly
+        // Logic for Volume/Style is handled in playChord
+    }
+
+    /**
+     * Plays a single chord immediately or at a scheduled time.
+     * Incorporates "Loudness" [38] and "Style" [41] based on Valence/Arousal.
+     */
+    playChord(chord: Chord, duration: number = 2.0, when?: number) {
         const ctx = this.getContext();
         if (!ctx || !this.masterGain) return;
         
-        const now = ctx.currentTime;
+        const startTime = when || ctx.currentTime;
         const frequencies = chord.notes.map(n => this.noteToFreq(n));
         
+        // --- Structural Feature Implementation ---
+        
+        // Loudness [38]: Map Arousal (-1 to 1) to Gain (0.1 to 0.6)
+        const baseGain = 0.35 + (this._arousal * 0.25);
+        const volume = Math.max(0.1, Math.min(0.8, baseGain));
+        
+        // Style [41]: Map Arousal to Articulation (Staccato vs Legato)
+        // High Arousal (> 0.2) = Staccato (Short release)
+        // Low Arousal = Legato (Full sustain)
+        const isStaccato = this._arousal > 0.2;
+        
+        // Envelope shaping
+        const attack = isStaccato ? 0.01 : 0.05 + (Math.abs(this._valence) * 0.05);
+        const release = isStaccato ? 0.1 : duration * 0.8; 
+        const hold = isStaccato ? 0.05 : duration * 0.9;
+
         frequencies.forEach((freq, i) => {
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
             
             // Simple instrument switching logic
             osc.type = this.instrument === 'pad' ? 'triangle' : this.instrument === 'synth' ? 'sawtooth' : 'sine';
+            
+            // Tension detuning logic (0 to 1 -> 0 to 50 cents)
+            const detune = (Math.random() - 0.5) * this._tension * 50;
             osc.frequency.value = freq;
+            osc.detune.value = detune;
             
             // ADSR Envelope
-            gain.gain.setValueAtTime(0, now);
-            gain.gain.linearRampToValueAtTime(0.1 / frequencies.length, now + 0.05); // Attack
-            gain.gain.exponentialRampToValueAtTime(0.001, now + duration); // Decay
+            gain.gain.setValueAtTime(0, startTime);
+            gain.gain.linearRampToValueAtTime(volume / frequencies.length, startTime + attack); // Attack
+            
+            // Sustain / Release
+            gain.gain.setValueAtTime(volume / frequencies.length, startTime + attack + hold);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + attack + hold + release);
             
             osc.connect(gain);
             gain.connect(this.masterGain!);
             
-            osc.start(now);
-            osc.stop(now + duration + 0.1);
+            osc.start(startTime);
+            osc.stop(startTime + duration + release + 0.5);
         });
     }
 
     /**
-     * Schedules a sequence of chords to play based on BPM.
+     * Internal scheduler loop.
+     * Looks ahead 0.1s and schedules notes that fall within that window.
      */
-    playProgression(progression: Chord[], bpm: number, onStep: (idx: number) => void, onComplete: () => void) {
-        this.stop();
-        this.isPlaying = true;
-        const beatDur = 60 / bpm;
-        let t = 0;
+    private scheduler() {
+        const lookahead = 25.0; // Check every 25ms
+        const scheduleAheadTime = 0.1; // Schedule 100ms ahead
 
-        const schedule = (idx: number) => {
-            if (!this.isPlaying) return;
-            if (idx >= progression.length) {
-                this.currentTimeout = window.setTimeout(onComplete, 1000);
+        while (this.nextNoteTime < this.getContext().currentTime + scheduleAheadTime) {
+            if (this.currentChordIndex >= this._progression.length) {
+                // Determine when the last note finishes to trigger onComplete
+                const totalDuration = this.nextNoteTime - this.getContext().currentTime;
+                if (totalDuration > 0) {
+                     setTimeout(() => {
+                         if(this.isPlaying) {
+                             this.stop();
+                             if (this._onComplete) this._onComplete();
+                         }
+                     }, totalDuration * 1000);
+                } else {
+                     this.stop();
+                     if (this._onComplete) this._onComplete();
+                }
                 return;
             }
-
-            const c = progression[idx];
-            onStep(idx);
             
-            if (!c.isRest) {
-                this.playChord(c, c.duration * beatDur);
+            this.scheduleNote(this.currentChordIndex, this.nextNoteTime);
+            this.advanceNote();
+        }
+
+        if (this.isPlaying) {
+            this.timerID = window.setTimeout(this.scheduler.bind(this), lookahead);
+        }
+    }
+
+    private advanceNote() {
+        const secondsPerBeat = 60.0 / this._bpm;
+        const chord = this._progression[this.currentChordIndex];
+        // Advance time by chord duration
+        this.nextNoteTime += chord.duration * secondsPerBeat;
+        this.currentChordIndex++;
+    }
+
+    private scheduleNote(index: number, time: number) {
+        const chord = this._progression[index];
+        const secondsPerBeat = 60.0 / this._bpm;
+        
+        if (!chord.isRest) {
+            this.playChord(chord, chord.duration * secondsPerBeat, time);
+        }
+
+        // Schedule visual update
+        // We use a precise timeout to trigger the UI callback at the exact moment audio plays
+        // We clamp it to 0 just in case we are slightly late
+        const timeToVisual = Math.max(0, (time - this.getContext().currentTime));
+        
+        setTimeout(() => {
+            if (this.isPlaying && this._onStep) {
+                this._onStep(index);
             }
+        }, timeToVisual * 1000);
+    }
 
-            // Recursively schedule next chord
-            this.currentTimeout = window.setTimeout(() => {
-                schedule(idx + 1);
-            }, c.duration * beatDur * 1000);
-        };
-
-        schedule(0);
+    /**
+     * Starts playback of the progression.
+     */
+    playProgression(progression: Chord[], bpm: number, onStep: (idx: number) => void, onComplete: () => void) {
+        if (this.isPlaying) this.stop();
+        this.isPlaying = true;
+        this._progression = progression;
+        this._bpm = bpm;
+        this._onStep = onStep;
+        this._onComplete = onComplete;
+        this.currentChordIndex = 0;
+        
+        const ctx = this.getContext();
+        // Start slightly in the future to ensure clean attack
+        this.nextNoteTime = ctx.currentTime + 0.05; 
+        
+        this.scheduler();
     }
 
     stop() {
         this.isPlaying = false;
-        if (this.currentTimeout) {
-            clearTimeout(this.currentTimeout);
-            this.currentTimeout = null;
+        if (this.timerID) {
+            window.clearTimeout(this.timerID);
+            this.timerID = null;
         }
-        // Cancel scheduled audio events to silence output
+        // Reset gain to silence output
         if (this.masterGain) {
-            const val = this.masterGain.gain.value;
-            this.masterGain.gain.cancelScheduledValues(0);
-            this.masterGain.gain.setValueAtTime(val, 0); // Reset
+            const now = this.getContext().currentTime;
+            this.masterGain.gain.cancelScheduledValues(now);
+            this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
+            this.masterGain.gain.linearRampToValueAtTime(0, now + 0.05); // Fade out quick
+            // Restore gain shortly after
+            setTimeout(() => {
+                if(this.masterGain) this.masterGain.gain.value = 0.4;
+            }, 100);
         }
     }
 
@@ -497,104 +739,3 @@ class AudioEngine {
 }
 
 export const audioEngine = new AudioEngine();
-
-// --- AI FUNCTIONS ---
-
-const getApiKey = () => {
-    try {
-        if (typeof process !== 'undefined' && process.env) {
-            return process.env.API_KEY;
-        }
-    } catch (e) {
-        // Ignore errors
-    }
-    return '';
-};
-
-/**
- * Uses Gemini API to suggest the next 4 chords based on the current progression and mood.
- */
-export const generateSuggestions = async (
-    key: Note, 
-    scale: ScaleType, 
-    valence: number, 
-    arousal: number, 
-    progression: Chord[]
-): Promise<AiSuggestion[]> => {
-    try {
-        const apiKey = getApiKey();
-        if (!apiKey) throw new Error("API Key missing");
-        
-        const ai = new GoogleGenAI({ apiKey });
-        const model = "gemini-2.5-flash";
-        
-        const prompt = `
-            Given a chord progression in ${key} ${scale}, suggest 4 next chords.
-            Current progression: ${progression.map(c => c.symbol).join(' -> ')}
-            Mood: Valence ${valence}, Arousal ${arousal}.
-            Return JSON.
-        `;
-        
-        const response = await ai.models.generateContent({
-            model,
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.ARRAY,
-                    items: {
-                        type: Type.OBJECT,
-                        properties: {
-                            root: { type: Type.STRING },
-                            quality: { type: Type.STRING },
-                            extension: { type: Type.STRING },
-                            roman: { type: Type.STRING },
-                            explanation: { type: Type.STRING },
-                            confidence: { type: Type.NUMBER }
-                        }
-                    }
-                }
-            }
-        });
-        
-        return JSON.parse(response.text || "[]");
-    } catch (e) {
-        console.error("AI Error", e);
-        return [];
-    }
-};
-
-/**
- * Uses Gemini API to analyze the current progression and return a summary.
- */
-export const analyzeHarmony = async (progression: Chord[], key: Note, scale: ScaleType): Promise<AiAnalysis | null> => {
-    try {
-        const apiKey = getApiKey();
-        if (!apiKey) throw new Error("API Key missing");
-
-        const ai = new GoogleGenAI({ apiKey });
-        const prompt = `Analyze this chord progression in ${key} ${scale}: ${progression.map(c => c.symbol).join('-')}. Provide a JSON summary.`;
-
-        const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash",
-            contents: prompt,
-            config: {
-                responseMimeType: "application/json",
-                responseSchema: {
-                    type: Type.OBJECT,
-                    properties: {
-                        summary: { type: Type.STRING },
-                        emotionalArc: { type: Type.STRING },
-                        harmonicComplexity: { type: Type.STRING },
-                        rating: { type: Type.NUMBER }
-                    }
-                }
-            }
-        });
-
-        return JSON.parse(response.text || "{}");
-    } catch (e) {
-        console.error("Analysis Error", e);
-        return null;
-    }
-};

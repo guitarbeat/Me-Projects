@@ -1,5 +1,4 @@
 
-
 // --- UI & LAYOUT CONSTANTS ---
 
 /**
@@ -303,6 +302,37 @@ export const generateChordsForScale = (root: Note, scale: ScaleType, complexity:
     });
 };
 
+// --- NARRATIVE TEMPLATES ---
+
+export interface NarrativeTemplate {
+    id: string;
+    label: string;
+    description: string;
+    degrees: number[]; // 0-based scale degrees
+}
+
+export const NARRATIVE_TEMPLATES: NarrativeTemplate[] = [
+    { id: 'epic', label: 'Epic Journey', description: 'Heroic and expansive.', degrees: [0, 5, 3, 4] }, // I-vi-IV-V
+    { id: 'sad', label: 'Tragedy', description: 'Deep sorrow and longing.', degrees: [0, 5, 1, 4] }, // i-VI-ii-V (approx)
+    { id: 'mystery', label: 'Noir Mystery', description: 'Unresolved tension.', degrees: [0, 1, 4, 6] },
+    { id: 'pop', label: 'Pop Anthem', description: 'The axis of awesome.', degrees: [0, 4, 5, 3] },
+    { id: 'jazz', label: 'Jazz Turnaround', description: 'Classic resolution.', degrees: [1, 4, 0] },
+    { id: 'rising', label: 'The Climb', description: 'Continuous upward motion.', degrees: [0, 1, 2, 3] },
+];
+
+export const getTemplateChords = (templateId: string, root: Note, scale: ScaleType): Chord[] => {
+    const template = NARRATIVE_TEMPLATES.find(t => t.id === templateId);
+    if (!template) return [];
+    
+    // Generate pool of chords
+    const diatonic = generateChordsForScale(root, scale, 'triad');
+    
+    return template.degrees.map(d => {
+        const chord = diatonic[d % diatonic.length];
+        return { ...chord, duration: 4 };
+    });
+};
+
 /**
  * Calculates Secondary Dominants (V of V, V of ii, etc.)
  * Returns the targetIndex so the UI can group them near their resolution.
@@ -571,6 +601,23 @@ class AudioEngine {
     }
 
     /**
+     * Converts a Note string (e.g. "C", "F#") to a frequency.
+     * @param note The note name
+     * @param octave The target octave (default 4)
+     */
+    private noteToFreq(note: string, octave: number = 4): number {
+        const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+        const map: {[key:string]: string} = { 'Db':'C#', 'Eb':'D#', 'Gb':'F#', 'Ab':'G#', 'Bb':'A#' };
+        const norm = map[note] || note;
+        const idx = notes.indexOf(norm);
+        if (idx === -1) return 261.63; // Fallback to Middle C
+        
+        // Calculate semitones relative to A4 (440Hz, index 9 in octave 4)
+        const absSemitones = (octave * 12 + idx) - (4 * 12 + 9);
+        return 440 * Math.pow(2, absSemitones / 12);
+    }
+
+    /**
      * Plays a single chord immediately or at a scheduled time.
      * Incorporates "Loudness" [38] and "Style" [41] based on Valence/Arousal.
      */
@@ -579,24 +626,34 @@ class AudioEngine {
         if (!ctx || !this.masterGain) return;
         
         const startTime = when || ctx.currentTime;
-        const frequencies = chord.notes.map(n => this.noteToFreq(n));
+        
+        // Simple Voicing Logic: 
+        // Force chords to stay within a reasonable range (Octave 3-4)
+        // This is a naive implementation; a real one would use smooth voice leading.
+        const notes = chord.notes;
+        const frequencies = notes.map((n, i) => {
+             // Root at octave 3, others at 3 or 4 depending on interval
+             // Simplification: Root=3, others=4 for triad feel
+             return this.noteToFreq(n, i === 0 ? 3 : 4);
+        });
         
         // --- Structural Feature Implementation ---
         
         // Loudness [38]: Map Arousal (-1 to 1) to Gain (0.1 to 0.6)
         const baseGain = 0.35 + (this._arousal * 0.25);
-        const volume = Math.max(0.1, Math.min(0.8, baseGain));
+        // Divide gain by note count to prevent clipping
+        const volume = Math.max(0.1, Math.min(0.8, baseGain)) / (frequencies.length || 1);
         
         // Style [41]: Map Arousal to Articulation (Staccato vs Legato)
         // High Arousal (> 0.2) = Staccato (Short release)
         // Low Arousal = Legato (Full sustain)
         const isStaccato = this._arousal > 0.2;
         
-        // Envelope shaping
+        // Envelope shaping parameters
         const attack = isStaccato ? 0.01 : 0.05 + (Math.abs(this._valence) * 0.05);
-        const release = isStaccato ? 0.1 : duration * 0.8; 
-        const hold = isStaccato ? 0.05 : duration * 0.9;
-
+        const release = isStaccato ? 0.1 : duration * 0.2; 
+        // For web audio, we ramp gain down before stop
+        
         frequencies.forEach((freq, i) => {
             const osc = ctx.createOscillator();
             const gain = ctx.createGain();
@@ -608,91 +665,32 @@ class AudioEngine {
             const detune = (Math.random() - 0.5) * this._tension * 50;
             osc.frequency.value = freq;
             osc.detune.value = detune;
-            
-            // ADSR Envelope
-            gain.gain.setValueAtTime(0, startTime);
-            gain.gain.linearRampToValueAtTime(volume / frequencies.length, startTime + attack); // Attack
-            
-            // Sustain / Release
-            gain.gain.setValueAtTime(volume / frequencies.length, startTime + attack + hold);
-            gain.gain.exponentialRampToValueAtTime(0.001, startTime + attack + hold + release);
-            
+
             osc.connect(gain);
             gain.connect(this.masterGain!);
-            
+
+            // Envelope
+            gain.gain.setValueAtTime(0, startTime);
+            gain.gain.linearRampToValueAtTime(volume, startTime + attack);
+            // Decay/Release
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration - release + 0.05); // slightly padded
+
             osc.start(startTime);
-            osc.stop(startTime + duration + release + 0.5);
+            osc.stop(startTime + duration);
         });
     }
 
     /**
-     * Internal scheduler loop.
-     * Looks ahead 0.1s and schedules notes that fall within that window.
+     * Starts the lookahead scheduler to play a sequence of chords.
      */
-    private scheduler() {
-        const lookahead = 25.0; // Check every 25ms
-        const scheduleAheadTime = 0.1; // Schedule 100ms ahead
-
-        while (this.nextNoteTime < this.getContext().currentTime + scheduleAheadTime) {
-            if (this.currentChordIndex >= this._progression.length) {
-                // Determine when the last note finishes to trigger onComplete
-                const totalDuration = this.nextNoteTime - this.getContext().currentTime;
-                if (totalDuration > 0) {
-                     setTimeout(() => {
-                         if(this.isPlaying) {
-                             this.stop();
-                             if (this._onComplete) this._onComplete();
-                         }
-                     }, totalDuration * 1000);
-                } else {
-                     this.stop();
-                     if (this._onComplete) this._onComplete();
-                }
-                return;
-            }
-            
-            this.scheduleNote(this.currentChordIndex, this.nextNoteTime);
-            this.advanceNote();
-        }
-
-        if (this.isPlaying) {
-            this.timerID = window.setTimeout(this.scheduler.bind(this), lookahead);
-        }
-    }
-
-    private advanceNote() {
-        const secondsPerBeat = 60.0 / this._bpm;
-        const chord = this._progression[this.currentChordIndex];
-        // Advance time by chord duration
-        this.nextNoteTime += chord.duration * secondsPerBeat;
-        this.currentChordIndex++;
-    }
-
-    private scheduleNote(index: number, time: number) {
-        const chord = this._progression[index];
-        const secondsPerBeat = 60.0 / this._bpm;
+    playProgression(progression: Chord[], bpm: number, onStep: (idx: number)=>void, onComplete: ()=>void) {
+        this.stop(); // Clear previous
         
-        if (!chord.isRest) {
-            this.playChord(chord, chord.duration * secondsPerBeat, time);
+        if (progression.length === 0) {
+            if (onComplete) onComplete();
+            return;
         }
 
-        // Schedule visual update
-        // We use a precise timeout to trigger the UI callback at the exact moment audio plays
-        // We clamp it to 0 just in case we are slightly late
-        const timeToVisual = Math.max(0, (time - this.getContext().currentTime));
-        
-        setTimeout(() => {
-            if (this.isPlaying && this._onStep) {
-                this._onStep(index);
-            }
-        }, timeToVisual * 1000);
-    }
-
-    /**
-     * Starts playback of the progression.
-     */
-    playProgression(progression: Chord[], bpm: number, onStep: (idx: number) => void, onComplete: () => void) {
-        if (this.isPlaying) this.stop();
         this.isPlaying = true;
         this._progression = progression;
         this._bpm = bpm;
@@ -701,40 +699,80 @@ class AudioEngine {
         this.currentChordIndex = 0;
         
         const ctx = this.getContext();
-        // Start slightly in the future to ensure clean attack
-        this.nextNoteTime = ctx.currentTime + 0.05; 
-        
+        // Start a bit in the future to allow scheduling
+        this.nextNoteTime = ctx.currentTime + 0.1;
         this.scheduler();
+    }
+
+    /**
+     * Recursive scheduler function.
+     */
+    private scheduler() {
+        if (!this.isPlaying) return;
+        
+        const lookahead = 25.0; // ms to sleep
+        const scheduleAheadTime = 0.1; // seconds to look ahead
+
+        // Schedule notes until the window is full
+        while (this.nextNoteTime < this.getContext().currentTime + scheduleAheadTime && this.currentChordIndex < this._progression.length) {
+            this.scheduleChord(this.currentChordIndex, this.nextNoteTime);
+            // Advance time
+            const secondsPerBeat = 60.0 / this._bpm;
+            this.nextNoteTime += secondsPerBeat * this._progression[this.currentChordIndex].duration;
+            this.currentChordIndex++;
+        }
+        
+        // Check for completion
+        // If we processed all chords, we need to wait for the last one to finish playing before calling onComplete
+        if (this.currentChordIndex >= this._progression.length) {
+            // Check if current time has passed the end of the last chord
+            // Note: nextNoteTime is now the END time of the last chord
+            if (this.getContext().currentTime > this.nextNoteTime) {
+                this.isPlaying = false;
+                if (this._onComplete) this._onComplete();
+                return;
+            }
+        }
+
+        this.timerID = window.setTimeout(() => this.scheduler(), lookahead);
+    }
+
+    private scheduleChord(index: number, time: number) {
+        // UI Callback Sync
+        if (this._onStep) {
+             // Web Audio time != Date.now(), so we estimate delay
+             const delay = (time - this.getContext().currentTime) * 1000;
+             setTimeout(() => {
+                 if(this.isPlaying) this._onStep!(index);
+             }, Math.max(0, delay));
+        }
+        
+        const chord = this._progression[index];
+        if(!chord.isRest) {
+            const secondsPerBeat = 60.0 / this._bpm;
+            const duration = secondsPerBeat * chord.duration;
+            this.playChord(chord, duration, time);
+        }
     }
 
     stop() {
         this.isPlaying = false;
-        if (this.timerID) {
-            window.clearTimeout(this.timerID);
-            this.timerID = null;
-        }
-        // Reset gain to silence output
-        if (this.masterGain) {
-            const now = this.getContext().currentTime;
-            this.masterGain.gain.cancelScheduledValues(now);
-            this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, now);
-            this.masterGain.gain.linearRampToValueAtTime(0, now + 0.05); // Fade out quick
-            // Restore gain shortly after
+        if (this.timerID) clearTimeout(this.timerID);
+        
+        const ctx = this.getContext();
+        // Panic button: fade out master briefly to kill ringing notes
+        if(this.masterGain) {
+            this.masterGain.gain.cancelScheduledValues(ctx.currentTime);
+            this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, ctx.currentTime);
+            this.masterGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.05);
+            // Restore gain after fade
             setTimeout(() => {
-                if(this.masterGain) this.masterGain.gain.value = 0.4;
+                if(this.masterGain) {
+                    this.masterGain.gain.cancelScheduledValues(ctx.currentTime);
+                    this.masterGain.gain.value = 0.4; 
+                }
             }, 100);
         }
-    }
-
-    private noteToFreq(note: string): number {
-        const octave = 4; // Default center octave
-        const noteMap: Record<string, number> = {
-            'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3, 'E': 4,
-            'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8, 'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
-        };
-        const semitones = noteMap[note.replace(/\d/, '')] || 0;
-        const n = (semitones - 9) + (octave - 4) * 12; 
-        return 440 * Math.pow(2, n / 12);
     }
 }
 

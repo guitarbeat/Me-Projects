@@ -3,6 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="theme-color" content="#141110">
+    <meta name="description" content="A professional musical composition tool for exploring harmony, scales, and chord progressions.">
     <title>Harmonic Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
@@ -10,50 +12,25 @@
       :root {
         /* 
          * --- COLOR PALETTE ---
-         * Defines the application's thematic colors for both Dark and Light modes.
-         * Default is "Warm/Vintage Dark" to match the creative studio aesthetic.
          */
+        --bg-main: #141110;       
+        --bg-panel: #1c1817;      
+        --bg-surface: #292422;    
+        --bg-element: #38312e;    
+        --bg-glass: rgba(28, 24, 23, 0.9); 
+        
+        --text-main: #d8c8b8; 
+        --text-muted: #beb3ac; 
+        --text-dim: #756a65;   
+        
+        --border: #38312e;        
+        --border-hover: #5c504a;  
+        
+        --accent: #d13a34;        
 
-        /* Default Dark Mode */
-        --bg-main: #141110;       /* App background */
-        --bg-panel: #1c1817;      /* Panel background (Sidebar, Headers) */
-        --bg-surface: #292422;    /* Card/Element background */
-        --bg-element: #38312e;    /* Input/Button background */
-        --bg-glass: rgba(28, 24, 23, 0.9); /* Transparent overlays */
-        
-        --text-main: #d8c8b8; /* Beige: Primary Text */
-        --text-muted: #beb3ac; /* Greige: Secondary Text */
-        --text-dim: #756a65;   /* Tertiary/Label Text */
-        
-        --border: #38312e;        /* Standard border */
-        --border-hover: #5c504a;  /* Hover state border */
-        
-        --accent: #d13a34;        /* Primary Accent (Red) */
-
-        /* 
-         * --- MOTION CURVES ---
-         * Custom Bezier curves for natural, fluid animations.
-         */
+        /* --- MOTION CURVES --- */
         --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
         --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-      }
-
-      [data-theme='light'] {
-        /* Parchment Light Mode Overrides */
-        --bg-main: #d8c8b8;
-        --bg-panel: #e8e0d9;
-        --bg-surface: #f2ede9;
-        --bg-element: #beb3ac;
-        --bg-glass: rgba(216, 200, 184, 0.85);
-
-        --text-main: #2b1d1a;
-        --text-muted: #5e504d;
-        --text-dim: #8a7a75;
-
-        --border: #beb3ac;
-        --border-hover: #78211e;
-        
-        --accent: #78211e;
       }
 
       body {
@@ -63,29 +40,26 @@
         margin: 0;
         height: 100vh;
         overflow: hidden;
-        transition: background-color 0.4s var(--ease-out-expo), color 0.4s var(--ease-out-expo);
+        -webkit-font-smoothing: antialiased;
       }
+      
+      /* Utilities */
       .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
       .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
       .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 10px; }
       .scrollbar-hide::-webkit-scrollbar { display: none; }
       .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
-      /* 
-       * --- INTERACTION UTILITIES ---
-       * Utility classes for micro-interactions (hover, click, focus).
-       */
-      
+      /* Interaction classes */
       .interact-base {
         transition-property: transform, opacity, background-color, border-color, box-shadow, color, filter;
         transition-duration: 300ms;
         transition-timing-function: var(--ease-out-expo);
         will-change: transform, opacity;
         backface-visibility: hidden;
-        transform: translateZ(0); /* Hardware accel */
+        transform: translateZ(0);
       }
       
-      /* For clickable cards/panels - Lifts up */
       .interact-lift:hover {
         transform: translateY(-2px);
         box-shadow: 0 12px 24px -10px rgba(0,0,0,0.3);
@@ -98,7 +72,6 @@
         transition-duration: 150ms;
       }
 
-      /* For smaller list items - Subtle lift */
       .interact-lift-sm:hover {
         transform: translateY(-1px);
         box-shadow: 0 4px 12px -4px rgba(0,0,0,0.2);
@@ -112,28 +85,12 @@
         transition-duration: 100ms;
       }
 
-      /* For standard buttons - Pushes down slightly */
-      .interact-push:hover {
-        transform: translateY(-1px);
-        filter: brightness(1.1);
-      }
-      .interact-push:active {
-        transform: translateY(1px) scale(0.97);
-        filter: brightness(0.95);
-        transition-duration: 100ms;
-      }
+      .interact-push:hover { transform: translateY(-1px); filter: brightness(1.1); }
+      .interact-push:active { transform: translateY(1px) scale(0.97); filter: brightness(0.95); transition-duration: 100ms; }
 
-      /* For icon buttons/toggles - Scales up/down */
-      .interact-scale:hover {
-        transform: scale(1.1);
-        color: var(--text-main);
-      }
-      .interact-scale:active {
-        transform: scale(0.9);
-        transition-duration: 100ms;
-      }
+      .interact-scale:hover { transform: scale(1.1); color: var(--text-main); }
+      .interact-scale:active { transform: scale(0.9); transition-duration: 100ms; }
       
-      /* Inputs */
       .interact-input:focus {
         border-color: var(--accent);
         box-shadow: 0 0 0 1px var(--accent);
@@ -147,9 +104,9 @@
     "react-dom/client": "https://esm.sh/react-dom@18.2.0/client?deps=react@18.2.0",
     "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
     "lucide-react": "https://esm.sh/lucide-react@0.292.0?deps=react@18.2.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-    "react/": "https://aistudiocdn.com/react@^19.2.1/",
-    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0"
+    "react/": "https://aistudiocdn.com/react@^19.2.1/"
   }
 }
 </script>

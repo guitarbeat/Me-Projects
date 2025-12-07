@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { LucideIcon } from 'lucide-react';
 
@@ -11,6 +10,8 @@ export const cn = (...classes: (string | undefined | null | false)[]) => classes
 export interface TypoProps extends React.HTMLAttributes<HTMLElement> {
     variant?: 'h1' | 'h2' | 'h3' | 'label' | 'mono' | 'body' | 'sub';
     as?: any;
+    className?: string;
+    children?: React.ReactNode;
 }
 
 export const Typo = ({ variant='body', as, children, className, ...props }: TypoProps) => {
@@ -31,6 +32,8 @@ export interface SurfaceProps extends React.HTMLAttributes<HTMLDivElement> {
     variant?: 'panel' | 'element' | 'card' | 'ghost' | 'tooltip';
     interactive?: boolean;
     active?: boolean;
+    className?: string;
+    children?: React.ReactNode;
 }
 
 export const Surface = ({ children, className, interactive, variant='panel', active, ...props }: SurfaceProps) => {
@@ -49,6 +52,10 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
     size?: 'sm' | 'md' | 'icon';
     icon?: LucideIcon;
     active?: boolean;
+    className?: string;
+    children?: React.ReactNode;
+    onClick?: React.MouseEventHandler<HTMLButtonElement>;
+    title?: string;
 }
 
 export const Button = ({ variant='secondary', size='md', className, children, icon: Icon, active, ...props }: ButtonProps) => {
@@ -78,6 +85,20 @@ export const DataPoint = ({ label, value, icon: Icon, color, className }: any) =
         <div className="flex items-center gap-1.5 min-w-0">
             {Icon && <Icon size={10} className={cn(color, "shrink-0")} />}
             <span className="text-[10px] font-medium text-white/90 truncate">{value}</span>
+        </div>
+    </div>
+);
+
+export const ToolbarGroup = ({ children, className }: { children?: React.ReactNode, className?: string }) => (
+    <div className={cn("flex items-center bg-[var(--bg-element)] rounded-lg p-0.5 border border-[var(--border)] shrink-0 gap-0.5 min-w-0", className)}>{children}</div>
+);
+
+export const Stat = ({ label, value, icon: Icon, color }: any) => (
+    <div className="flex items-center gap-1.5 px-2 py-1 bg-white/5 rounded border border-white/5 select-none min-w-0 shrink">
+        {Icon && <Icon size={10} className={cn(color, "shrink-0")} />}
+        <div className="flex flex-col leading-none min-w-0">
+            <span className="text-[7px] font-bold text-white/30 uppercase truncate">{label}</span>
+            <span className="text-[9px] font-bold text-white/90 truncate max-w-[80px] sm:max-w-[120px]">{value}</span>
         </div>
     </div>
 );

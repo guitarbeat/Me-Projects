@@ -15,6 +15,10 @@ export default function App() {
     const [inst, setInst] = useState<InstrumentType>('rhodes');
     const [showPath, setShowPath] = useState(false);
     
+    // Cross-Component Interaction State
+    const [hoveredChord, setHoveredChord] = useState<Chord | null>(null);
+    const [targetMood, setTargetMood] = useState<{ v: number, a: number } | null>(null);
+    
     // UI State
     const [topView, setTopView] = useState<string>('sequencer');
 
@@ -140,6 +144,9 @@ export default function App() {
                                             contextChord={contextChord || null} 
                                             mood={mood}
                                             complexity={complexity}
+                                            // Linkage Props
+                                            targetMood={targetMood}
+                                            onHoverChord={setHoveredChord}
                                         />
                                     </div>
                                 </div>
@@ -161,6 +168,9 @@ export default function App() {
                                     progression={progression}
                                     activeIndex={playIndex}
                                     showPath={showPath}
+                                    // Linkage Props
+                                    hoveredChord={hoveredChord}
+                                    onPreviewMood={setTargetMood}
                                 />
                             </div>
                         </div>

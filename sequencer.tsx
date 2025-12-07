@@ -43,7 +43,7 @@ interface TimelineNodeProps {
     isDragging: boolean;
 }
 
-export const TimelineNode = ({ chord, index, isActive, onRemove, onResize, onDragStart, onDragEnter, onDragLeave, onDrop, isDropTarget, isDragging }: TimelineNodeProps) => {
+export const TimelineNode: React.FC<TimelineNodeProps> = ({ chord, index, isActive, onRemove, onResize, onDragStart, onDragEnter, onDragLeave, onDrop, isDropTarget, isDragging }) => {
     const [tempWidth, setTempWidth] = useState<number|null>(null);
     const [isExiting, setIsExiting] = useState(false);
     

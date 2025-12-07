@@ -10,7 +10,7 @@ interface PanelWrapperProps {
     minimise: number;
     isFull: boolean;
     bgColor: string;
-    children: React.ReactNode;
+    children?: React.ReactNode;
     overlay: React.ReactNode;
     anchor: 'top' | 'bottom';
 }
@@ -52,7 +52,7 @@ export const PanelWrapper = ({ minimise, isFull, bgColor, children, overlay, anc
 };
 
 interface ResizableTopPanelProps {
-    children: React.ReactNode;
+    children?: React.ReactNode;
     minHeight: number;
     maxHeight: number;
     defaultHeight: number;

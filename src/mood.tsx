@@ -151,6 +151,49 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
         }
     };
 
+    // --- LINKAGE EFFECT ---
+    // Sync hovered chord sentiment to global target mood for visual resonance
+    useEffect(() => {
+        if (!onPreviewMood) return;
+
+        if (hoveredChord && hoveredChord.sentiment) {
+            onPreviewMood({
+                v: hoveredChord.sentiment.valence,
+                a: hoveredChord.sentiment.arousal
+            });
+        } else if (!isDragging) {
+             // Reset preview when not interacting
+             onPreviewMood(null);
+        }
+    }, [hoveredChord, isDragging, onPreviewMood]);
+
+    useEffect(() => {
+        const handleWheel = (e: WheelEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setShowHint(false);
+            
+            setIsScrolling(true);
+            if(scrollTimeout.current) clearTimeout(scrollTimeout.current);
+            scrollTimeout.current = setTimeout(() => setIsScrolling(false), 800);
+            
+            const direction = Math.sign(e.deltaY);
+            const delta = direction * -0.05; 
+            
+            const newTension = Math.max(0, Math.min(1, moodRef.current.tension + delta));
+            if (newTension !== moodRef.current.tension) {
+                onMoodChange(moodRef.current.valence, moodRef.current.arousal, newTension);
+            }
+        };
+        
+        const el = containerRef.current;
+        if (el) el.addEventListener('wheel', handleWheel, { passive: false });
+        
+        return () => {
+            if (el) el.removeEventListener('wheel', handleWheel);
+        };
+    }, [onMoodChange]);
+
     const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
         if ((e.target as HTMLElement).closest('.chord-node')) return;
         
@@ -164,8 +207,26 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
 
     const handlePointerMove = (e: React.MouseEvent | React.TouchEvent) => {
         if ('touches' in e && (e as React.TouchEvent).touches.length === 2) {
-             // Pinch/Scroll logic handling (omitted for brevity, same as before)
+             setIsScrolling(true);
+             if(scrollTimeout.current) clearTimeout(scrollTimeout.current);
+             scrollTimeout.current = setTimeout(() => setIsScrolling(false), 800);
+
+             const touch1 = (e as React.TouchEvent).touches[0];
+             const touch2 = (e as React.TouchEvent).touches[1];
+             const dist = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
+             
+             if (initialPinchDist === null) {
+                 setInitialPinchDist(dist);
+                 setInitialPinchTension(moodRef.current.tension);
+             } else {
+                 const scaleFactor = dist / initialPinchDist;
+                 const delta = (scaleFactor - 1) * 1.5; 
+                 const newTension = Math.max(0, Math.min(1, initialPinchTension + delta));
+                 onMoodChange(moodRef.current.valence, moodRef.current.arousal, newTension);
+             }
              return;
+        } else {
+             if (initialPinchDist !== null) setInitialPinchDist(null);
         }
 
         const clientX = 'touches' in e ? (e as React.TouchEvent).touches[0].clientX : (e as React.MouseEvent).clientX;
@@ -173,10 +234,19 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
 
         if (isDragging) {
             if (requestRef.current !== undefined) cancelAnimationFrame(requestRef.current);
-            requestRef.current = requestAnimationFrame(() => updateMoodPad(clientX, clientY, true));
+            requestRef.current = requestAnimationFrame(() => {
+                updateMoodPad(clientX, clientY, true);
+            });
         } else {
-            // Passive Hover - Just preview
-            updateMoodPad(clientX, clientY, false);
+            // Passive Hover - Update beam/cursor locally, but maybe don't commit?
+            // Actually, for consistency, we only preview on hover if we aren't dragging.
+            // But we already handle hover via 'hoveredChord'. 
+            // If the mouse is over the mood pad, we might want to preview that mood too?
+            // The current implementation of updateMoodPad calls onPreviewMood(v, a).
+            // So if we call it here with commit=false, it works as a preview.
+            if (!hoveredChord) {
+                updateMoodPad(clientX, clientY, false);
+            }
         }
     };
 
@@ -184,7 +254,28 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
         setIsDragging(false);
         setInitialPinchDist(null);
         if (requestRef.current !== undefined) cancelAnimationFrame(requestRef.current);
-        if (onPreviewMood) onPreviewMood(null); // Clear preview on release/leave
+        if (onPreviewMood) onPreviewMood(null); // Clear preview on release
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        const step = 0.1;
+        let newV = mood.valence;
+        let newA = mood.arousal;
+        let handled = true;
+
+        switch(e.key) {
+            case 'ArrowUp': newA = Math.min(1, newA + step); break;
+            case 'ArrowDown': newA = Math.max(-1, newA - step); break;
+            case 'ArrowRight': newV = Math.min(1, newV + step); break;
+            case 'ArrowLeft': newV = Math.max(-1, newV - step); break;
+            default: handled = false;
+        }
+
+        if (handled) {
+            e.preventDefault();
+            setShowHint(false);
+            onMoodChange(newV, newA, mood.tension);
+        }
     };
 
     return (
@@ -224,6 +315,9 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
                 <div 
                     ref={ref}
                     className="absolute inset-0 cursor-crosshair touch-none outline-none z-0"
+                    tabIndex={0}
+                    role="slider"
+                    aria-label="Mood Selector"
                     onMouseDown={handlePointerDown}
                     onMouseMove={handlePointerMove}
                     onMouseUp={handlePointerUp}
@@ -231,9 +325,10 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
                     onTouchStart={handlePointerDown}
                     onTouchMove={handlePointerMove}
                     onTouchEnd={handlePointerUp}
+                    onKeyDown={handleKeyDown}
                     style={{ transformStyle: 'preserve-3d' }}
                 >
-                    {/* BACKGROUND FX */}
+                    {/* BACKGROUND GRADIENTS */}
                     <div className="absolute inset-0 w-full h-full transition-colors duration-1000" style={{
                         transform: `translateZ(-${mood.tension * 500}px) scale(${1 + mood.tension})`,
                         background: `
@@ -245,20 +340,28 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
                         `,
                         opacity: 1 - (mood.tension * 0.5)
                     }}/>
+                    
                     <div className="absolute inset-0 pointer-events-none transition-opacity duration-300" 
-                         style={{ backgroundImage: 'linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)', backgroundSize: '50px 50px', opacity: Math.max(0, (1 - mood.tension * 1.5)) * 0.15, transform: `scale(${1 + mood.tension * 0.8})` }} />
+                         style={{
+                             backgroundImage: 'linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)', 
+                             backgroundSize: '50px 50px',
+                             opacity: Math.max(0, (1 - mood.tension * 1.5)) * 0.15,
+                             transform: `scale(${1 + mood.tension * 0.8})`
+                         }} 
+                    />
 
                     {/* AXIS LABELS */}
                     <div className="absolute inset-0 pointer-events-none">
                          <div className="absolute top-0 bottom-0 left-1/2 w-px bg-white/10" />
                          <span className="absolute top-4 left-1/2 -translate-x-1/2 text-[9px] font-black tracking-widest text-white/40 uppercase">High Energy</span>
                          <span className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[9px] font-black tracking-widest text-white/40 uppercase">Low Energy</span>
+
                          <div className="absolute left-0 right-0 top-1/2 h-px bg-white/10" />
                          <span className="absolute left-4 top-1/2 -translate-y-1/2 -rotate-90 text-[9px] font-black tracking-widest text-white/40 uppercase">Negative</span>
                          <span className="absolute right-4 top-1/2 -translate-y-1/2 rotate-90 text-[9px] font-black tracking-widest text-white/40 uppercase">Positive</span>
                     </div>
 
-                    {/* PATH */}
+                    {/* HARMONIC PATH */}
                     <div className={cn("absolute inset-0 pointer-events-none z-30 transition-opacity duration-500", showPath ? "opacity-100" : "opacity-0")} style={{ transform: 'translateZ(50px)' }}>
                          <svg className="absolute inset-0 w-full h-full overflow-visible">
                             <defs>
@@ -272,7 +375,15 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
                              <path d={trajectory.path} fill="none" stroke="url(#pathGradient)" strokeWidth="2" strokeLinecap="round" />
                          </svg>
                          {trajectory.points.map((p: any, i: number) => (
-                             <div key={i} className={cn("absolute w-6 h-6 -ml-3 -mt-3 rounded-full border border-white/20 bg-black/80 flex items-center justify-center chord-node transition-all duration-300 cursor-pointer pointer-events-auto hover:scale-125 hover:border-var(--accent) hover:text-[var(--accent)] group", i === activeIndex ? "bg-[var(--accent)] border-[var(--accent)] text-black font-bold scale-125 shadow-[0_0_15px_var(--accent)] z-50" : "z-40")} style={{ left: `${p.x}%`, top: `${p.y}%` }} onClick={(e) => { e.stopPropagation(); onJumpToChord?.(i); }}>
+                             <div 
+                                key={i}
+                                className={cn(
+                                    "absolute w-6 h-6 -ml-3 -mt-3 rounded-full border border-white/20 bg-black/80 flex items-center justify-center chord-node transition-all duration-300 cursor-pointer pointer-events-auto hover:scale-125 hover:border-var(--accent) hover:text-[var(--accent)] group",
+                                    i === activeIndex ? "bg-[var(--accent)] border-[var(--accent)] text-black font-bold scale-125 shadow-[0_0_15px_var(--accent)] z-50" : "z-40"
+                                )}
+                                style={{ left: `${p.x}%`, top: `${p.y}%` }}
+                                onClick={(e) => { e.stopPropagation(); onJumpToChord?.(i); }}
+                             >
                                  {i === activeIndex ? <Play size={10} fill="black" /> : <span className="text-[9px] font-mono group-hover:hidden">{i + 1}</span>}
                              </div>
                          ))}
@@ -302,7 +413,9 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
                         style={{ 
                             left: `${(mood.valence + 1) * 50}%`, 
                             top: `${(1 - mood.arousal) * 50}%`,
-                            borderColor: accentColor, color: accentColor, backgroundColor: `${accentColor}20`,
+                            borderColor: accentColor,
+                            color: accentColor,
+                            backgroundColor: `${accentColor}20`,
                             boxShadow: `0 0 ${20 + mood.tension * 40}px currentColor`, 
                             transform: `scale(${1 + mood.tension * 0.5})` 
                         }}
@@ -323,12 +436,38 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
                             </div>
                         )}
                     </div>
+
+                    {/* SCALE MARKERS */}
+                    {Object.entries(SCALE_DEFS).map(([st, d]) => {
+                        const def = d as ScaleDef;
+                        const x = (def.scaleCoordinates.v + 1) / 2 * 100;
+                        const y = (-def.scaleCoordinates.a + 1) / 2 * 100;
+                        const isActive = st === currentScale;
+                        return (
+                            <div key={st} className="absolute w-4 h-4 -ml-2 -mt-2 rounded-full transition-all duration-500 shadow-lg pointer-events-none flex items-center justify-center group"
+                                style={{ 
+                                    left: `${x}%`, top: `${y}%`, 
+                                    backgroundColor: isActive ? 'white' : 'rgba(255,255,255,0.2)', 
+                                    transform: isActive ? 'scale(1.5)' : 'scale(1)',
+                                    boxShadow: isActive ? '0 0 20px rgba(255,255,255,0.6)' : 'none',
+                                    opacity: isScaleLocked && !isActive ? 0.3 : 1
+                                }}
+                            >
+                                <span className={cn("absolute -top-6 whitespace-nowrap text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10 transition-opacity", isActive ? "text-white opacity-100" : "text-white/50 opacity-0")}>{st}</span>
+                            </div>
+                        );
+                    })}
                 </div>
 
-                <div className={cn("absolute bottom-20 left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center gap-1 transition-opacity duration-700 delay-500", showHint ? "opacity-100" : "opacity-0")}>
+                <div className={cn(
+                    "absolute bottom-20 left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center gap-1 transition-opacity duration-700 delay-500",
+                    showHint ? "opacity-100" : "opacity-0"
+                )}>
                      <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 flex items-center gap-3">
                          <MousePointer2 size={14} className="text-[var(--accent)] animate-bounce" />
-                         <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">Scroll or Pinch to adjust Tension</span>
+                         <div className="flex flex-col">
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">Scroll or Pinch to adjust Tension</span>
+                         </div>
                      </div>
                 </div>
                 
@@ -338,14 +477,16 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
                      </button>
                 </div>
 
-                {/* EMOTIONAL ZONES */}
+                {/* EMOTIONAL ZONES OVERLAY */}
                 <div className="absolute inset-0 pointer-events-none transition-opacity duration-500" style={{ opacity: showZones || isDragging ? 0.8 : 0 }}>
                      {EMOTIONAL_ZONES.map((gem, i) => {
                          const x = (gem.v + 1) / 2 * 100;
                          const y = (-gem.a + 1) / 2 * 100;
                          const isHover = cursorPos && Math.hypot(cursorPos.x / containerRef.current!.offsetWidth * 100 - x, cursorPos.y / containerRef.current!.offsetHeight * 100 - y) < 15;
+                         
                          return (
-                            <div key={i} className={cn("absolute flex flex-col items-center justify-center text-center -translate-x-1/2 -translate-y-1/2 transition-all duration-300", isHover ? "scale-110 opacity-100" : "opacity-30")} style={{ left: `${x}%`, top: `${y}%` }}>
+                            <div key={i} className={cn("absolute flex flex-col items-center justify-center text-center -translate-x-1/2 -translate-y-1/2 transition-all duration-300", isHover ? "scale-110 opacity-100" : "opacity-30")}
+                                 style={{ left: `${x}%`, top: `${y}%` }}>
                                 <span className="text-[10px] font-black tracking-widest text-white uppercase whitespace-nowrap">{gem.label}</span>
                                 {isHover && <span className="text-[8px] font-mono text-[var(--accent)] bg-black/80 px-1 rounded">{gem.desc}</span>}
                             </div>

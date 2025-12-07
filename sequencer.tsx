@@ -41,9 +41,12 @@ interface TimelineNodeProps {
     onDrop: (e: React.DragEvent) => void;
     isDropTarget: boolean;
     isDragging: boolean;
+    onMouseEnter?: () => void;
+    onMouseLeave?: () => void;
+    isHovered?: boolean;
 }
 
-export const TimelineNode: React.FC<TimelineNodeProps> = ({ chord, index, isActive, onRemove, onResize, onDragStart, onDragEnter, onDragLeave, onDrop, isDropTarget, isDragging }) => {
+export const TimelineNode: React.FC<TimelineNodeProps> = ({ chord, index, isActive, onRemove, onResize, onDragStart, onDragEnter, onDragLeave, onDrop, isDropTarget, isDragging, onMouseEnter, onMouseLeave, isHovered }) => {
     const [tempWidth, setTempWidth] = useState<number|null>(null);
     const [isExiting, setIsExiting] = useState(false);
     
@@ -70,6 +73,8 @@ export const TimelineNode: React.FC<TimelineNodeProps> = ({ chord, index, isActi
             role="button"
             aria-label={`${chord.symbol} chord. Press Delete to remove.`}
             onKeyDown={handleKeyDown}
+            onMouseEnter={onMouseEnter}
+            onMouseLeave={onMouseLeave}
             onDragStart={(e) => { 
                 setDragGhost(e, chord.symbol);
                 onDragStart(e); 
@@ -99,8 +104,9 @@ export const TimelineNode: React.FC<TimelineNodeProps> = ({ chord, index, isActi
             )}
             
             <div className={cn(
-                    "h-full w-full rounded-lg border flex flex-col overflow-hidden relative shadow-sm interact-base interact-lift-sm backdrop-blur-sm", 
+                    "h-full w-full rounded-lg border flex flex-col overflow-hidden relative shadow-sm interact-base interact-lift-sm backdrop-blur-sm transition-all duration-200", 
                     isActive ? "border-[var(--accent)] bg-[var(--bg-surface)] shadow-md z-10 scale-[1.02]" 
+                    : isHovered ? "border-[var(--accent)] bg-[var(--bg-surface)] ring-1 ring-[var(--accent)] z-10"
                     : chord.isRest ? "border-[var(--border)] bg-[var(--bg-main)] opacity-60" 
                     : "border-[var(--border)] bg-[var(--bg-element)] hover:bg-[var(--bg-surface)]"
                 )}>
@@ -138,9 +144,11 @@ interface ProgressionStripProps {
     onResize: (index: number, duration: number) => void;
     timeSignature: { num: number; den: number };
     draggingChord?: Chord | null;
+    hoveredIndex?: number | null;
+    onHoverIndex?: (index: number | null) => void;
 }
 
-export const ProgressionStrip = ({ progression, onRemove, activeIndex, onDropChord, availableChords, onReorder, onResize, timeSignature }: ProgressionStripProps) => {
+export const ProgressionStrip = ({ progression, onRemove, activeIndex, onDropChord, availableChords, onReorder, onResize, timeSignature, hoveredIndex, onHoverIndex }: ProgressionStripProps) => {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [draggingIndex, setDraggingIndex] = useState<number|null>(null);
     const [dropTarget, setDropTarget] = useState<number|null>(null);
@@ -179,6 +187,9 @@ export const ProgressionStrip = ({ progression, onRemove, activeIndex, onDropCho
                         }
                     }} 
                     isDropTarget={dropTarget===i} isDragging={draggingIndex===i}
+                    isHovered={i === hoveredIndex}
+                    onMouseEnter={() => onHoverIndex && onHoverIndex(i)}
+                    onMouseLeave={() => onHoverIndex && onHoverIndex(null)}
                 />
             );
             accumulatedBeats += c.duration;
@@ -212,7 +223,7 @@ export const ProgressionStrip = ({ progression, onRemove, activeIndex, onDropCho
             </div>
         );
         return els;
-    }, [progression, activeIndex, draggingIndex, dropTarget, availableChords, timeSignature, onRemove, onResize, onDropChord, onReorder]);
+    }, [progression, activeIndex, draggingIndex, dropTarget, availableChords, timeSignature, onRemove, onResize, onDropChord, onReorder, hoveredIndex, onHoverIndex]);
 
     return (
       <div className="relative w-full h-full flex bg-[var(--bg-main)] overflow-hidden">

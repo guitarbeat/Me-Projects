@@ -1,8 +1,12 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, Suspense } from 'react';
 import { ScaleType, Note, InstrumentType, generateChordsForScale, audioEngine, useProgression, usePlayback, useMood, Chord, ChordComplexity, getTensionChords, getMusicalCharacteristics, SCALE_DEFS } from './lib';
-import { ProgressionStrip, HarmonicSpace, cn, MoodSelector, ControlPanel, SplitView, ResizableTopPanel } from './components';
-import { Music, Layout } from 'lucide-react';
+import { ProgressionStrip, cn, ControlPanel, SplitView, ResizableTopPanel } from './components';
+import { Music, Layout, Loader2 } from 'lucide-react';
+
+// Lazy load heavy visualization components
+const HarmonicSpace = React.lazy(() => import('./tonnetz').then(module => ({ default: module.HarmonicSpace })));
+const MoodSelector = React.lazy(() => import('./mood').then(module => ({ default: module.MoodSelector })));
 
 export default function App() {
     // --- APP STATE ---
@@ -15,6 +19,11 @@ export default function App() {
     const [inst, setInst] = useState<InstrumentType>('rhodes');
     const [showPath, setShowPath] = useState(false);
     
+    // Cross-Component Interaction State
+    const [hoveredChord, setHoveredChord] = useState<Chord | null>(null);
+    const [targetMood, setTargetMood] = useState<{ v: number, a: number } | null>(null);
+    const [hoveredSequenceIndex, setHoveredSequenceIndex] = useState<number | null>(null);
+
     // UI State
     const [topView, setTopView] = useState<string>('sequencer');
 
@@ -126,21 +135,35 @@ export default function App() {
                                             onResize={(index: number, duration: number) => handleProgression('resize', { index, duration })}
                                             timeSignature={timeSig}
                                             activeIndex={playIndex}
+                                            hoveredIndex={hoveredSequenceIndex}
+                                            onHoverIndex={setHoveredSequenceIndex}
                                         />
                                     </div>
 
                                     <div className={cn("h-full w-full", topView === 'harmony' ? 'block' : 'hidden')}>
-                                        <HarmonicSpace 
-                                            currentKey={key} 
-                                            scaleType={scale} 
-                                            chords={chords} 
-                                            tensionChords={tensionChords}
-                                            onAddChord={(c: Chord) => handleProgression('add', c)} 
-                                            onChordClick={playOne} 
-                                            contextChord={contextChord || null} 
-                                            mood={mood}
-                                            complexity={complexity}
-                                        />
+                                        <Suspense fallback={
+                                            <div className="flex h-full w-full items-center justify-center text-[var(--text-dim)] gap-2">
+                                                <Loader2 className="animate-spin" size={16} />
+                                                <span className="text-[10px] tracking-widest uppercase">Loading Harmonic Space...</span>
+                                            </div>
+                                        }>
+                                            <HarmonicSpace 
+                                                currentKey={key} 
+                                                scaleType={scale} 
+                                                chords={chords} 
+                                                tensionChords={tensionChords}
+                                                onAddChord={(c: Chord) => handleProgression('add', c)} 
+                                                onChordClick={playOne} 
+                                                contextChord={contextChord || null} 
+                                                mood={mood}
+                                                complexity={complexity}
+                                                // Linkage Props
+                                                targetMood={targetMood}
+                                                onHoverChord={setHoveredChord}
+                                                progression={progression}
+                                                hoveredSequenceIndex={hoveredSequenceIndex}
+                                            />
+                                        </Suspense>
                                     </div>
                                 </div>
                             </div>
@@ -149,19 +172,30 @@ export default function App() {
                     bottom={
                         <div className="h-full w-full bg-[var(--bg-panel)] overflow-hidden relative">
                             <div className="h-full w-full">
-                                <MoodSelector 
-                                    theme="dark"
-                                    currentScale={scale} 
-                                    onManualScaleSelect={handleScaleSelect}
-                                    onTempoChange={setBpm} 
-                                    mood={mood} 
-                                    onMoodChange={updateMood} 
-                                    bpm={bpm}
-                                    isScaleLocked={isScaleLocked}
-                                    progression={progression}
-                                    activeIndex={playIndex}
-                                    showPath={showPath}
-                                />
+                                <Suspense fallback={
+                                    <div className="flex h-full w-full items-center justify-center text-[var(--text-dim)] gap-2">
+                                        <Loader2 className="animate-spin" size={16} />
+                                        <span className="text-[10px] tracking-widest uppercase">Loading Mood Selector...</span>
+                                    </div>
+                                }>
+                                    <MoodSelector 
+                                        theme="dark"
+                                        currentScale={scale} 
+                                        onManualScaleSelect={handleScaleSelect}
+                                        onTempoChange={setBpm} 
+                                        mood={mood} 
+                                        onMoodChange={updateMood} 
+                                        bpm={bpm}
+                                        isScaleLocked={isScaleLocked}
+                                        progression={progression}
+                                        activeIndex={playIndex}
+                                        showPath={showPath}
+                                        // Linkage Props
+                                        hoveredChord={hoveredChord}
+                                        onPreviewMood={setTargetMood}
+                                        onHoverSequenceIndex={setHoveredSequenceIndex}
+                                    />
+                                </Suspense>
                             </div>
                         </div>
                     }

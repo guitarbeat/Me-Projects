@@ -32,8 +32,8 @@ const useDrag = (onDrag: (dy: number) => void, onEnd?: () => void) => {
 export const PanelWrapper = ({ minimise, children, overlay, anchor, bgColor, isDragging }: any) => (
     <div 
         className={cn(
-            "relative w-full h-full overflow-hidden shadow-2xl ring-1 ring-white/5 rounded-2xl will-change-transform bg-[var(--bg-panel)] flex flex-col",
-            isDragging ? "transition-none" : "transition-all duration-500 ease-[var(--ease-spring)]"
+            "relative w-full h-full overflow-hidden shadow-2xl ring-1 ring-white/5 rounded-2xl bg-[var(--bg-panel)] flex flex-col will-change-transform",
+            isDragging ? "transition-none" : "transition-all duration-300 ease-[var(--ease-out-expo)]"
         )}
         style={{ 
             transform: `scale(${1 - (1 - (1 - minimise)) * 0.05})`, 
@@ -42,7 +42,7 @@ export const PanelWrapper = ({ minimise, children, overlay, anchor, bgColor, isD
         }}
     >
         <div 
-            className="flex-1 w-full h-full transition-all duration-500 ease-[var(--ease-spring)] flex items-center justify-center overflow-hidden relative"
+            className="flex-1 w-full h-full transition-all duration-300 ease-[var(--ease-out-expo)] flex items-center justify-center overflow-hidden relative"
             style={{ 
                 filter: `blur(${minimise * 16}px)`, 
                 opacity: Math.max(0, 1 - minimise * 1.5), 
@@ -84,14 +84,14 @@ export const ResizableTopPanel = ({ children, minHeight, maxHeight, defaultHeigh
     return (
         <div 
             className={cn(
-                "w-full relative z-[60] bg-[var(--bg-main)] shadow-lg transition-all ease-[var(--ease-spring)] group/panel",
-                isDragging ? "duration-0" : "duration-500"
+                "w-full relative z-[60] bg-[var(--bg-main)] shadow-lg transition-all ease-[var(--ease-out-expo)] group/panel",
+                isDragging ? "duration-0" : "duration-300"
             )} 
             style={{ height: collapsed ? 12 : h + 12 }}
         >
             <div 
                 className={cn(
-                    "w-full overflow-hidden transition-all duration-500 ease-[var(--ease-spring)] pb-3 border-b border-[var(--border)]", 
+                    "w-full overflow-hidden transition-all duration-300 ease-[var(--ease-out-expo)] pb-3 border-b border-[var(--border)]", 
                     collapsed ? "opacity-0 -translate-y-4" : "opacity-100"
                 )} 
                 style={{ height: h }}
@@ -125,7 +125,6 @@ export const SplitView = ({ top, bottom, topOverlay, bottomOverlay }: any) => {
         if (!ref.current) return;
         const rect = ref.current.getBoundingClientRect();
         const raw = (e.clientY - rect.top) / rect.height;
-        // Adjusted detents for better feel
         const detents = [0.15, 0.5, 0.85];
         let snap = raw;
         for (const d of detents) {
@@ -141,8 +140,8 @@ export const SplitView = ({ top, bottom, topOverlay, bottomOverlay }: any) => {
         <div ref={ref} className="absolute inset-0 flex flex-col bg-black">
             <div 
                 className={cn(
-                    "relative min-h-0 w-full p-2 pb-1 transition-all ease-[var(--ease-spring)]",
-                    isDragging ? "duration-0" : "duration-500"
+                    "relative min-h-0 w-full p-2 pb-1 will-change-[flex]",
+                    isDragging ? "transition-none" : "transition-all duration-300 ease-[var(--ease-out-expo)]"
                 )} 
                 style={{ flex: split }}
             >
@@ -188,8 +187,8 @@ export const SplitView = ({ top, bottom, topOverlay, bottomOverlay }: any) => {
 
             <div 
                 className={cn(
-                    "relative min-h-0 w-full p-2 pt-1 transition-all ease-[var(--ease-spring)]",
-                    isDragging ? "duration-0" : "duration-500"
+                    "relative min-h-0 w-full p-2 pt-1 will-change-[flex]",
+                    isDragging ? "transition-none" : "transition-all duration-300 ease-[var(--ease-out-expo)]"
                 )} 
                 style={{ flex: 1 - split }}
             >

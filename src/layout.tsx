@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronsUpDown, Play, Pause, Square, Zap, Cloud, Music2, Keyboard, Lock, Unlock, Link as LinkIcon, Trash2, Network, ListMusic, Layers, Music } from 'lucide-react';
+import { ChevronsUpDown, Play, Pause, Square, Zap, Cloud, Music2, Keyboard, Lock, Unlock, Link as LinkIcon, Trash2, Network, ListMusic, Layers, Music, Gauge, Activity } from 'lucide-react';
 import { InstrumentType, Note, ScaleType, CIRCLE_KEYS, ChordComplexity } from './lib';
 import { cn, IconButton } from './ui';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
@@ -127,15 +127,20 @@ export const ControlPanel = () => {
         scale, setScale, 
         isScaleLocked, toggleScaleLock,
         instrument, setInstrument, 
-        view, setView
+        view, setView,
+        bpm, setBpm,
+        progression, playIndex
     } = useStore();
 
     const { analysis } = useDerivedData();
 
+    // Determine currently playing chord
+    const currentChord = isPlaying && playIndex !== null && progression[playIndex] ? progression[playIndex] : null;
+
     return (
-        <div className="w-full h-full flex flex-col select-none bg-[#0c0a09]">
+        <div className="w-full h-full flex flex-col select-none bg-[#0c0a09] relative">
             {/* HEADER TOOLBAR */}
-            <div className="flex flex-wrap items-center justify-between p-3 gap-3 border-b border-[var(--border)] bg-[#0c0a09] min-h-[56px]">
+            <div className="flex flex-wrap items-center justify-between p-3 gap-3 border-b border-[var(--border)] bg-[#0c0a09] min-h-[56px] relative z-20">
                 
                 <div className="flex flex-wrap items-center gap-2">
                     {/* KEY / SCALE GROUP */}
@@ -169,6 +174,31 @@ export const ControlPanel = () => {
                         >
                             {isScaleLocked ? <Lock size={12} /> : <Unlock size={12} />}
                         </button>
+                    </div>
+
+                    {/* BPM CONTROL */}
+                    <div className="flex items-center bg-[var(--bg-element)] rounded-lg border border-[var(--border)] overflow-hidden h-9 shadow-sm px-1.5 gap-2 group hover:border-[var(--accent)]/50 transition-colors">
+                        <div className="flex items-center justify-center text-[var(--text-dim)]">
+                            <Gauge size={14} />
+                        </div>
+                        <div className="flex items-center gap-2">
+                             <input 
+                                type="range" 
+                                min="40" max="220" 
+                                value={bpm} 
+                                onChange={(e) => setBpm(parseInt(e.target.value))}
+                                className="w-16 h-1 bg-[var(--border)] rounded-full appearance-none cursor-pointer accent-[var(--accent)] hover:accent-[var(--accent)] opacity-60 group-hover:opacity-100 transition-opacity"
+                            />
+                            <div className="relative min-w-[3ch]">
+                                <input 
+                                    type="number" 
+                                    value={bpm} 
+                                    onChange={(e) => setBpm(Math.max(40, Math.min(240, parseInt(e.target.value)||120)))}
+                                    className="bg-transparent text-xs font-mono font-bold text-center outline-none text-[var(--text-main)] w-full appearance-none m-0 p-0"
+                                />
+                                <span className="absolute -top-1 -right-2 text-[7px] text-[var(--text-dim)] font-bold">BPM</span>
+                            </div>
+                        </div>
                     </div>
 
                     {/* TRANSPORT GROUP */}
@@ -207,6 +237,17 @@ export const ControlPanel = () => {
                         ))}
                     </div>
                 </div>
+
+                {/* CENTER - NOW PLAYING (Visible when playing) */}
+                {currentChord && !currentChord.isRest && (
+                    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden lg:flex flex-col items-center justify-center animate-in fade-in zoom-in-95 duration-300 pointer-events-none">
+                         <div className="flex items-center gap-2">
+                             <Activity size={12} className="text-[var(--accent)] animate-pulse" />
+                             <span className="text-sm font-black text-[var(--accent)] tracking-tight">{currentChord.symbol}</span>
+                         </div>
+                         <span className="text-[9px] font-mono text-[var(--text-muted)] uppercase tracking-widest">{currentChord.romanNumeral}</span>
+                    </div>
+                )}
 
                 <div className="flex-1" />
 

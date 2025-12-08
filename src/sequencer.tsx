@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { Plus, X, GripHorizontal, Filter } from 'lucide-react';
+import { Plus, X, GripHorizontal, Filter, Search } from 'lucide-react';
 import { cn } from './ui';
 import { estimateChordSentiment, Chord, useStore, useDerivedData } from './lib';
 
@@ -169,17 +169,17 @@ export const ProgressionStrip = ({ showPalette = false }: { showPalette?: boolea
     
     const { chords: availableChords } = useDerivedData();
     const [filter, setFilter] = useState<string>('All');
+    const [searchTerm, setSearchTerm] = useState('');
 
     const filteredChords = useMemo(() => {
-        if (filter === 'All') return availableChords;
         return availableChords.filter(c => {
-             if (filter === 'Major') return c.quality === 'Major';
-             if (filter === 'Minor') return c.quality === 'Minor';
-             if (filter === 'Dominant') return c.quality === 'Dominant';
-             if (filter === 'Other') return !['Major', 'Minor', 'Dominant'].includes(c.quality);
-             return true;
+             const matchesFilter = filter === 'All' ? true : 
+                                   filter === 'Other' ? !['Major', 'Minor', 'Dominant'].includes(c.quality) : 
+                                   c.quality === filter;
+             const matchesSearch = c.symbol.toLowerCase().includes(searchTerm.toLowerCase());
+             return matchesFilter && matchesSearch;
         });
-    }, [availableChords, filter]);
+    }, [availableChords, filter, searchTerm]);
 
     const scrollRef = useRef<HTMLDivElement>(null);
     const [dragState, setDragState] = useState<{dragging: number|null, target: number|null}>({dragging:null, target:null});
@@ -228,6 +228,17 @@ export const ProgressionStrip = ({ showPalette = false }: { showPalette?: boolea
                         <option value="Other" className="bg-[#0c0a09]">Other</option>
                     </select>
                 </div>
+                
+                <div className="flex items-center gap-2 bg-[var(--bg-element)] rounded-md border border-[var(--border)] px-2 h-7">
+                    <Search size={10} className="text-[var(--text-dim)]"/>
+                    <input 
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                        placeholder="Search..."
+                        className="bg-transparent border-none outline-none text-[10px] w-20 text-[var(--text-main)] placeholder:text-[var(--text-dim)]"
+                    />
+                </div>
+
                 <div className="w-px h-8 bg-white/5 shrink-0" />
                 <div className="flex-1 overflow-x-auto custom-scrollbar flex items-center gap-2 h-full">
                     {filteredChords.map((c: any, i: number) => (
@@ -239,7 +250,7 @@ export const ProgressionStrip = ({ showPalette = false }: { showPalette?: boolea
                         />
                     ))}
                     {filteredChords.length === 0 && (
-                        <span className="text-[10px] text-white/20 italic px-2">No chords match filter</span>
+                        <span className="text-[10px] text-white/20 italic px-2">No chords found</span>
                     )}
                 </div>
             </div>

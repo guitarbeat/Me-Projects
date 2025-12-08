@@ -1,234 +1,217 @@
 
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { Plus, X } from 'lucide-react';
-import { Chord } from './lib';
+import { Plus, X, GripHorizontal } from 'lucide-react';
 import { cn } from './ui';
+import { estimateChordSentiment, Chord, useStore, useDerivedData } from './lib';
 
-// --- HELPERS ---
-
-const setDragGhost = (e: React.DragEvent, text: string) => {
-    if (e.dataTransfer && typeof e.dataTransfer.setDragImage === 'function') {
-        const el = document.createElement('div');
-        el.className = "fixed top-0 left-0 bg-[var(--accent)] text-white px-3 py-1.5 rounded-full font-bold text-xs shadow-xl z-[9999] pointer-events-none transform -translate-x-[1000px] border border-white/20 whitespace-nowrap";
-        el.innerText = text;
-        document.body.appendChild(el);
-        e.dataTransfer.setDragImage(el, 0, 0);
-        setTimeout(() => { if(el.parentNode) document.body.removeChild(el); }, 0);
-    }
-};
-
-const getFunctionColor = (roman: string) => {
-    const r = (roman || '').toLowerCase().replace(/[^ivxlc]/g, ''); 
-    if (['i', 'iii', 'vi'].includes(r)) return 'bg-emerald-500/80 border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.2)]'; 
-    if (['ii', 'iv'].includes(r)) return 'bg-sky-500/80 border-sky-500/50 shadow-[0_0_10px_rgba(14,165,233,0.2)]'; 
-    if (['v', 'vii'].includes(r)) return 'bg-rose-500/80 border-rose-500/50 shadow-[0_0_10px_rgba(244,63,94,0.2)]';
-    return 'bg-[var(--bg-element)] border-[var(--border)]';
-};
+const PIXELS_PER_BEAT = 40;
 
 // --- COMPONENTS ---
 
-const PIXELS_PER_BEAT = 40, SNAP_GRID = 0.25;
+const HarmonicGraph = ({ progression, currentKey, scaleType }: any) => {
+    const data = useMemo(() => {
+        if (!progression.length) return null;
+        let x = 0;
+        const points = progression.map((c: any) => {
+            const w = c.duration * PIXELS_PER_BEAT;
+            const sentiment = estimateChordSentiment(c, currentKey, scaleType);
+            const y = 48 - (sentiment.valence * 25); // Map valence to height
+            const cx = x + w / 2;
+            x += w + 4; // gap-1 (4px)
+            return { x: cx, y, v: sentiment.valence, w };
+        });
+        return { points, totalWidth: x + 60 };
+    }, [progression, currentKey, scaleType]);
 
-interface TimelineNodeProps {
-    chord: Chord;
-    index: number;
-    isActive: boolean;
-    onRemove: (idx: number) => void;
-    onResize: (idx: number, dur: number) => void;
-    onDragStart: (e: React.DragEvent) => void;
-    onDragEnter: () => void;
-    onDragLeave: () => void;
-    onDrop: (e: React.DragEvent) => void;
-    isDropTarget: boolean;
-    isDragging: boolean;
-    onMouseEnter?: () => void;
-    onMouseLeave?: () => void;
-    isHovered?: boolean;
-}
+    if (!data || data.points.length < 2) return null;
 
-export const TimelineNode: React.FC<TimelineNodeProps> = ({ chord, index, isActive, onRemove, onResize, onDragStart, onDragEnter, onDragLeave, onDrop, isDropTarget, isDragging, onMouseEnter, onMouseLeave, isHovered }) => {
-    const [tempWidth, setTempWidth] = useState<number|null>(null);
-    const [isExiting, setIsExiting] = useState(false);
-    
-    const width = (tempWidth!==null?tempWidth:chord.duration*PIXELS_PER_BEAT);
-    
-    const handleResize = (dx:number) => setTempWidth(Math.max(PIXELS_PER_BEAT*0.5, (chord.duration*PIXELS_PER_BEAT)+dx));
-    const handleResizeEnd = () => { if(tempWidth!==null){ onResize(index, Math.round((tempWidth/PIXELS_PER_BEAT)/SNAP_GRID)*SNAP_GRID); setTempWidth(null); } };
-    const handleRemove = (e?: React.SyntheticEvent) => { 
-        if(e) e.stopPropagation(); 
-        setIsExiting(true); 
-        setTimeout(() => { onRemove(index); }, 300); 
-    };
-    
-    const handleKeyDown = (e: React.KeyboardEvent) => {
-        if (e.key === 'Backspace' || e.key === 'Delete') { handleRemove(e); }
-    };
-    
-    const colorClass = chord.isRest ? 'bg-transparent border-transparent' : getFunctionColor(chord.romanNumeral);
+    let d = `M ${data.points[0].x} ${data.points[0].y}`;
+    for (let i = 0; i < data.points.length - 1; i++) {
+        const p0 = data.points[i];
+        const p1 = data.points[i + 1];
+        const cp1x = p0.x + (p1.x - p0.x) * 0.5;
+        const cp1y = p0.y;
+        const cp2x = p0.x + (p1.x - p0.x) * 0.5;
+        const cp2y = p1.y;
+        d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p1.x} ${p1.y}`;
+    }
 
     return (
-        <div 
-            draggable={!chord.isRest} 
-            tabIndex={0}
-            role="button"
-            aria-label={`${chord.symbol} chord. Press Delete to remove.`}
-            onKeyDown={handleKeyDown}
-            onMouseEnter={onMouseEnter}
-            onMouseLeave={onMouseLeave}
-            onDragStart={(e) => { 
-                setDragGhost(e, chord.symbol);
-                onDragStart(e); 
-                if(e.dataTransfer){
-                     e.dataTransfer.setData('reorder_index', index.toString());
-                     try { (e.dataTransfer as any).effectAllowed = 'move'; } catch(e){}
-                }
-            }} 
-            onDragOver={(e)=>{ e.preventDefault(); if(e.dataTransfer) try { (e.dataTransfer as any).dropEffect='move'; } catch(err) {} }} 
-            onDragEnter={onDragEnter} 
-            onDragLeave={onDragLeave} 
-            onDrop={onDrop} 
-            className={cn(
-                "relative h-12 shrink-0 interact-base group/node select-none mb-1 transition-all duration-300 outline-none focus:ring-2 focus:ring-[var(--accent)] rounded-lg", 
-                isDragging?"opacity-30 scale-95":"", 
-                isExiting && "opacity-0 scale-90 w-0 !m-0"
-            )} 
-            style={{ width:isExiting?'0px':`${width}px` }}
-        >
-            {isDropTarget && (
-                <div className="absolute -left-1.5 top-0 bottom-0 w-3 z-50 flex items-center justify-center pointer-events-none -translate-x-1/2">
-                    <div className="h-full w-1 bg-[var(--accent)] shadow-[0_0_15px_var(--accent)] rounded-full animate-pulse" />
-                    <div className="absolute bg-[var(--bg-surface)] border border-[var(--accent)] text-[var(--accent)] rounded-full p-0.5 shadow-lg transform scale-75 animate-bounce">
-                        <Plus size={10} strokeWidth={3} />
-                    </div>
-                </div>
-            )}
-            
-            <div className={cn(
-                    "h-full w-full rounded-lg border flex flex-col overflow-hidden relative shadow-sm interact-base interact-lift-sm backdrop-blur-sm transition-all duration-200", 
-                    isActive ? "border-[var(--accent)] bg-[var(--bg-surface)] shadow-md z-10 scale-[1.02]" 
-                    : isHovered ? "border-[var(--accent)] bg-[var(--bg-surface)] ring-1 ring-[var(--accent)] z-10"
-                    : chord.isRest ? "border-[var(--border)] bg-[var(--bg-main)] opacity-60" 
-                    : "border-[var(--border)] bg-[var(--bg-element)] hover:bg-[var(--bg-surface)]"
-                )}>
-                 <div className="absolute inset-0 pointer-events-none flex opacity-5">{Array.from({length:Math.ceil(width/PIXELS_PER_BEAT)}).map((_,i)=><div key={i} className="h-full border-r border-[var(--text-main)] flex-1" style={{width:`${PIXELS_PER_BEAT}px`,flex:'none'}}/>)}</div>
-                 {chord.isRest && <div className="absolute inset-0 opacity-10" style={{backgroundImage:'linear-gradient(45deg, var(--text-muted) 25%, transparent 25%, transparent 50%, var(--text-muted) 50%, var(--text-muted) 75%, transparent 75%, transparent)',backgroundSize:'6px 6px'}}/>}
-                 
-                 {!chord.isRest && <div className={cn("absolute left-0 top-0 bottom-0 w-1", colorClass)} />}
-
-                 <div className="relative z-10 pl-3 pr-1 h-full flex flex-row items-center justify-between gap-1">
-                     <div className="flex flex-col justify-center leading-none min-w-0 px-1 py-1">
-                        {!chord.isRest ? (
-                            <>
-                                <span className="font-bold tracking-tight truncate text-[var(--text-main)] text-xs">{chord.symbol}</span>
-                                <span className={cn("font-mono text-[10px] uppercase tracking-wider mt-0.5", isActive?"text-[var(--accent)]":"text-[var(--text-dim)]")}>{chord.romanNumeral}</span>
-                            </>
-                        ) : <div className="text-[var(--text-muted)] opacity-50 ml-0.5 w-2 h-2 rounded-full border border-current"/>}
-                     </div>
-                     <button onClick={handleRemove} disabled={isExiting} tabIndex={-1} className="text-[var(--text-muted)] hover:text-red-400 opacity-0 group-hover/node:opacity-100 group-focus-within/node:opacity-100 interact-base interact-scale p-1 rounded hover:bg-red-500/10 shrink-0"><X size={12}/></button>
-                 </div>
-                 
-                 {!chord.isRest && <div onMouseDown={(e)=>{e.stopPropagation();e.preventDefault();const s=e.clientX;const mv=(ev:MouseEvent)=>handleResize(ev.clientX-s);const up=()=>{document.removeEventListener('mousemove',mv);document.removeEventListener('mouseup',up);handleResizeEnd()};document.addEventListener('mousemove',mv);document.addEventListener('mouseup',up);}} className="absolute right-0 top-0 bottom-0 w-3 cursor-col-resize group z-50 flex items-center justify-center hover:bg-[var(--accent)]/5 interact-base"><div className="w-1 h-4 bg-[var(--text-muted)] rounded-full group-hover:bg-[var(--accent)] interact-base opacity-20 group-hover:scale-y-125"/></div>}
-            </div>
-            <div className="absolute -bottom-4 left-0 right-0 text-center opacity-0 group-hover/node:opacity-100 transition-opacity pointer-events-none"><span className="text-[8px] font-mono font-bold text-[var(--text-muted)] bg-[var(--bg-panel)] px-1.5 py-0.5 rounded-full border border-[var(--border)] shadow-sm">{chord.duration}</span></div>
+        <div className="absolute top-0 bottom-0 left-6 z-0 pointer-events-none" style={{ width: data.totalWidth }}>
+            <svg className="w-full h-full overflow-visible">
+                <defs>
+                    <linearGradient id="gStroke" x1="0" x2="100%" y1="0" y2="0">
+                         {data.points.map((p:any, i:number) => (
+                             <stop key={i} offset={`${(p.x / data.totalWidth)*100}%`} stopColor={p.v > 0.1 ? '#facc15' : p.v < -0.1 ? '#6366f1' : '#a8a29e'} />
+                         ))}
+                    </linearGradient>
+                </defs>
+                <path d={d} fill="none" stroke="url(#gStroke)" strokeWidth="3" strokeLinecap="round" className="opacity-50 blur-[2px]" />
+                <path d={d} fill="none" stroke="url(#gStroke)" strokeWidth="1.5" strokeLinecap="round" className="opacity-80" />
+            </svg>
         </div>
     );
 };
 
-interface ProgressionStripProps {
-    progression: Chord[];
-    onRemove: (index: number) => void;
-    activeIndex: number | null;
-    onDropChord: (chord: Chord, index: number) => void;
-    availableChords: Chord[];
-    onReorder: (from: number, to: number) => void;
-    onResize: (index: number, duration: number) => void;
-    timeSignature: { num: number; den: number };
-    draggingChord?: Chord | null;
-    hoveredIndex?: number | null;
-    onHoverIndex?: (index: number | null) => void;
-}
-
-export const ProgressionStrip = ({ progression, onRemove, activeIndex, onDropChord, availableChords, onReorder, onResize, timeSignature, hoveredIndex, onHoverIndex }: ProgressionStripProps) => {
-    const scrollRef = useRef<HTMLDivElement>(null);
-    const [draggingIndex, setDraggingIndex] = useState<number|null>(null);
-    const [dropTarget, setDropTarget] = useState<number|null>(null);
+export const DraggableChord: React.FC<{ chord: Chord, className?: string }> = ({ chord, className }) => {
+    const color = useMemo(() => {
+        const root = (chord.romanNumeral||'').toLowerCase().replace(/[^a-z]/g,'');
+        const map: any = { i:'emerald', ii:'sky', iii:'emerald', iv:'sky', v:'rose', vi:'emerald', vii:'rose' };
+        return map[root] || 'stone';
+    }, [chord.romanNumeral]);
     
-    useEffect(() => { 
-        if(activeIndex!==null && scrollRef.current && scrollRef.current.children.length > activeIndex){ 
-            const el = scrollRef.current.children[activeIndex] as HTMLElement; 
-            if(el) el.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' }); 
-        } 
-    }, [activeIndex]);
-
-    const timelineElements = useMemo(() => {
-        const els: React.ReactNode[] = [];
-        let accumulatedBeats = 0;
-        const beatsPerBar = timeSignature.num;
-        
-        progression.forEach((c: any, i: number) => {
-            els.push(
-                <TimelineNode 
-                    key={`node-${i}`} chord={c} index={i} isActive={i===activeIndex} onRemove={onRemove} onResize={(idx: number,d: number)=>onResize?.(idx,d)} 
-                    onDragStart={(e: any)=>{
-                        setDraggingIndex(i);
-                        if(e.dataTransfer){
-                            e.dataTransfer.setData('reorder_index',i.toString());
-                            try { (e.dataTransfer as any).effectAllowed='move'; } catch(e){}
-                        }
-                    }} 
-                    onDragEnter={()=>{if(draggingIndex!==null&&draggingIndex!==i || draggingIndex===null)setDropTarget(i)}} 
-                    onDragLeave={()=>setDropTarget(null)} 
-                    onDrop={(e: any)=>{
-                        e.preventDefault();e.stopPropagation();setDraggingIndex(null);setDropTarget(null);
-                        if(e.dataTransfer){
-                            const ri=e.dataTransfer.getData('reorder_index');
-                            if(ri){const si=parseInt(ri);if(!isNaN(si)&&si!==i)onReorder?.(si,i)}
-                            else{try{const d=JSON.parse(e.dataTransfer.getData('application/json'));if(d.root)onDropChord(d, i)}catch(e){}}
-                        }
-                    }} 
-                    isDropTarget={dropTarget===i} isDragging={draggingIndex===i}
-                    isHovered={i === hoveredIndex}
-                    onMouseEnter={() => onHoverIndex && onHoverIndex(i)}
-                    onMouseLeave={() => onHoverIndex && onHoverIndex(null)}
-                />
-            );
-            accumulatedBeats += c.duration;
-            if (Math.abs(accumulatedBeats % beatsPerBar) < 0.01) {
-                const barNum = Math.round(accumulatedBeats / beatsPerBar) + 1;
-                els.push(<div key={`bar-${i}`} className="flex flex-col items-center justify-start h-12 w-px bg-[var(--border)] mx-1 relative shrink-0"><span className="absolute -top-4 text-[9px] font-bold text-[var(--text-dim)]">{barNum}</span></div>);
-            }
-        });
-        
-        const isEndTarget = dropTarget === progression.length;
-        els.push(
-            <div key="add-btn" 
-                onClick={()=>{const t=availableChords.find((c: any)=>c.romanNumeral==='I'||c.romanNumeral==='i');if(t)onDropChord(t, progression.length)}} 
-                onDragOver={(e)=>{ e.preventDefault(); setDropTarget(progression.length); if(e.dataTransfer) try {(e.dataTransfer as any).dropEffect='move';}catch(e){} }} 
-                onDragLeave={()=>setDropTarget(null)}
-                onDrop={(e)=>{
-                    e.preventDefault(); setDropTarget(null);
-                    if(e.dataTransfer){
-                        const ri=e.dataTransfer.getData('reorder_index');
-                        if(ri){onReorder?.(parseInt(ri),progression.length)}
-                        else{try{const d=JSON.parse(e.dataTransfer.getData('application/json'));if(d.root)onDropChord(d, progression.length)}catch(e){}}
-                    }
-                }} 
-                className={cn(
-                    "h-12 w-12 shrink-0 rounded-xl border border-dashed interact-base interact-scale flex flex-col items-center justify-center gap-1 cursor-pointer transition-colors relative mb-1",
-                    isEndTarget ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]" : "border-[var(--border)] text-[var(--text-dim)] hover:border-[var(--accent)] hover:bg-[var(--accent)]/5 hover:text-[var(--accent)]"
-                )}
-            >
-                {isEndTarget && <div className="absolute -left-1.5 h-full w-1 bg-[var(--accent)] rounded-full animate-pulse shadow-[0_0_10px_var(--accent)] pointer-events-none" />}
-                <Plus size={16}/>
-            </div>
-        );
-        return els;
-    }, [progression, activeIndex, draggingIndex, dropTarget, availableChords, timeSignature, onRemove, onResize, onDropChord, onReorder, hoveredIndex, onHoverIndex]);
+    const handleDragStart = (e: React.DragEvent) => {
+        e.dataTransfer.setData('application/json', JSON.stringify(chord));
+        e.dataTransfer.effectAllowed = 'copy';
+    };
 
     return (
-      <div className="relative w-full h-full flex bg-[var(--bg-main)] overflow-hidden">
-        <div className="flex-1 overflow-x-auto overflow-y-hidden custom-scrollbar bg-[var(--bg-main)] relative select-none">
-             <div className="h-full flex items-center px-6 gap-1 min-w-max" ref={scrollRef}>{timelineElements}</div>
+        <div draggable onDragStart={handleDragStart}
+            className={cn("h-9 px-3 rounded-md border flex items-center justify-between gap-2 cursor-grab active:cursor-grabbing hover:translate-x-1 transition-all interact-base group relative overflow-hidden shrink-0",
+                `border-${color}-500/30 bg-${color}-500/10 hover:bg-${color}-500/20`, className)}>
+            <div className="flex items-baseline gap-2">
+                <span className={cn("font-bold text-xs", `text-${color}-100`)}>{chord.symbol}</span>
+                <span className="font-mono text-[9px] uppercase opacity-50">{chord.romanNumeral}</span>
+            </div>
+            <div className={`opacity-0 group-hover:opacity-100 transition-opacity text-${color}-400`}><GripHorizontal size={12} /></div>
+        </div>
+    );
+};
+
+const TimelineNode = ({ chord, index, isActive, onRemove, onResize, onDragStart, onDragEnter, onDrop, isDropTarget, isDragging }: any) => {
+    const [resizeState, setResizeState] = useState<{px: number, dur: number} | null>(null);
+    const color = useMemo(() => {
+        const root = (chord.romanNumeral||'').toLowerCase().replace(/[^a-z]/g,'');
+        const map: any = { i:'emerald', ii:'sky', iii:'emerald', iv:'sky', v:'rose', vi:'emerald', vii:'rose' };
+        return map[root] || 'stone';
+    }, [chord.romanNumeral]);
+
+    const width = resizeState ? resizeState.px : chord.duration * PIXELS_PER_BEAT;
+
+    const handleResizeStart = (e: React.MouseEvent) => {
+        e.preventDefault(); e.stopPropagation();
+        const startX = e.clientX;
+        const startWidth = chord.duration * PIXELS_PER_BEAT;
+        const move = (ev: MouseEvent) => {
+            const newPx = Math.max(PIXELS_PER_BEAT * 0.25, startWidth + (ev.clientX - startX));
+            const snappedDur = Math.max(0.25, Math.round((newPx / PIXELS_PER_BEAT) * 4) / 4);
+            setResizeState({ px: newPx, dur: snappedDur });
+        };
+        const up = () => {
+            window.removeEventListener('mousemove', move);
+            window.removeEventListener('mouseup', up);
+            document.body.style.cursor = '';
+            if (resizeState) onResize(index, resizeState.dur);
+            setResizeState(null);
+        };
+        document.body.style.cursor = 'col-resize';
+        window.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', up);
+    };
+
+    const dragHandlers = {
+        draggable: !chord.isRest && !resizeState,
+        onDragStart: (e: React.DragEvent) => { e.dataTransfer.setData('reorder_index', index.toString()); onDragStart(e); },
+        onDragOver: (e: React.DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = e.dataTransfer.types.includes('reorder_index') ? 'move' : 'copy'; },
+        onDragEnter, onDrop
+    };
+
+    return (
+        <div {...dragHandlers}
+             className={cn("relative h-14 shrink-0 interact-base select-none mb-1 transition-all group outline-none rounded-md z-10", isDragging && "opacity-30 scale-95", resizeState && "z-50 scale-105 shadow-xl transition-none")} 
+             style={{ width }}>
+            {isDropTarget && <div className="absolute -left-1.5 inset-y-0 w-3 z-50 flex justify-center"><div className="h-full w-1 bg-[var(--accent)] rounded-full animate-pulse shadow-[0_0_10px_var(--accent)]" /></div>}
+            
+            <div className={cn("h-full w-full rounded-md border flex flex-col overflow-hidden relative shadow-sm backdrop-blur-md transition-all", 
+                isActive ? "border-[var(--accent)] bg-[var(--bg-surface)] ring-1 ring-[var(--accent)]" : 
+                resizeState ? "border-[var(--accent)] bg-[var(--bg-surface)] ring-2 ring-[var(--accent)] shadow-lg" :
+                chord.isRest ? "border-[var(--border)] bg-[var(--bg-main)] opacity-60" : 
+                `border-${color}-500/40 bg-${color}-950/40 hover:bg-${color}-900/50`)}>
+                 {!chord.isRest && <div className="absolute inset-0 opacity-10 flex pointer-events-none">{Array.from({length:Math.ceil(width/PIXELS_PER_BEAT)}).map((_,i)=><div key={i} className="h-full border-r border-white flex-1 min-w-[40px]"/>)}</div>}
+                 
+                 <div className="relative z-10 px-3 h-full flex flex-col justify-center gap-0.5 pointer-events-none">
+                     {!chord.isRest ? <><span className={cn("font-bold text-xs truncate", `text-${color}-100`)}>{chord.symbol}</span><span className="font-mono text-[9px] uppercase opacity-70">{chord.romanNumeral}</span></> : <div className="w-2 h-2 rounded-full bg-white/20"/>}
+                 </div>
+                 <button onClick={(e) => { e.stopPropagation(); onRemove(index); }} className="absolute top-1 right-1 text-white/50 hover:text-white opacity-0 group-hover:opacity-100 p-1 cursor-pointer pointer-events-auto transition-opacity z-20"><X size={10}/></button>
+            </div>
+            
+            {!chord.isRest && (
+                <div onMouseDown={handleResizeStart} className="absolute right-0 top-0 bottom-0 w-5 cursor-col-resize z-[60] group/resize flex items-center justify-center hover:bg-white/5 -mr-2.5">
+                    <div className={cn("w-1 h-6 rounded-full transition-all duration-200", resizeState ? "bg-[var(--accent)] opacity-100 h-8" : "bg-white/30 opacity-0 group-hover/resize:opacity-100")} />
+                </div>
+            )}
+            
+            <div className={cn("absolute -bottom-6 left-1/2 -translate-x-1/2 transition-all duration-200 z-[100] pointer-events-none", resizeState ? "opacity-100 translate-y-0 scale-110" : "opacity-0 -translate-y-1 group-hover:opacity-100")}>
+                <span className={cn("text-[9px] font-mono font-bold px-2 py-0.5 rounded-full border shadow-sm whitespace-nowrap", resizeState ? "bg-[var(--accent)] text-black border-[var(--accent)]" : "bg-[#1c1917] text-[var(--text-muted)] border-[var(--border)]")}>
+                    {resizeState ? resizeState.dur : chord.duration} Beats
+                </span>
+            </div>
+        </div>
+    );
+};
+
+export const ProgressionStrip = () => {
+    // Connect to Store
+    const store = useStore();
+    const { chords: availableChords } = useDerivedData();
+    const progression = store.progression;
+    const activeIndex = store.playIndex;
+    
+    // Local State
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [dragState, setDragState] = useState<{dragging: number|null, target: number|null}>({dragging:null, target:null});
+    
+    // Handlers mapped to store actions
+    const onDropChord = (chord: Chord, index: number) => {
+        store.playOne(chord);
+        store.handleProgression('add', { chord, index });
+    };
+    const onRemove = (i: number) => store.handleProgression('remove', i);
+    const onResize = (index: number, duration: number) => store.handleProgression('resize', { index, duration });
+    const onReorder = (from: number, to: number) => store.handleProgression('reorder', { from, to });
+
+    useEffect(() => { scrollRef.current?.children[activeIndex || 0]?.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' }); }, [activeIndex]);
+
+    const handleDrop = (e: React.DragEvent, index: number) => {
+        e.preventDefault(); e.stopPropagation();
+        setDragState({dragging:null, target:null});
+        const ri = e.dataTransfer.getData('reorder_index');
+        
+        if (ri && ri !== "") {
+            const from = parseInt(ri);
+            if (!isNaN(from) && from !== index) onReorder?.(from, from < index ? index - 1 : index);
+        } else { 
+            try { const d = JSON.parse(e.dataTransfer.getData('application/json')); if (d.root) onDropChord(d, index); } catch {} 
+        }
+    };
+
+    return (
+      <div className="w-full h-full flex flex-col bg-[#0c0a09] overflow-hidden relative">
+        <div className="flex-1 relative overflow-hidden flex flex-col justify-center">
+            <div className="absolute inset-0 z-0" style={{backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px)', backgroundSize: '100% 20px'}}/>
+            <div className="w-full overflow-x-auto custom-scrollbar relative z-10" ref={scrollRef}>
+                <div className="flex items-center gap-1 h-24 px-6 min-w-max relative">
+                    <HarmonicGraph progression={progression} currentKey={store.key} scaleType={store.scale} />
+                    {progression.map((c: any, i: number) => (
+                        <React.Fragment key={i}>
+                            <TimelineNode chord={c} index={i} isActive={i===activeIndex} onRemove={onRemove} onResize={onResize} 
+                                onDragStart={() => setDragState(s => ({...s, dragging:i}))} onDragEnter={() => setDragState(s => ({...s, target:i}))}
+                                onDrop={(e: any) => handleDrop(e, i)} isDropTarget={dragState.target===i} isDragging={dragState.dragging===i} />
+                            {(i+1) % 4 === 0 && <div className="h-14 w-px bg-white/10 mx-1 shrink-0 relative"><span className="absolute -top-3 text-[9px] text-[var(--text-dim)]">{(i/4)+1}</span></div>}
+                        </React.Fragment>
+                    ))}
+                    
+                    <div onClick={() => { const t = availableChords.find((c:any)=>c.romanNumeral.match(/^[iI]$/)); if(t) onDropChord(t, progression.length); }}
+                        onDragOver={(e) => { e.preventDefault(); setDragState(s => ({...s, target: progression.length})); }}
+                        onDragLeave={() => setDragState(s => ({...s, target: null}))}
+                        onDrop={(e) => handleDrop(e, progression.length)}
+                        className={cn("h-14 w-14 shrink-0 rounded-xl border border-dashed flex items-center justify-center cursor-pointer ml-2 transition-colors z-10 bg-black/20 backdrop-blur-sm", 
+                            dragState.target === progression.length ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]" : "border-[var(--border)] text-[var(--text-dim)] hover:border-[var(--accent)]")}>
+                        <Plus size={16}/>
+                    </div>
+                    <div className="w-12 shrink-0" />
+                </div>
+            </div>
         </div>
       </div>
     );

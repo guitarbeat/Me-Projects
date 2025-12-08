@@ -1,6 +1,7 @@
 
 import { Note, ScaleType, Chord, ChordComplexity } from './types';
 import { CHROMATIC_SHARPS, CHROMATIC_FLATS, SCALE_DEFS } from './constants';
+import { ScaleDef } from './types';
 
 export const getScaleNotes = (root: Note, scaleType: ScaleType): Note[] => {
     if (!SCALE_DEFS[scaleType]) return [];
@@ -343,3 +344,21 @@ export const getHarmonicSuggestions = (contextChord: Chord | null): number[] => 
         default: return [0, 4, 5];
     }
 };
+
+export const findClosestScale = (v: number, a: number, t: number, currentScale: ScaleType): ScaleType => {
+    let minDist = Infinity;
+    let closest = currentScale;
+    
+    Object.entries(SCALE_DEFS).forEach(([st, def]) => {
+        const sDef = def as ScaleDef;
+         const d = Math.sqrt(
+            Math.pow(v - sDef.scaleCoordinates.v, 2) + 
+            Math.pow(a - sDef.scaleCoordinates.a, 2) + 
+            Math.pow(t - sDef.scaleCoordinates.t, 2)
+        );
+        // Hysteresis: prevent jitter by giving preference to current scale
+        const weightedDist = st === currentScale ? d * 0.75 : d;
+        if (weightedDist < minDist) { minDist = weightedDist; closest = st as ScaleType; }
+    });
+    return closest;
+}

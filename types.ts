@@ -73,5 +73,5 @@ export interface ScaleDef {
   coords: { x: number; y: number };
   emotions: Record<number, string>;
   meta: { title: string; desc: string; quote: string; characteristic: string; };
-  scaleCoordinates: { v: number, a: number };
+  scaleCoordinates: { v: number, a: number, t: number };
 }

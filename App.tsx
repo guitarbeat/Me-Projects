@@ -1,55 +1,45 @@
 
-import React, { useState, useMemo, Suspense } from 'react';
-import { ScaleType, Note, InstrumentType, generateChordsForScale, audioEngine, useProgression, usePlayback, useMood, Chord, ChordComplexity, getTensionChords, getMusicalCharacteristics, SCALE_DEFS } from './lib';
-import { ProgressionStrip, cn, ControlPanel, SplitView, ResizableTopPanel } from './components';
-import { Music, Layout, Loader2 } from 'lucide-react';
+import React, { Suspense } from 'react';
+import { useStore, useDerivedData, ScaleType, InstrumentType, Chord, Note, ChordComplexity } from './lib';
+import { ProgressionStrip, cn, ControlPanel, SplitView, ResizableTopPanel, MoodSelector } from './components';
+import { Loader2 } from 'lucide-react';
 
 // Lazy load heavy visualization components
 const HarmonicSpace = React.lazy(() => import('./tonnetz').then(module => ({ default: module.HarmonicSpace })));
-const MoodSelector = React.lazy(() => import('./mood').then(module => ({ default: module.MoodSelector })));
 
 export default function App() {
-    // --- APP STATE ---
-    const [key, setKey] = useState<Note>('C');
-    const [scale, setScale] = useState<ScaleType>(ScaleType.Major);
-    const [complexity, setComplexity] = useState<ChordComplexity>('triad');
-    const [isScaleLocked, setIsScaleLocked] = useState(false);
-    const [bpm, setBpm] = useState(100);
-    const [timeSig, setTimeSig] = useState({ num: 4, den: 4 });
-    const [inst, setInst] = useState<InstrumentType>('rhodes');
-    const [showPath, setShowPath] = useState(false);
-    
-    // Cross-Component Interaction State
-    const [hoveredChord, setHoveredChord] = useState<Chord | null>(null);
-    const [targetMood, setTargetMood] = useState<{ v: number, a: number } | null>(null);
-    const [hoveredSequenceIndex, setHoveredSequenceIndex] = useState<number | null>(null);
+    // --- APP STATE (Global Store) ---
+    const { 
+        key, setKey, 
+        scale, setScale, 
+        complexity, setComplexity, 
+        isScaleLocked, toggleScaleLock,
+        bpm, setBpm, 
+        timeSig, setTimeSig, 
+        instrument, setInstrument, 
+        showPath, togglePath, 
+        view, setView,
+        hoveredChord, setHoveredChord,
+        targetMood, setTargetMood,
+        progression, handleProgression,
+        mood, setMood,
+        playIndex, togglePlay, playOne, isPlaying
+    } = useStore();
 
-    // UI State
-    const [topView, setTopView] = useState<string>('sequencer');
+    // --- DERIVED DATA ---
+    const { chords, tensionChords, analysis, scaleMeta } = useDerivedData();
 
-    // --- HOOKS ---
-    const { progression, handleProgression, addRest } = useProgression(timeSig);
-    const { mood, updateMood } = useMood(audioEngine);
-    const { isPlaying, playIndex, togglePlay, playOne } = usePlayback(audioEngine, progression, bpm, mood);
-
-    // --- DATA GENERATION ---
-    const chords = useMemo(() => 
-        generateChordsForScale(key, scale, complexity).map(c => ({...c, duration: timeSig.num})), 
-    [key, scale, complexity, timeSig.num]);
-
-    // Generate specific tension chords (substitutions) based on the current key and high tension values
-    const tensionChords = useMemo(() => 
-        mood.tension > 0.3 ? getTensionChords(key, scale, mood.tension) : [],
-    [key, scale, mood.tension]);
-    
-    const contextChord = progression.slice().reverse().find(c => !c.isRest); 
-
-    // Calculate Analysis Data
-    const char = useMemo(() => getMusicalCharacteristics(mood.valence, mood.arousal, mood.tension), [mood.valence, mood.arousal, mood.tension]);
-    const scaleMeta = useMemo(() => SCALE_DEFS[scale]?.meta || { desc: '', characteristic: '' }, [scale]);
+    // Context for visualization
+    const contextChord = progression.slice().reverse().find(c => !c.isRest) || null;
 
     // --- HANDLERS ---
-    const handleInstrumentChange = (i: InstrumentType) => { setInst(i); audioEngine.setInstrument(i); };
+    const addRest = () => {
+        const rest: Chord = {
+            root: 'C', quality: 'Major', extension: '', suffix: '', symbol: 'Rest',
+            romanNumeral: '', notes: [], interval: -1, duration: timeSig.num, isRest: true
+        };
+        handleProgression('add', { chord: rest, index: progression.length });
+    };
 
     const handleScaleSelect = (s: ScaleType) => {
         if (!isScaleLocked) setScale(s);
@@ -68,64 +58,50 @@ export default function App() {
                 backgroundImage: 'radial-gradient(circle at 50% 0%, #1c1917 0%, #000000 100%)'
             }}/>
 
-            {/* Consolidated Top Control Panel - COMPACT MODE */}
-            <ResizableTopPanel minHeight={84} maxHeight={180} defaultHeight={98}>
-                <ControlPanel 
-                    isPlaying={isPlaying} 
-                    togglePlay={togglePlay} 
-                    timeSig={timeSig} 
-                    setTimeSig={setTimeSig}
-                    complexity={complexity}
-                    setComplexity={setComplexity}
-                    onRest={addRest}
-                    onSnap={() => handleProgression('quantize')}
-                    onClear={() => handleProgression('clear')}
-                    currentKey={key}
-                    setKey={setKey}
-                    scale={scale}
-                    setScale={handleScaleSelect}
-                    isScaleLocked={isScaleLocked}
-                    toggleScaleLock={() => setIsScaleLocked(!isScaleLocked)}
-                    showPath={showPath}
-                    togglePath={() => setShowPath(!showPath)}
-                    // Unified Props
-                    instrument={inst}
-                    setInstrument={handleInstrumentChange}
-                    view={topView}
-                    setView={setTopView}
-                    progressionCount={progression.length}
-                    // Metadata
-                    scaleMeta={scaleMeta}
-                    analysis={char}
-                />
-            </ResizableTopPanel>
+            {/* Top Control Panel */}
+            <ResizableTopPanel 
+                minHeight={84} 
+                maxHeight={220} 
+                defaultHeight={140}
+                children={
+                    <ControlPanel 
+                        isPlaying={isPlaying} 
+                        togglePlay={togglePlay} 
+                        timeSig={timeSig} 
+                        setTimeSig={setTimeSig}
+                        complexity={complexity}
+                        setComplexity={setComplexity}
+                        onRest={addRest}
+                        onSnap={() => handleProgression('quantize')}
+                        onClear={() => handleProgression('clear')}
+                        currentKey={key}
+                        setKey={setKey}
+                        scale={scale}
+                        setScale={handleScaleSelect}
+                        isScaleLocked={isScaleLocked}
+                        toggleScaleLock={toggleScaleLock}
+                        showPath={showPath}
+                        togglePath={togglePath}
+                        instrument={instrument}
+                        setInstrument={setInstrument}
+                        view={view}
+                        setView={setView}
+                        progressionCount={progression.length}
+                        scaleMeta={scaleMeta}
+                        analysis={analysis}
+                        availableChords={chords}
+                    />
+                }
+            />
 
-            {/* Main Workspace (Split View) */}
+            {/* Main Workspace */}
             <div className="flex-1 relative min-h-0 z-10">
                 <SplitView
-                    topOverlay={
-                        <div className="flex items-center gap-4 text-white">
-                            <Music size={20} className="text-[var(--accent)]" />
-                            <div className="flex flex-col">
-                                <span className="text-sm font-bold">{key} {scale}</span>
-                                <div className="flex items-center gap-2">
-                                     <span className="text-xs opacity-70">{bpm} BPM</span>
-                                     <span className="text-[8px] opacity-50 px-1 py-0.5 border border-white/20 rounded uppercase">{complexity}</span>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                    bottomOverlay={
-                        <div className="flex items-center justify-center gap-4 text-white w-full">
-                                <Layout size={20} className="text-[var(--accent)]" />
-                                <span className="text-sm font-bold capitalize">Vibe Selector</span>
-                        </div>
-                    }
                     top={
                         <div className="h-full w-full relative bg-[var(--bg-panel)] flex flex-col">
                             <div className="flex-1 flex flex-col h-full min-w-0">
                                 <div className="flex-1 min-h-0 relative">
-                                    <div className={cn("h-full w-full", topView === 'sequencer' ? 'block' : 'hidden')}>
+                                    <div className={cn("h-full w-full", view === 'sequencer' ? 'block' : 'hidden')}>
                                         <ProgressionStrip 
                                             progression={progression} 
                                             onRemove={(i: number) => handleProgression('remove', i)} 
@@ -135,18 +111,14 @@ export default function App() {
                                             onResize={(index: number, duration: number) => handleProgression('resize', { index, duration })}
                                             timeSignature={timeSig}
                                             activeIndex={playIndex}
-                                            hoveredIndex={hoveredSequenceIndex}
-                                            onHoverIndex={setHoveredSequenceIndex}
+                                            currentKey={key}
+                                            scaleType={scale}
+                                            showPalette={false}
                                         />
                                     </div>
 
-                                    <div className={cn("h-full w-full", topView === 'harmony' ? 'block' : 'hidden')}>
-                                        <Suspense fallback={
-                                            <div className="flex h-full w-full items-center justify-center text-[var(--text-dim)] gap-2">
-                                                <Loader2 className="animate-spin" size={16} />
-                                                <span className="text-[10px] tracking-widest uppercase">Loading Harmonic Space...</span>
-                                            </div>
-                                        }>
+                                    <div className={cn("h-full w-full", view === 'harmony' ? 'block' : 'hidden')}>
+                                        <Suspense fallback={<div className="flex h-full w-full items-center justify-center"><Loader2 className="animate-spin" size={16} /></div>}>
                                             <HarmonicSpace 
                                                 currentKey={key} 
                                                 scaleType={scale} 
@@ -154,14 +126,11 @@ export default function App() {
                                                 tensionChords={tensionChords}
                                                 onAddChord={(c: Chord) => handleProgression('add', c)} 
                                                 onChordClick={playOne} 
-                                                contextChord={contextChord || null} 
+                                                contextChord={contextChord} 
                                                 mood={mood}
                                                 complexity={complexity}
-                                                // Linkage Props
                                                 targetMood={targetMood}
                                                 onHoverChord={setHoveredChord}
-                                                progression={progression}
-                                                hoveredSequenceIndex={hoveredSequenceIndex}
                                             />
                                         </Suspense>
                                     </div>
@@ -172,30 +141,22 @@ export default function App() {
                     bottom={
                         <div className="h-full w-full bg-[var(--bg-panel)] overflow-hidden relative">
                             <div className="h-full w-full">
-                                <Suspense fallback={
-                                    <div className="flex h-full w-full items-center justify-center text-[var(--text-dim)] gap-2">
-                                        <Loader2 className="animate-spin" size={16} />
-                                        <span className="text-[10px] tracking-widest uppercase">Loading Mood Selector...</span>
-                                    </div>
-                                }>
-                                    <MoodSelector 
-                                        theme="dark"
-                                        currentScale={scale} 
-                                        onManualScaleSelect={handleScaleSelect}
-                                        onTempoChange={setBpm} 
-                                        mood={mood} 
-                                        onMoodChange={updateMood} 
-                                        bpm={bpm}
-                                        isScaleLocked={isScaleLocked}
-                                        progression={progression}
-                                        activeIndex={playIndex}
-                                        showPath={showPath}
-                                        // Linkage Props
-                                        hoveredChord={hoveredChord}
-                                        onPreviewMood={setTargetMood}
-                                        onHoverSequenceIndex={setHoveredSequenceIndex}
-                                    />
-                                </Suspense>
+                                <MoodSelector 
+                                    theme="dark"
+                                    currentScale={scale} 
+                                    onManualScaleSelect={handleScaleSelect}
+                                    onTempoChange={setBpm} 
+                                    mood={mood} 
+                                    onMoodChange={(v, a, t) => setMood(v, a, t)} 
+                                    bpm={bpm}
+                                    isScaleLocked={isScaleLocked}
+                                    progression={progression}
+                                    activeIndex={playIndex}
+                                    showPath={showPath}
+                                    hoveredChord={hoveredChord}
+                                    onPreviewMood={setTargetMood}
+                                    instrument={instrument}
+                                />
                             </div>
                         </div>
                     }

@@ -1,6 +1,6 @@
-
 import { useEffect, useMemo } from 'react';
-import { generateChordsForScale, getTensionChords, getMusicalCharacteristics, SCALE_DEFS } from './lib';
+import { generateChordsForScale, getTensionChords, getMusicalCharacteristics } from './theory';
+import { SCALE_DEFS } from './constants';
 import { useStore } from './store';
 import { Chord } from './types';
 

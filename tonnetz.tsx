@@ -1,552 +1,385 @@
 
-import React, { useState, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Plus, Minus, Maximize2, Network, Layers } from 'lucide-react';
-import { buildChord, getCompassLabel, estimateChordSentiment, generateSecondaryDominants, getHarmonicSuggestions, getScaleNotes, Chord, ScaleType, Note, ChordComplexity } from './lib';
+import { buildChord, getCompassLabel, estimateChordSentiment, generateSecondaryDominants, getHarmonicSuggestions, getScaleNotes, ChordComplexity, Note, ScaleType, Chord } from './lib';
 import { cn, Badge } from './ui';
 
-// --- CONSTANTS & CONFIG ---
-
-const GRID_SIZE = 6; 
-const SPACING = 80;
-const X_VEC = { x: SPACING * 1, y: 0 }; 
-const Y_VEC = { x: SPACING * 0.5, y: SPACING * 0.866 }; 
-
 // --- HELPERS ---
+const GRID_SIZE = 6, SPACING = 80, X_VEC = { x: SPACING, y: 0 }, Y_VEC = { x: SPACING * 0.5, y: SPACING * 0.866 };
 
-const getFillColor = (t: any, mood: any, isHover: boolean, isActive: boolean, isLinked: boolean) => {
-    if (isActive) return 'var(--accent)';
-    
-    // Linked Extensions (Upper Structures)
-    if (isLinked) {
-        // Use valence to tint the extensions slightly
-        return isHover ? `rgba(255, 255, 255, 0.2)` : `rgba(255, 255, 255, 0.05)`;
-    }
-
-    if (t.isChromatic) return isHover ? 'rgba(255,255,255,0.1)' : 'rgba(20,20,20,0.4)';
-    if (t.secondary) return isHover ? 'rgba(236, 72, 153, 0.6)' : 'rgba(236, 72, 153, 0.25)';
-
-    const v = mood.valence;
-    // Higher arousal = brighter, more opaque colors
-    const opacity = Math.min(0.9, 0.35 + (mood.arousal * 0.25) + (isHover ? 0.3 : 0));
-
-    if (t.type === 'Major') {
-        // Valence shifts major chords from gold (neutral) to warm (high valence)
-        if (v > 0.2) return `rgba(255, 255, ${200 + (v * 55)}, ${opacity})`; 
-        return `rgba(255, 215, 0, ${opacity})`; 
-    } else {
-        // Valence shifts minor chords from indigo (neutral) to cold/dark (low valence)
-        if (v < -0.2) return `rgba(${30}, ${30}, ${100 - (v * 30)}, ${opacity})`;
-        return `rgba(99, 102, 241, ${opacity})`; 
-    }
+// --- LOGIC ---
+const getSentimentMatch = (chordInfo: any, currentKey: Note, scaleType: ScaleType, targetMood: { v: number, a: number } | null) => {
+    if (!targetMood) return 1;
+    const sentiment = estimateChordSentiment(chordInfo, currentKey, scaleType);
+    const dist = Math.hypot(sentiment.valence - targetMood.v, sentiment.arousal - targetMood.a);
+    return Math.max(0.1, 1 - (dist * 0.7)); 
 };
 
-// --- MEMOIZED COMPONENTS ---
+const getFillColor = (t: any, mood: any, state: any, matchScore: number) => {
+    const { isActive, isHover, isLinked } = state;
+    const { valence: v, arousal: a } = mood;
 
-const TonnetzNode = React.memo(({ x, y, note, isKeyCenter, isDiatonic, isActiveChordNote, mood }: any) => {
-    // Tension affects the "jitter" or glow size of active nodes
-    const glowSize = isActiveChordNote ? 15 + (mood.tension * 15) : 0;
+    if (isActive) return 'var(--accent)';
     
-    return (
-        <g transform={`translate(${x}, ${y})`} className="transition-all duration-300">
-            {/* Glow for active notes */}
-            {isActiveChordNote && (
-                <>
-                    <circle r={glowSize} className="fill-[var(--accent)] opacity-20 animate-pulse" />
-                    <circle r={glowSize * 0.6} className="fill-[var(--accent)] opacity-40" />
-                </>
-            )}
-            
-            {/* Node Dot */}
-            <circle 
-                r={isKeyCenter ? 6 : 3} 
-                className={cn("transition-all duration-300", 
-                    isActiveChordNote ? "fill-[var(--accent)]" : 
-                    isKeyCenter ? "fill-white" : 
-                    isDiatonic ? "fill-[var(--text-muted)]" : "fill-[var(--bg-element)]"
-                )}
-                stroke={isKeyCenter ? "rgba(0,0,0,0.5)" : "none"}
-                strokeWidth={1}
-            />
-            
-            {/* Note Label */}
-            <text 
-                dy={isKeyCenter ? 16 : 12}
-                textAnchor="middle" 
-                className={cn("text-[8px] font-bold pointer-events-none select-none transition-opacity",
-                    isActiveChordNote ? "fill-white opacity-100 font-black text-[10px]" :
-                    isKeyCenter ? "fill-white opacity-100" :
-                    isDiatonic ? "fill-[var(--text-dim)] opacity-80" : "fill-[var(--bg-element)] opacity-30"
-                )}
-            >
-                {note}
-            </text>
-        </g>
-    );
-});
+    let r, g, b;
+    let opacity = 0.45 + (a * 0.25); 
 
-const TonnetzLink = React.memo(({ link, isActive, isHover, mood }: any) => {
-    // VISUALIZATION OF EXTENDED HARMONY
-    // ---------------------------------
-    // Level 0: Root Triad -> 7th Triad (Strong bond)
-    // Level 1: 7th Triad -> 9th Triad (Medium bond)
-    // Level 2: 9th Triad -> 11th Triad (Weaker bond)
-    
-    const isTense = mood.tension > 0.5;
-    const isExtremeTension = mood.tension > 0.8;
+    if (t.isChromatic) { r=80; g=80; b=80; } 
+    else if (t.secondary) { r=236; g=72+(v*30); b=153+(v*50); } 
+    else if (t.type === 'Major') { r=255; g=Math.min(255, 180 + (v*60)); b=Math.max(0, (v*100)); } 
+    else { r=Math.max(20, 70-(v*40)); g=Math.max(30, 80+(v*80)); b=220+(v*20); }
 
-    // Base styling
-    let strokeWidth = 1;
-    let strokeOpacity = 0.1;
-    let strokeDash = "none";
-    let color = "white";
+    if (matchScore < 0.9) { opacity *= (matchScore * matchScore); r=(r+128)/2; g=(g+128)/2; b=(b+128)/2; } 
+    else if (matchScore > 0.95 && !isActive) { opacity = Math.min(0.9, opacity * 1.5); }
 
-    if (isActive) {
-        color = "var(--accent)";
-        strokeOpacity = 0.8 - (link.level * 0.2); // Fade out higher extensions
-        strokeWidth = 3 - (link.level * 0.5);
+    if (isLinked) { opacity = isHover ? 0.3 : 0.1; return `rgba(255, 255, 255, ${opacity})`; }
+
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+};
+
+// --- SUB-COMPONENTS ---
+const TonnetzNode = React.memo(({ x, y, note, isKey, isDiatonic, active, mood }: any) => (
+    <g transform={`translate(${x}, ${y})`} className="transition-all duration-300">
+        {active && <circle r={20 + mood.tension * 20} className="fill-[var(--accent)] opacity-20 animate-pulse" />}
         
-        if (isTense && link.level > 0) {
-            strokeDash = "3 3"; // Break upper structure links under tension
-        }
-    } else if (isHover) {
-        strokeOpacity = 0.4;
-        strokeWidth = 2;
-    } else {
-        // Inactive background links
-        strokeOpacity = 0.05;
-        if (isTense) strokeOpacity = 0.02; // Hide clutter when tense
-    }
+        {/* Key Center Indicator Ring */}
+        {isKey && <circle r={12} className="fill-transparent stroke-[var(--accent)] stroke-[1] opacity-30" strokeDasharray="2 2" />}
 
-    // Animation class for high tension
-    const animClass = (isActive && isExtremeTension && link.level > 0) ? "animate-pulse" : "";
-
-    return (
-        <g className={animClass}>
-            <line 
-                x1={link.from.x} y1={link.from.y} 
-                x2={link.to.x} y2={link.to.y}
-                stroke={color}
-                strokeWidth={strokeWidth}
-                strokeOpacity={strokeOpacity}
-                strokeDasharray={strokeDash}
-                strokeLinecap="round"
-                className="transition-all duration-300"
-            />
-            {/* Structural Nodes for Links (Joints) */}
-            {isActive && (
-                <circle cx={(link.from.x + link.to.x)/2} cy={(link.from.y + link.to.y)/2} r={2} fill={color} opacity={strokeOpacity} />
+        <circle 
+            r={isKey ? 8 : active ? 6 : 3} 
+            className={cn(
+                "transition-all duration-300", 
+                active ? "fill-[var(--accent)] stroke-white stroke-2" : 
+                isKey ? "fill-white stroke-black/50" : 
+                isDiatonic ? "fill-[var(--text-muted)]" : "fill-[var(--bg-element)]"
+            )} 
+        />
+        <text 
+            dy={isKey ? 20 : 16} 
+            textAnchor="middle" 
+            className={cn(
+                "text-[9px] font-bold pointer-events-none select-none transition-all", 
+                active ? "fill-white text-[12px]" : 
+                isKey ? "fill-white text-[10px]" : 
+                "fill-[var(--text-dim)] opacity-80"
             )}
-        </g>
-    );
-});
+        >
+            {note}
+        </text>
+    </g>
+));
 
-const TonnetzTriangle = React.memo(({ t, mood, isHover, isActive, isLinked, isSuggested, onClick, onEnter, onLeave }: any) => {
-    const fill = getFillColor(t, mood, isHover, isActive, isLinked);
+const TonnetzLink = React.memo(({ link, isActive, isHover, mood, onClick }: any) => (
+    <g onClick={(e) => { e.stopPropagation(); onClick(link); }} className={cn("cursor-pointer interact-base group/link", isActive && "z-10")}>
+         <line x1={link.from.x} y1={link.from.y} x2={link.to.x} y2={link.to.y} stroke="transparent" strokeWidth={24} />
+         <line 
+            x1={link.from.x} y1={link.from.y} x2={link.to.x} y2={link.to.y} 
+            stroke={isActive ? 'var(--accent)' : 'white'} 
+            strokeWidth={isActive ? 3 : isHover ? 2 : 1} 
+            opacity={isActive ? 0.8 : isHover ? 0.4 : 0.1} 
+            strokeDasharray={isActive && mood.tension > 0.5 ? '3 3' : 'none'} 
+            strokeLinecap="round" 
+            className="transition-all duration-300 pointer-events-none"
+         />
+         {(isActive || isHover) && <circle cx={(link.from.x + link.to.x)/2} cy={(link.from.y + link.to.y)/2} r={isActive ? 3 : 2} className={cn("transition-all", isActive ? "fill-[var(--accent)]" : "fill-white/50")} />}
+    </g>
+));
+
+const TonnetzTriangle = React.memo(({ t, mood, state, matchScore, onClick, onEnter, onLeave }: any) => {
+    const { isActive, isHover, isLinked, isSuggested } = state;
+    const fill = getFillColor(t, mood, state, matchScore);
     
+    // Chord Properties
+    const q = t.chordInfo.quality;
+    const isTonic = t.chordInfo.interval === 0;
+    const isDominant = q === 'Dominant';
+    const isDissonant = q === 'Diminished' || q === 'Augmented' || q === 'Half-Dim';
+    const showNoise = isDissonant && (isActive || mood.tension > 0.4);
+
+    // Scale Logic
+    const baseScale = matchScore > 0.9 && !isActive && !isHover ? 0.9 : 1; 
+    const finalScale = isActive ? 1.15 : isHover ? 1.05 : baseScale;
+    
+    // Stroke Logic
     let stroke = 'transparent';
     let strokeW = 0.5;
     let dash = 'none';
 
-    if (isActive) { stroke = 'var(--accent)'; strokeW = 3; }
-    else if (isHover) { stroke = 'white'; strokeW = 2; }
-    else if (isLinked) { stroke = 'rgba(255,255,255,0.5)'; strokeW = 1.5; dash = '2 2'; } 
-    else if (isSuggested) { stroke = 'var(--accent)'; strokeW = 1.5; dash = '2 2'; }
+    if (isActive) { 
+        stroke = 'white'; strokeW = 3; 
+    } else if (isHover) { 
+        stroke = 'white'; strokeW = 2; 
+    } else if (isTonic) {
+        stroke = 'rgba(255,255,255,0.6)'; strokeW = 1.5;
+    } else if (matchScore > 0.95) { 
+        stroke = 'rgba(255,255,255,0.3)'; strokeW = 1; 
+    } else if (isLinked) { 
+        stroke = 'rgba(255,255,255,0.5)'; strokeW = 1.5; dash = '2 2'; 
+    } else if (isSuggested) { 
+        stroke = 'var(--accent)'; strokeW = 1.5; dash = '2 2'; 
+    }
 
+    // Functional Stroke Styles
+    if (!isActive && !isHover) {
+        if (isDominant) dash = '4 2';
+        if (isDissonant) dash = '1 2';
+    }
+    
     return (
         <g 
-            className={cn("cursor-pointer interact-base", isActive && "z-10")}
-            onMouseEnter={() => onEnter(t)}
-            onMouseLeave={onLeave}
+            className={cn("cursor-pointer interact-base transition-transform duration-300", isActive && "z-10")} 
+            style={{ 
+                transformOrigin: `${t.center.x}px ${t.center.y}px`, 
+                transform: `scale(${finalScale})` 
+            }}
+            onMouseEnter={() => onEnter(t)} 
+            onMouseLeave={onLeave} 
             onClick={(e) => { e.stopPropagation(); onClick(t); }}
         >
-            <polygon
-                points={t.points.map((p: any) => `${p.x},${p.y}`).join(' ')}
-                fill={fill}
-                stroke={stroke}
-                strokeWidth={strokeW}
-                strokeDasharray={dash}
-                strokeLinejoin="round"
-                style={{ transition: 'fill 0.2s ease-out, stroke 0.1s' }}
-                className="vector-effect-non-scaling-stroke"
+            {/* Active/Tonic Glow */}
+            {(isActive || (isTonic && matchScore > 0.8)) && (
+                <polygon 
+                    points={t.points.map((p:any)=>`${p.x},${p.y}`).join(' ')} 
+                    fill="transparent"
+                    stroke={isActive ? 'var(--accent)' : 'white'}
+                    strokeWidth={isActive ? 8 : 4}
+                    strokeLinejoin="round"
+                    className="opacity-20 blur-sm transition-all pointer-events-none"
+                />
+            )}
+
+            <polygon 
+                points={t.points.map((p:any)=>`${p.x},${p.y}`).join(' ')} 
+                fill={fill} 
+                stroke={stroke} 
+                strokeWidth={strokeW} 
+                strokeDasharray={dash} 
+                strokeLinejoin="round" 
+                className="transition-colors duration-200"
+                filter={showNoise ? "url(#noise)" : undefined}
             />
             
+            {/* Tonic Indicator Dot */}
+            {isTonic && !t.secondary && (
+                <circle cx={t.center.x} cy={t.center.y - 8} r={1.5} fill="white" className="opacity-80" />
+            )}
+
             <text 
-                x={t.center.x} 
-                y={t.center.y} 
-                dy={2.5} 
-                textAnchor="middle" 
-                fontSize={10} 
-                fontWeight="bold" 
-                className={cn("pointer-events-none transition-opacity select-none", 
-                    (isActive || isHover || isLinked) ? "fill-white opacity-100" :
-                    t.diatonic ? "fill-white/80 opacity-60" : "fill-white/20 opacity-10"
-                )}
-                style={{ textShadow: '0 0 4px rgba(0,0,0,0.5)' }}
+                x={t.center.x} y={t.center.y} dy={3} textAnchor="middle" 
+                fontSize={isActive ? 12 : 10} 
+                fontWeight={isActive ? "900" : "bold"} 
+                className={cn("pointer-events-none select-none transition-all duration-300", (isActive||isHover||isLinked||matchScore>0.9)?"fill-white opacity-100":t.diatonic?"fill-white/80 opacity-60":"fill-white/20 opacity-10")}
             >
                 {t.label}
             </text>
+
+            {/* Roman Numeral Overlay on Active/Hover */}
+            {(isActive || isHover) && (
+                <text 
+                    x={t.center.x} y={t.center.y} dy={14} 
+                    textAnchor="middle" 
+                    fontSize={7} 
+                    className="fill-white/80 font-mono tracking-wider pointer-events-none select-none animate-in fade-in slide-in-from-bottom-1"
+                >
+                    {t.chordInfo.romanNumeral}
+                </text>
+            )}
         </g>
     );
 });
 
-// --- DATA GENERATION HELPER ---
+// --- GRID GENERATION ---
+const generateGridData = (key: Note, scale: ScaleType, chords: any[], secondary: any[], complexity: ChordComplexity, suggestions: number[]) => {
+    const chrom = (['F','Bb','Eb','Ab','Db','Gb','Cb'].includes(key)||key.includes('b')) ? ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'] : ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+    const scaleNotes = getScaleNotes(key, scale);
+    const keyIdx = chrom.indexOf(key);
 
-const generateGridData = (currentKey: Note, scaleType: ScaleType, chords: Chord[], secondaryDominants: Chord[], complexity: ChordComplexity, suggestedIndices: number[]) => {
-    // 1. Determine Chromatic & Scale Context
-    const chromaticScale = (['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb'].includes(currentKey) || currentKey.includes('b')) 
-        ? ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B'] 
-        : ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-    
-    const centerKeyIndex = chromaticScale.indexOf(currentKey);
-    const scaleNotes = getScaleNotes(currentKey, scaleType);
-
-    // 2. Generate Grid Points
-    const points = [];
+    const points = [], tris: any[] = [];
     for (let x = -GRID_SIZE; x <= GRID_SIZE; x++) {
         for (let y = -GRID_SIZE; y <= GRID_SIZE; y++) {
-            if (Math.abs(x + y) > GRID_SIZE + 2) continue; 
-            
-            let semitones = (centerKeyIndex + (x * 7) + (y * 4)) % 12;
-            if (semitones < 0) semitones += 12;
-            const note = chromaticScale[semitones];
-            
-            points.push({
-                gx: x, gy: y,
-                sx: (x * X_VEC.x) + (y * Y_VEC.x),
-                sy: (x * X_VEC.y) + (y * Y_VEC.y),
-                note,
-                isDiatonic: scaleNotes.includes(note)
+            if (Math.abs(x + y) > GRID_SIZE + 2) continue;
+            const note = chrom[((keyIdx + (x * 7) + (y * 4)) % 12 + 12) % 12];
+            const p = { gx: x, gy: y, sx: x * X_VEC.x + y * Y_VEC.x, sy: x * X_VEC.y + y * Y_VEC.y, note, isDiatonic: scaleNotes.includes(note) };
+            points.push(p);
+
+            ['Major', 'Minor'].forEach((type) => {
+                const root = p.note;
+                const diatonic = chords.find(c => c.root === root && c.quality === type);
+                const sec = secondary.find(c => c.root === root && c.quality === type);
+                const info = diatonic || sec || { root, quality: type, symbol: type==='Major'?root:`${root}m`, romanNumeral: '?', notes: [], interval: -1, duration: 0 };
+                
+                const pts = type === 'Major' 
+                    ? [{ x: p.sx, y: p.sy }, { x: p.sx + X_VEC.x, y: p.sy + X_VEC.y }, { x: p.sx + Y_VEC.x, y: p.sy + Y_VEC.y }]
+                    : [{ x: p.sx, y: p.sy }, { x: p.sx + X_VEC.x, y: p.sy + X_VEC.y }, { x: p.sx + X_VEC.x - Y_VEC.x, y: p.sy + X_VEC.y - Y_VEC.y }];
+
+                tris.push({
+                    id: `${type}-${x}-${y}`, type, root, label: type==='Major'?root:root.toLowerCase(), points: pts,
+                    center: { x: (pts[0].x+pts[1].x+pts[2].x)/3, y: (pts[0].y+pts[1].y+pts[2].y)/3 },
+                    diatonic: !!diatonic, secondary: !!sec, isSuggested: info.interval!==-1 && suggestions.includes(info.interval), isChromatic: !diatonic && !sec, chordInfo: info
+                });
             });
         }
     }
 
-    // 3. Generate Triangles (Triads)
-    const tris: any[] = [];
-    
-    points.forEach(p => {
-        const createTri = (type: 'Major'|'Minor', pts: any[]) => {
-            const rootNote = p.note;
-            const label = type === 'Major' ? rootNote : rootNote.toLowerCase();
-            const id = `${type}-${p.gx}-${p.gy}`;
-
-            // Check if this triad exists in our harmonic definition
-            const diatonic = chords.find((c: any) => c.root === rootNote && c.quality === type);
-            const secondary = secondaryDominants.find((c: any) => c.root === rootNote && c.quality === type);
-            
-            const chordInfo = diatonic || secondary || { 
-                root: rootNote, quality: type, symbol: type === 'Major' ? rootNote : `${rootNote}m`,
-                romanNumeral: '?', notes: [], interval: -1, duration: 0, suffix: type==='Minor'?'m':''
-            };
-
-            const isSuggested = chordInfo.interval !== -1 && suggestedIndices.includes(chordInfo.interval);
-
-            return {
-                id, type, root: rootNote, label, points: pts,
-                center: { x: (pts[0].x + pts[1].x + pts[2].x) / 3, y: (pts[0].y + pts[1].y + pts[2].y) / 3 },
-                diatonic: !!diatonic, secondary: !!secondary, isSuggested,
-                isChromatic: !diatonic && !secondary,
-                chordInfo
-            };
-        };
-
-        // Up (Major)
-        tris.push(createTri('Major', [
-            { x: p.sx, y: p.sy },
-            { x: p.sx + X_VEC.x, y: p.sy + X_VEC.y },
-            { x: p.sx + Y_VEC.x, y: p.sy + Y_VEC.y }
-        ]));
-        // Down (Minor)
-        tris.push(createTri('Minor', [
-            { x: p.sx, y: p.sy },
-            { x: p.sx + X_VEC.x, y: p.sy + X_VEC.y },
-            { x: p.sx + X_VEC.x - Y_VEC.x, y: p.sy + X_VEC.y - Y_VEC.y }
-        ]));
-    });
-
-    // 4. Link Extensions (Extended Harmony Clusters)
-    // Identify clusters of triads that form extended chords (e.g., Cmaj9 = C Maj + E Min + G Maj)
-    // We create structural links between these triads to visualize the "stack".
-    const links: any[] = [];
-    const extensionMap: Record<string, string[]> = {}; // Key: TriadID, Value: [ExtensionTriadID, ...]
-
+    const links: any[] = [], extMap: Record<string, string[]> = {};
     if (complexity !== 'triad') {
-        const processedPairs = new Set<string>();
         const depth = complexity === '11th' ? 3 : complexity === '9th' ? 2 : 1;
-
         tris.forEach(t => {
-            // Only generate extensions for diatonic or secondary dominant chords (functional harmony)
-            if (!t.diatonic && !t.secondary) return;
-
-            // Find full chord definition to get scale degrees for extensions
-            const chordDef = chords.find(c => c.root === t.root && c.quality === t.type) || t.chordInfo;
-            if (!chordDef || !chordDef.notes || chordDef.notes.length < 3) return;
-
-            let currentTriad = t;
-            const chain: string[] = [];
-
+            if ((!t.diatonic && !t.secondary)) return;
+            const def = chords.find(c => c.root === t.root && c.quality === t.type) || t.chordInfo;
+            if (!def?.notes?.length) return;
+            let curr = t, chain = [];
             for (let i = 0; i < depth; i++) {
-                // To stack thirds, we look for the next note in the chord structure.
-                // Index 0=Root, 1=3rd, 2=5th, 3=7th, 4=9th, 5=11th
-                // Extension 1 (7th) is built on the 3rd (Index 1).
-                // Extension 2 (9th) is built on the 5th (Index 2).
-                const nextRootIndex = 1 + i; 
-                
-                if (chordDef.notes.length <= nextRootIndex) break;
-                const nextRoot = chordDef.notes[nextRootIndex]; 
-                
-                // Find a triad rooted at 'nextRoot' that is physically adjacent on the lattice.
-                // This geometric constraint ensures we visualize the "tightest" voicing representation.
-                const nextTriad = tris.find(candidate => 
-                    candidate.root === nextRoot && 
-                    // Spatially close (Euclidean distance check)
-                    Math.hypot(candidate.center.x - currentTriad.center.x, candidate.center.y - currentTriad.center.y) < SPACING * 1.8
-                );
-
-                if (nextTriad) {
-                    chain.push(nextTriad.id);
-                    
-                    const linkId = `${currentTriad.id}->${nextTriad.id}`;
-                    if (!processedPairs.has(linkId)) {
-                        links.push({ 
-                            id: linkId, 
-                            from: currentTriad.center, 
-                            to: nextTriad.center,
-                            sourceId: currentTriad.id,
-                            targetId: nextTriad.id,
-                            rootId: t.id, // Track the fundamental root to light up the whole chain
-                            level: i // 0 = Base connection (7th), 1 = Upper structure (9th), etc.
-                        });
-                        processedPairs.add(linkId);
-                    }
-                    
-                    currentTriad = nextTriad;
-                } else {
-                    break;
-                }
+                const nextRoot = def.notes[1 + i];
+                const next = nextRoot && tris.find(c => c.root === nextRoot && Math.hypot(c.center.x - curr.center.x, c.center.y - curr.center.y) < SPACING * 1.8);
+                if (next) {
+                    chain.push(next.id);
+                    links.push({ id: `${curr.id}->${next.id}`, from: curr.center, to: next.center, rootId: t.id, level: i });
+                    curr = next;
+                } else break;
             }
-            
-            if (chain.length > 0) {
-                extensionMap[t.id] = chain;
-            }
+            if (chain.length) extMap[t.id] = chain;
         });
     }
-
-    return { points, tris, extensionMap, links };
+    return { points, tris, extMap, links };
 };
 
-// --- MAIN GRID COMPONENT ---
+export interface HarmonicSpaceProps {
+    currentKey: Note;
+    scaleType: ScaleType;
+    chords: Chord[];
+    tensionChords: Chord[];
+    onAddChord: (c: Chord) => void;
+    onChordClick: (c: Chord) => void;
+    contextChord: Chord | null;
+    mood: { valence: number, arousal: number, tension: number };
+    complexity: ChordComplexity;
+    targetMood: { v: number, a: number } | null;
+    onHoverChord: (c: Chord | null) => void;
+}
 
-export const TonnetzGrid = ({ currentKey, scaleType, chords, tensionChords, onAddChord, onChordClick, mood, contextChord, secondaryDominants, suggestedIndices, complexity }: any) => {
-    const containerRef = useRef<HTMLDivElement>(null);
+// --- MAIN COMPONENT ---
+export const HarmonicSpace = ({ 
+    currentKey, 
+    scaleType, 
+    chords, 
+    tensionChords, 
+    onAddChord, 
+    onChordClick, 
+    contextChord, 
+    mood, 
+    complexity, 
+    targetMood, 
+    onHoverChord 
+}: HarmonicSpaceProps) => {
+
+    // Derived logic inside component
+    const secondaryDominants = useMemo(() => generateSecondaryDominants(currentKey, scaleType), [currentKey, scaleType]);
+    const suggestedIndices = useMemo(() => getHarmonicSuggestions(contextChord), [contextChord]);
+    
+    // Local Interaction State
     const [view, setView] = useState({ x: 0, y: 0, k: 1 });
-    const [isDragging, setIsDragging] = useState(false);
-    const [lastPos, setLastPos] = useState<{x:number, y:number} | null>(null);
-    const [hoveredTri, setHoveredTri] = useState<any|null>(null);
+    const [drag, setDrag] = useState<{active:boolean, last:{x:number,y:number}|null}>({active:false, last:null});
+    const [hover, setHover] = useState<any|null>(null);
 
-    // Optimized Data Generation
-    const { points, tris, extensionMap, links } = useMemo(() => 
-        generateGridData(currentKey, scaleType, chords, secondaryDominants, complexity, suggestedIndices),
+    const { points, tris, extMap, links } = useMemo(() => 
+        generateGridData(currentKey, scaleType, chords, secondaryDominants, complexity, suggestedIndices), 
     [currentKey, scaleType, chords, secondaryDominants, complexity, suggestedIndices]);
 
-    // Active Note Set for Visualizing Complex Chords
-    const activeNoteSet = useMemo(() => {
-        if (!contextChord) return new Set();
-        return new Set(contextChord.notes);
-    }, [contextChord]);
+    const activeIds = useMemo(() => {
+        const set = new Set<string>();
+        if (!contextChord) return { set, root: null };
+        const main = tris.find(t => t.root === contextChord.root && t.type === contextChord.quality);
+        if (main) { set.add(main.id); extMap[main.id]?.forEach(id => set.add(id)); }
+        return { set, root: main?.id };
+    }, [contextChord, tris, extMap]);
 
-    // Calculate Active Cluster
-    const { activeTriadIds, activeRootId } = useMemo(() => {
-        const ids = new Set<string>();
-        let rootId = null;
-        if (!contextChord) return { activeTriadIds: ids, activeRootId: null };
+    const activeNotes = useMemo(() => new Set(contextChord?.notes || []), [contextChord]);
 
-        // Find the main triad that matches the playing chord
-        const mainTriad = tris.find(t => t.root === contextChord.root && t.type === contextChord.quality);
-        if (mainTriad) {
-            rootId = mainTriad.id;
-            ids.add(mainTriad.id);
-            // If complexity is high, add the extension chain
-            if (extensionMap[mainTriad.id]) {
-                extensionMap[mainTriad.id].forEach((extId: string) => ids.add(extId));
-            }
-        }
-        return { activeTriadIds: ids, activeRootId: rootId };
-    }, [contextChord, tris, extensionMap]);
-
-    // --- INTERACTION HANDLERS ---
-    const handleWheel = (e: React.WheelEvent) => {
-        e.preventDefault(); e.stopPropagation();
-        const delta = -e.deltaY * 0.001;
-        setView(p => ({ ...p, k: Math.min(Math.max(p.k * (1 + delta), 0.5), 4) }));
-    };
-    
-    const handlePointerDown = (e: React.PointerEvent) => {
-        setIsDragging(true);
-        setLastPos({ x: e.clientX, y: e.clientY });
-        (e.target as Element).setPointerCapture(e.pointerId);
+    const handleDrag = (e: React.PointerEvent) => {
+        if(e.type === 'pointerdown') { setDrag({active:true, last:{x:e.clientX, y:e.clientY}}); try { (e.target as Element).setPointerCapture(e.pointerId); } catch(err){} }
+        else if(e.type === 'pointermove' && drag.active && drag.last) { setView(v => ({...v, x: v.x + e.clientX - drag.last!.x, y: v.y + e.clientY - drag.last!.y})); setDrag(prev => ({...prev, last:{x:e.clientX, y:e.clientY}})); }
+        else if(e.type === 'pointerup') { setDrag({active:false, last:null}); try { (e.target as Element).releasePointerCapture(e.pointerId); } catch(err){} }
     };
 
-    const handlePointerMove = (e: React.PointerEvent) => {
-        if (!isDragging || !lastPos) return;
-        setView(p => ({ ...p, x: p.x + (e.clientX - lastPos.x), y: p.y + (e.clientY - lastPos.y) }));
-        setLastPos({ x: e.clientX, y: e.clientY });
-    };
-
-    const handlePointerUp = (e: React.PointerEvent) => {
-        setIsDragging(false);
-        (e.target as Element).releasePointerCapture(e.pointerId);
-    };
-
-    const handleChordClick = useCallback((t: any) => {
+    const handleChordAction = useCallback((t: any) => {
         let chordToPlay = t.chordInfo;
-        // Build generic extended chord if no pre-def exists (e.g., chromatic)
         if (!chordToPlay.notes || chordToPlay.notes.length === 0) {
-            let ext = '';
-            if (complexity === '7th') ext = '7';
-            else if (complexity === '9th') ext = '9';
-            else if (complexity === '11th') ext = '11';
+            let ext = complexity === 'triad' ? '' : complexity === '11th' ? '11' : complexity === '9th' ? '9' : '7';
             chordToPlay = buildChord(t.root, t.type, ext);
         }
         onChordClick(chordToPlay);
         onAddChord(chordToPlay);
     }, [complexity, onChordClick, onAddChord]);
 
+    const handleEnter = (t: any) => {
+        setHover(t);
+        const info = t.chordInfo;
+        if (info) {
+             const sentiment = estimateChordSentiment(info, currentKey, scaleType);
+             onHoverChord({ ...info, sentiment }); 
+        }
+    };
+    const handleLeave = () => { setHover(null); onHoverChord(null); };
+
     return (
-        <div ref={containerRef} className="w-full h-full bg-black relative overflow-hidden flex items-center justify-center cursor-move touch-none select-none"
-            onWheel={handleWheel} onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerLeave={handlePointerUp}>
+        <div className="w-full h-full relative overflow-hidden bg-[#0c0a09] touch-none select-none flex items-center justify-center cursor-move"
+             onWheel={(e) => setView(v => ({ ...v, k: Math.max(0.5, Math.min(4, v.k * (1 - e.deltaY * 0.001))) }))}
+             onPointerDown={handleDrag} onPointerMove={handleDrag} onPointerUp={handleDrag}>
             
-            <svg className="w-full h-full" viewBox="-400 -300 800 600" preserveAspectRatio="xMidYMid slice">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,#292524_0%,#000000_100%)] opacity-80 pointer-events-none" />
+            
+            <svg className="w-full h-full relative z-10" viewBox="-400 -300 800 600" preserveAspectRatio="xMidYMid slice">
                 <defs>
-                     <filter id="glow-soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="15" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+                    <filter id="noise" x="0%" y="0%" width="100%" height="100%">
+                        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" result="noise" />
+                        <feComposite operator="in" in="noise" in2="SourceGraphic" result="composite" />
+                        <feBlend mode="overlay" in="composite" in2="SourceGraphic" />
+                    </filter>
                 </defs>
-                <g transform={`translate(${view.x}, ${view.y}) scale(${view.k})`} className="transition-transform duration-75 ease-out origin-center">
-                    
-                    {/* 1. GRID LINES */}
-                    <g opacity={0.15}>
-                        {points.map((p, i) => (
-                             <React.Fragment key={i}>
-                                 <line x1={p.sx} y1={p.sy} x2={p.sx + X_VEC.x} y2={p.sy + X_VEC.y} stroke={p.isDiatonic ? "white" : "#444"} strokeWidth={p.isDiatonic ? 1 : 0.5} />
-                                 <line x1={p.sx} y1={p.sy} x2={p.sx + Y_VEC.x} y2={p.sy + Y_VEC.y} stroke={p.isDiatonic ? "white" : "#444"} strokeWidth={p.isDiatonic ? 1 : 0.5} />
-                                 <line x1={p.sx} y1={p.sy} x2={p.sx + X_VEC.x - Y_VEC.x} y2={p.sy + X_VEC.y - Y_VEC.y} stroke={p.isDiatonic ? "white" : "#444"} strokeWidth={p.isDiatonic ? 1 : 0.5} />
-                             </React.Fragment>
-                        ))}
-                    </g>
-
-                    {/* 2. CONNECTORS (Extended Harmony) */}
-                    <g>
-                        {links.map(link => {
-                            // Link is active if it is part of the currently active harmonic cluster
-                            const isActive = activeRootId && link.rootId === activeRootId;
-                            
-                            // Also highlight if hovering over the parent triad
-                            const isHover = hoveredTri && (link.rootId === hoveredTri.id || extensionMap[hoveredTri.id]?.includes(link.targetId));
-                            
-                            return <TonnetzLink key={link.id} link={link} isActive={isActive} isHover={isHover} mood={mood} />;
-                        })}
-                    </g>
-
-                    {/* 3. TRIANGLES */}
-                    <g>
-                        {tris.map(t => {
-                            const isActive = activeTriadIds.has(t.id);
-                            const isDirectHover = hoveredTri && hoveredTri.id === t.id;
-                            
-                            // Extended Chain Highlight (Hover)
-                            let isLinkedHover = false;
-                            if (hoveredTri) {
-                                // Highlight if T is in Hovered's extension chain
-                                const hoveredExts = extensionMap[hoveredTri.id] || [];
-                                if (hoveredExts.includes(t.id)) isLinkedHover = true;
-                                
-                                // Highlight if Hovered is in T's extension chain (Reverse lookup for parent)
-                                // This visualizes "This is the extension of X"
-                                if (extensionMap[t.id]?.includes(hoveredTri.id)) isLinkedHover = true;
-                            }
-                            
-                            return (
-                                <TonnetzTriangle 
-                                    key={t.id} t={t} mood={mood} 
-                                    isActive={isActive} 
-                                    isHover={isDirectHover} 
-                                    isLinked={isLinkedHover}
-                                    isSuggested={t.isSuggested}
-                                    onClick={handleChordClick}
-                                    onEnter={setHoveredTri}
-                                    onLeave={() => setHoveredTri(null)}
-                                />
-                            );
-                        })}
-                    </g>
-
-                    {/* 4. NODES */}
-                    <g>
-                        {points.map((p, i) => (
-                            <TonnetzNode 
-                                key={i} x={p.sx} y={p.sy} note={p.note} 
-                                isKeyCenter={p.note === currentKey} 
-                                isDiatonic={p.isDiatonic}
-                                isActiveChordNote={activeNoteSet.has(p.note)}
-                                mood={mood}
-                            />
-                        ))}
-                    </g>
+                <g transform={`translate(${view.x}, ${view.y}) scale(${view.k})`} className="transition-transform duration-75">
+                    <g opacity={0.15}>{points.map((p,i)=><React.Fragment key={i}><line x1={p.sx} y1={p.sy} x2={p.sx+X_VEC.x} y2={p.sy} stroke={p.isDiatonic?"white":"#444"}/><line x1={p.sx} y1={p.sy} x2={p.sx+Y_VEC.x} y2={p.sy+Y_VEC.y} stroke={p.isDiatonic?"white":"#444"}/><line x1={p.sx} y1={p.sy} x2={p.sx+X_VEC.x-Y_VEC.x} y2={p.sy+X_VEC.y-Y_VEC.y} stroke={p.isDiatonic?"white":"#444"}/></React.Fragment>)}</g>
+                    <g>{links.map(l => {
+                        const active = activeIds.root === l.rootId;
+                        const isHover = hover && (hover.id === l.rootId || extMap[hover.id]?.includes(l.targetId));
+                        return <TonnetzLink key={l.id} link={l} isActive={active} isHover={isHover} mood={mood} onClick={() => { const rootTriad = tris.find(t => t.id === l.rootId); if (rootTriad) handleChordAction(rootTriad); }} />;
+                    })}</g>
+                    <g>{tris.map(t => {
+                        const score = getSentimentMatch(t.chordInfo, currentKey, scaleType, targetMood);
+                        return <TonnetzTriangle key={t.id} t={t} mood={mood} matchScore={score} state={{isActive:activeIds.set.has(t.id), isHover:hover?.id===t.id, isLinked: hover && (extMap[hover.id]?.includes(t.id) || extMap[t.id]?.includes(hover.id)), isSuggested:t.isSuggested}} onClick={handleChordAction} onEnter={handleEnter} onLeave={handleLeave} />;
+                    })}</g>
+                    <g>{points.map((p, i) => <TonnetzNode key={i} x={p.sx} y={p.sy} note={p.note} isKey={p.note === currentKey} isDiatonic={p.isDiatonic} active={activeNotes.has(p.note)} mood={mood} />)}</g>
                 </g>
             </svg>
-
-            {/* HEADER & INFO OVERLAY */}
-            <div className="absolute top-4 left-4 pointer-events-none flex flex-col gap-2 z-10">
-                 <div className="flex items-center gap-2 opacity-50">
-                     <Network size={14} className="text-[var(--text-main)]"/>
-                     <span className="text-[10px] font-mono text-[var(--text-main)]">TONNETZ LATTICE // {complexity.toUpperCase()}</span>
-                 </div>
-                 {hoveredTri && (
-                     <div className="bg-black/80 backdrop-blur-md border border-white/10 p-3 rounded-lg shadow-xl animate-in fade-in slide-in-from-left-2 w-52">
-                         <div className="flex items-center justify-between mb-1">
-                             <span className="text-sm font-bold text-white">{hoveredTri.chordInfo.symbol}</span>
-                             <Badge variant={hoveredTri.diatonic ? "default" : "accent"}>{hoveredTri.diatonic ? "Diatonic" : "Chromatic"}</Badge>
-                         </div>
-                         <div className="flex flex-col gap-1.5 mt-1">
-                             <span className="text-[10px] text-[var(--text-muted)]">{hoveredTri.chordInfo.romanNumeral || 'Unknown Function'}</span>
-                             <div className="flex items-center gap-2">
-                                 <span className="text-[10px] text-[var(--text-dim)]">{getCompassLabel(estimateChordSentiment(hoveredTri.chordInfo, currentKey, scaleType).valence, estimateChordSentiment(hoveredTri.chordInfo, currentKey, scaleType).arousal)}</span>
-                             </div>
-                             
-                             {/* EXTENSION INFO */}
-                             {complexity !== 'triad' && extensionMap[hoveredTri.id] && (
-                                 <div className="flex flex-col gap-0.5 pt-1 border-t border-white/5">
-                                     <span className="text-[9px] text-[var(--text-dim)] font-mono uppercase">Upper Structure</span>
-                                     <div className="flex items-center gap-1 flex-wrap">
-                                        <Layers size={10} className="text-[var(--accent)]"/>
-                                        {extensionMap[hoveredTri.id].map((extId: string) => {
-                                            const extTri = tris.find(x => x.id === extId);
-                                            return (
-                                                <span key={extId} className="text-[9px] text-white/80 bg-white/10 px-1 rounded">
-                                                    {extTri?.label} {extTri?.type === 'Minor' ? 'min' : ''}
-                                                </span>
-                                            );
-                                        })}
-                                     </div>
-                                 </div>
-                             )}
-                         </div>
-                     </div>
-                 )}
+            
+            {/* HUD & CONTROLS */}
+            <div className="absolute top-4 left-4 pointer-events-none flex flex-col gap-2 z-20">
+                 <div className="flex items-center gap-2 opacity-50"><Network size={14} className="text-[var(--text-main)]"/><span className="text-[10px] font-mono text-[var(--text-main)]">TONNETZ // {complexity}</span></div>
+                 {hover && (() => {
+                     const sent = estimateChordSentiment(hover.chordInfo, currentKey, scaleType);
+                     return (
+                        <div className="bg-black/80 backdrop-blur border border-white/10 p-3 rounded-lg shadow-xl animate-in fade-in w-56">
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-bold text-white">{hover.chordInfo.symbol}</span>
+                                <Badge variant={hover.diatonic ? "default" : "accent"}>{hover.diatonic ? "Diatonic" : "Chromatic"}</Badge>
+                            </div>
+                            <div className="text-[10px] text-[var(--text-muted)] mt-1 mb-2">{hover.chordInfo.romanNumeral || 'Non-Functional'}</div>
+                            <div className="flex items-center gap-3 pt-2 border-t border-white/10">
+                                <div className="relative w-8 h-8 rounded-full border border-white/20 bg-black/50">
+                                    <div className="absolute top-1/2 left-0 right-0 h-px bg-white/10"/><div className="absolute left-1/2 top-0 bottom-0 w-px bg-white/10"/>
+                                    <div className="absolute w-2 h-2 bg-[var(--accent)] rounded-full -ml-1 -mt-1 shadow-[0_0_5px_var(--accent)]" style={{ left: `${(sent.valence + 1) * 50}%`, top: `${(1 - sent.arousal) * 50}%` }}/>
+                                </div>
+                                <div className="flex flex-col"><span className="text-[9px] font-bold text-[var(--text-main)]">{getCompassLabel(sent.valence, sent.arousal)}</span></div>
+                            </div>
+                            {complexity !== 'triad' && extMap[hover.id] && (<div className="mt-2 pt-1 border-t border-white/5 flex items-center gap-1"><Layers size={8} className="text-[var(--text-dim)]"/><span className="text-[9px] text-[var(--text-dim)]">Extended Structure</span></div>)}
+                        </div>
+                     );
+                 })()}
             </div>
             
-            {/* VIEW CONTROLS */}
-            <div className="absolute bottom-6 right-6 flex flex-col gap-2 z-10">
-                 <button className="w-8 h-8 rounded-full bg-[var(--bg-element)] border border-[var(--border)] flex items-center justify-center text-[var(--text-main)] interact-push" onClick={() => setView(prev => ({ ...prev, k: Math.min(4, prev.k * 1.2) }))}><Plus size={16} /></button>
-                 <button className="w-8 h-8 rounded-full bg-[var(--bg-element)] border border-[var(--border)] flex items-center justify-center text-[var(--text-main)] interact-push" onClick={() => setView(prev => ({ ...prev, k: Math.max(0.5, prev.k * 0.8) }))}><Minus size={16} /></button>
-                 <button className="w-8 h-8 rounded-full bg-[var(--bg-element)] border border-[var(--border)] flex items-center justify-center text-[var(--text-main)] interact-push" onClick={() => setView({ x: 0, y: 0, k: 1 })}><Maximize2 size={16} /></button>
+            <div className="absolute bottom-6 right-6 flex flex-col gap-2 z-20">
+                 {[ {i:Plus, a:()=>setView(v=>({...v,k:Math.min(4,v.k*1.2)}))}, {i:Minus, a:()=>setView(v=>({...v,k:Math.max(0.5,v.k*0.8)}))}, {i:Maximize2, a:()=>setView({x:0,y:0,k:1})} ].map((b,i)=><button key={i} onClick={b.a} className="w-8 h-8 rounded-full bg-[var(--bg-element)] border border-[var(--border)] flex items-center justify-center text-[var(--text-main)] hover:scale-110 transition-transform"><b.i size={16}/></button>)}
              </div>
         </div>
     );
-};
-
-export const HarmonicSpace = (props: any) => {
-    // Wrapper to ensure derived props are calculated
-    const secondaryDominants = useMemo(() => generateSecondaryDominants(props.currentKey, props.scaleType), [props.currentKey, props.scaleType]);
-    const suggestedIndices = useMemo(() => getHarmonicSuggestions(props.contextChord), [props.contextChord]);
-    
-    return <TonnetzGrid {...props} secondaryDominants={secondaryDominants} suggestedIndices={suggestedIndices} />;
 };

@@ -1,8 +1,8 @@
 
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { Plus, X, GripHorizontal } from 'lucide-react';
+import { Plus, X, GripHorizontal, Filter } from 'lucide-react';
 import { cn } from './ui';
-import { estimateChordSentiment, Chord } from './lib';
+import { estimateChordSentiment, Chord, useStore, useDerivedData } from './lib';
 
 const PIXELS_PER_BEAT = 40;
 
@@ -25,7 +25,6 @@ const HarmonicGraph = ({ progression, currentKey, scaleType }: any) => {
 
     if (!data || data.points.length < 2) return null;
 
-    // Build Curve
     let d = `M ${data.points[0].x} ${data.points[0].y}`;
     for (let i = 0; i < data.points.length - 1; i++) {
         const p0 = data.points[i];
@@ -60,7 +59,7 @@ const HarmonicGraph = ({ progression, currentKey, scaleType }: any) => {
     );
 };
 
-export const DraggableChord: React.FC<{ chord: Chord, className?: string }> = ({ chord, className }) => {
+export const DraggableChord: React.FC<{ chord: Chord, className?: string, onClick?: () => void }> = ({ chord, className, onClick }) => {
     const color = useMemo(() => {
         const root = (chord.romanNumeral||'').toLowerCase().replace(/[^a-z]/g,'');
         const map: any = { i:'emerald', ii:'sky', iii:'emerald', iv:'sky', v:'rose', vi:'emerald', vii:'rose' };
@@ -73,7 +72,7 @@ export const DraggableChord: React.FC<{ chord: Chord, className?: string }> = ({
     };
 
     return (
-        <div draggable onDragStart={handleDragStart}
+        <div draggable onDragStart={handleDragStart} onClick={onClick}
             className={cn("h-9 px-3 rounded-md border flex items-center justify-between gap-2 cursor-grab active:cursor-grabbing hover:translate-x-1 transition-all interact-base group relative overflow-hidden shrink-0",
                 `border-${color}-500/30 bg-${color}-500/10 hover:bg-${color}-500/20`, className)}>
             <div className="flex items-baseline gap-2">
@@ -158,11 +157,43 @@ const TimelineNode = ({ chord, index, isActive, onRemove, onResize, onDragStart,
     );
 };
 
-export const ProgressionStrip = ({ progression, onRemove, activeIndex, onDropChord, availableChords, onReorder, onResize, currentKey, scaleType, showPalette = false }: any) => {
+export const ProgressionStrip = ({ showPalette = false }: { showPalette?: boolean }) => {
+    const { 
+        progression, 
+        playIndex: activeIndex, 
+        handleProgression, 
+        playOne,
+        key: currentKey,
+        scale: scaleType
+    } = useStore();
+    
+    const { chords: availableChords } = useDerivedData();
+    const [filter, setFilter] = useState<string>('All');
+
+    const filteredChords = useMemo(() => {
+        if (filter === 'All') return availableChords;
+        return availableChords.filter(c => {
+             if (filter === 'Major') return c.quality === 'Major';
+             if (filter === 'Minor') return c.quality === 'Minor';
+             if (filter === 'Dominant') return c.quality === 'Dominant';
+             if (filter === 'Other') return !['Major', 'Minor', 'Dominant'].includes(c.quality);
+             return true;
+        });
+    }, [availableChords, filter]);
+
     const scrollRef = useRef<HTMLDivElement>(null);
     const [dragState, setDragState] = useState<{dragging: number|null, target: number|null}>({dragging:null, target:null});
     
-    useEffect(() => { scrollRef.current?.children[activeIndex]?.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' }); }, [activeIndex]);
+    useEffect(() => { 
+        if (activeIndex !== null) {
+            scrollRef.current?.children[activeIndex]?.scrollIntoView({ behavior:'smooth', block:'nearest', inline:'center' }); 
+        }
+    }, [activeIndex]);
+
+    const onDropChord = (chord: Chord, index: number) => {
+        playOne(chord);
+        handleProgression('add', { chord, index });
+    };
 
     const handleDrop = (e: React.DragEvent, index: number) => {
         e.preventDefault(); e.stopPropagation();
@@ -171,7 +202,7 @@ export const ProgressionStrip = ({ progression, onRemove, activeIndex, onDropCho
         
         if (ri && ri !== "") {
             const from = parseInt(ri);
-            if (!isNaN(from) && from !== index) onReorder?.(from, from < index ? index - 1 : index);
+            if (!isNaN(from) && from !== index) handleProgression('reorder', { from, to: from < index ? index - 1 : index });
         } else { 
             try { const d = JSON.parse(e.dataTransfer.getData('application/json')); if (d.root) onDropChord(d, index); } catch {} 
         }
@@ -180,9 +211,37 @@ export const ProgressionStrip = ({ progression, onRemove, activeIndex, onDropCho
     return (
       <div className="w-full h-full flex flex-col bg-[#0c0a09] overflow-hidden relative">
         {showPalette && (
-            <div className="shrink-0 h-14 border-b border-white/5 flex items-center px-4 gap-2 overflow-x-auto custom-scrollbar bg-white/[0.02]">
-                <span className="text-[9px] font-bold text-white/20 uppercase tracking-widest mr-2 select-none sticky left-0 z-10">Palette</span>
-                {availableChords?.map((c: any, i: number) => <DraggableChord key={i} chord={c} className="h-10 w-auto min-w-[64px]" />)}
+            <div className="shrink-0 h-16 border-b border-white/5 flex items-center px-4 gap-4 overflow-hidden bg-white/[0.02]">
+                 <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center justify-center w-6 h-6 rounded bg-white/5 text-white/40">
+                        <Filter size={12} />
+                    </div>
+                    <select 
+                        value={filter} 
+                        onChange={(e) => setFilter(e.target.value)}
+                        className="bg-transparent text-[10px] font-medium text-[var(--text-muted)] border border-white/10 rounded px-2 py-1 outline-none focus:border-[var(--accent)] cursor-pointer hover:bg-white/5 appearance-none"
+                    >
+                        <option value="All" className="bg-[#0c0a09]">All Qualities</option>
+                        <option value="Major" className="bg-[#0c0a09]">Major</option>
+                        <option value="Minor" className="bg-[#0c0a09]">Minor</option>
+                        <option value="Dominant" className="bg-[#0c0a09]">Dominant</option>
+                        <option value="Other" className="bg-[#0c0a09]">Other</option>
+                    </select>
+                </div>
+                <div className="w-px h-8 bg-white/5 shrink-0" />
+                <div className="flex-1 overflow-x-auto custom-scrollbar flex items-center gap-2 h-full">
+                    {filteredChords.map((c: any, i: number) => (
+                        <DraggableChord 
+                            key={c.symbol + i} 
+                            chord={c} 
+                            onClick={() => playOne(c)}
+                            className="h-10 w-auto min-w-[64px] bg-[var(--bg-surface)] hover:bg-[var(--bg-element)] shadow-sm border border-[var(--border)] cursor-pointer hover:scale-105 active:scale-95 transition-all" 
+                        />
+                    ))}
+                    {filteredChords.length === 0 && (
+                        <span className="text-[10px] text-white/20 italic px-2">No chords match filter</span>
+                    )}
+                </div>
             </div>
         )}
 
@@ -193,9 +252,18 @@ export const ProgressionStrip = ({ progression, onRemove, activeIndex, onDropCho
                     <HarmonicGraph progression={progression} currentKey={currentKey} scaleType={scaleType} />
                     {progression.map((c: any, i: number) => (
                         <React.Fragment key={i}>
-                            <TimelineNode chord={c} index={i} isActive={i===activeIndex} onRemove={onRemove} onResize={onResize} 
-                                onDragStart={() => setDragState(s => ({...s, dragging:i}))} onDragEnter={() => setDragState(s => ({...s, target:i}))}
-                                onDrop={(e: any) => handleDrop(e, i)} isDropTarget={dragState.target===i} isDragging={dragState.dragging===i} />
+                            <TimelineNode 
+                                chord={c} 
+                                index={i} 
+                                isActive={i===activeIndex} 
+                                onRemove={(idx: number) => handleProgression('remove', idx)} 
+                                onResize={(idx: number, dur: number) => handleProgression('resize', { index: idx, duration: dur })}
+                                onDragStart={() => setDragState(s => ({...s, dragging:i}))} 
+                                onDragEnter={() => setDragState(s => ({...s, target:i}))}
+                                onDrop={(e: any) => handleDrop(e, i)} 
+                                isDropTarget={dragState.target===i} 
+                                isDragging={dragState.dragging===i} 
+                            />
                             {(i+1) % 4 === 0 && <div className="h-14 w-px bg-white/10 mx-1 shrink-0 relative"><span className="absolute -top-3 text-[9px] text-[var(--text-dim)]">{(i/4)+1}</span></div>}
                         </React.Fragment>
                     ))}

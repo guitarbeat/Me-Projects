@@ -29,11 +29,12 @@ export const Typo = ({ variant='body', as, children, className, ...props }: Typo
 };
 
 export interface SurfaceProps extends React.HTMLAttributes<HTMLDivElement> {
-    variant?: 'panel' | 'element' | 'card' | 'ghost' | 'tooltip';
+    variant?: 'panel' | 'element' | 'card' | 'ghost' | 'tooltip' | 'overlay';
     interactive?: boolean;
     active?: boolean;
     className?: string;
     children?: React.ReactNode;
+    style?: React.CSSProperties;
 }
 
 export const Surface = ({ children, className, interactive, variant='panel', active, ...props }: SurfaceProps) => {
@@ -42,7 +43,8 @@ export const Surface = ({ children, className, interactive, variant='panel', act
       element: "bg-[var(--bg-element)] border border-[var(--border)] rounded-lg shadow-sm", 
       card: "bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl shadow-sm", 
       ghost: "bg-transparent border border-transparent rounded-lg", 
-      tooltip: "bg-[#09090b]/90 backdrop-blur-xl border border-white/10 shadow-2xl rounded-lg z-[100] text-xs text-[var(--text-main)] px-3 py-2 pointer-events-none" 
+      tooltip: "bg-[#09090b]/90 backdrop-blur-xl border border-white/10 shadow-2xl rounded-lg z-[100] text-xs text-[var(--text-main)] px-3 py-2 pointer-events-none",
+      overlay: "bg-black/80 backdrop-blur-xl border border-white/10 shadow-2xl rounded-lg z-[100]"
     };
     return <div className={cn("interact-base", v[variant as keyof typeof v], interactive && "cursor-pointer interact-lift", active && "border-[var(--accent)] bg-[var(--bg-surface)] ring-1 ring-[var(--accent)]", className)} {...props}>{children}</div>;
 };
@@ -100,6 +102,14 @@ export const Stat = ({ label, value, icon: Icon, color }: any) => (
             <span className="text-[7px] font-bold text-white/30 uppercase truncate">{label}</span>
             <span className="text-[9px] font-bold text-white/90 truncate max-w-[80px] sm:max-w-[120px]">{value}</span>
         </div>
+    </div>
+);
+
+// --- DRAG HANDLE ---
+
+export const DragHandle = ({ vertical = false, active, className, ...props }: any) => (
+    <div className={cn("flex items-center justify-center transition-all group interact-base cursor-grab active:cursor-grabbing", vertical ? "w-4 h-full cursor-col-resize" : "h-4 w-full cursor-row-resize", className)} {...props}>
+        <div className={cn("rounded-full bg-[var(--border)] transition-all group-hover:bg-[var(--accent)] opacity-50 group-hover:opacity-100", vertical ? "w-1 h-8" : "h-1 w-12", active && "bg-[var(--accent)] opacity-100 scale-110")} />
     </div>
 );
 

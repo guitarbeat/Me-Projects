@@ -1,5 +1,3 @@
-
-
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { Thermometer, MousePointer2, Activity, Wind, Music2, Settings, Sliders } from 'lucide-react';
 import { SCALE_DEFS, EMOTIONAL_ZONES, getTempoFromArousal, getCompassLabel, ScaleDef } from './lib';
@@ -172,25 +170,25 @@ export const MoodSelector = () => {
     };
 
     return (
-        <div ref={containerRef} className="absolute inset-0 w-full h-full bg-black overflow-hidden flex flex-row select-none">
+        <div ref={containerRef} className="absolute inset-0 w-full h-full bg-[var(--bg-main)] overflow-hidden flex flex-row select-none">
             
             {/* --- VISUALIZERS --- */}
             <div className="flex-1 relative overflow-hidden perspective-[1000px] flex flex-col min-w-0">
                 {isDragging && (
-                    <div className="fixed top-0 bottom-0 w-[1px] bg-white z-[9999] pointer-events-none" style={{ left: beamX, background: 'linear-gradient(to top, var(--accent) 0%, transparent 100%)', boxShadow: '0 0 15px var(--accent)', opacity: 0.8 }}>
+                    <div className="fixed top-0 bottom-0 w-[1px] bg-[var(--accent)] z-[9999] pointer-events-none" style={{ left: beamX, background: 'linear-gradient(to top, var(--accent) 0%, transparent 100%)', boxShadow: '0 0 15px var(--accent)', opacity: 0.8 }}>
                         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-64 bg-[var(--accent)] opacity-20 blur-3xl rounded-full" />
                     </div>
                 )}
                 
                 {/* TENSION HUD */}
                 <div className={cn("absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-opacity duration-300 z-50 flex flex-col items-center", isScrolling ? "opacity-100" : "opacity-0")}>
-                   <div className="bg-black/80 backdrop-blur-xl border border-[var(--accent)] px-6 py-4 rounded-2xl flex flex-col items-center shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                   <div className="bg-[var(--bg-glass)] backdrop-blur-xl border border-[var(--accent)] px-6 py-4 rounded-2xl flex flex-col items-center shadow-[0_0_30px_rgba(0,0,0,0.5)]">
                        <div className="flex items-center gap-2 mb-2">
                            <Thermometer size={12} className="text-[var(--accent)]" />
                            <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-[0.2em]">Harmonic Tension</span>
                        </div>
-                       <div className="text-3xl font-black text-white tabular-nums tracking-tighter">{(mood.tension * 100).toFixed(0)}<span className="text-sm text-[var(--accent)]">%</span></div>
-                       <div className="w-24 h-1 bg-white/10 rounded-full mt-2 overflow-hidden"><div className="h-full bg-[var(--accent)] transition-all duration-75" style={{width: `${mood.tension*100}%`}} /></div>
+                       <div className="text-3xl font-black text-[var(--text-main)] tabular-nums tracking-tighter">{(mood.tension * 100).toFixed(0)}<span className="text-sm text-[var(--accent)]">%</span></div>
+                       <div className="w-24 h-1 bg-[var(--border)] rounded-full mt-2 overflow-hidden"><div className="h-full bg-[var(--accent)] transition-all duration-75" style={{width: `${mood.tension*100}%`}} /></div>
                    </div>
                </div>
 
@@ -215,14 +213,14 @@ export const MoodSelector = () => {
                             radial-gradient(circle at 0% 0%, rgba(220, 38, 38, 0.4) 0%, transparent 70%),
                             radial-gradient(circle at 0% 100%, rgba(59, 130, 246, 0.4) 0%, transparent 70%),
                             radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.4) 0%, transparent 70%),
-                            linear-gradient(to bottom, #000000 0%, transparent 10%, transparent 90%, #000000 100%)
+                            linear-gradient(to bottom, var(--bg-main) 0%, transparent 10%, transparent 90%, var(--bg-main) 100%)
                         `,
                         opacity: 1 - (mood.tension * 0.5)
                     }}/>
                     
                     <div className="absolute inset-0 pointer-events-none transition-opacity duration-300" 
                          style={{
-                             backgroundImage: 'linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)', 
+                             backgroundImage: 'linear-gradient(var(--border-soft) 1px, transparent 1px), linear-gradient(90deg, var(--border-soft) 1px, transparent 1px)', 
                              backgroundSize: '50px 50px',
                              opacity: Math.max(0, (1 - mood.tension * 1.5)) * 0.15,
                              transform: `scale(${1 + mood.tension * 0.8})`
@@ -239,13 +237,13 @@ export const MoodSelector = () => {
                             <div key={st} className="absolute w-4 h-4 -ml-2 -mt-2 rounded-full transition-all duration-500 shadow-lg pointer-events-none flex items-center justify-center group"
                                 style={{ 
                                     left: `${x}%`, top: `${y}%`, 
-                                    backgroundColor: isActive ? 'white' : 'rgba(255,255,255,0.2)', 
+                                    backgroundColor: isActive ? 'var(--text-main)' : 'var(--bg-soft-hover)', 
                                     transform: isActive ? 'scale(1.5)' : 'scale(1)',
-                                    boxShadow: isActive ? '0 0 20px rgba(255,255,255,0.6)' : 'none',
+                                    boxShadow: isActive ? '0 0 20px var(--text-main)' : 'none',
                                     opacity: isScaleLocked && !isActive ? 0.3 : 1
                                 }}
                             >
-                                <span className={cn("absolute -top-6 whitespace-nowrap text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10 transition-opacity", isActive ? "text-white opacity-100" : "text-white/50 opacity-0")}>{st}</span>
+                                <span className={cn("absolute -top-6 whitespace-nowrap text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-[var(--bg-glass)] backdrop-blur-md border border-[var(--border)] transition-opacity", isActive ? "text-[var(--text-main)] opacity-100" : "text-[var(--text-muted)] opacity-0")}>{st}</span>
                             </div>
                         );
                     })}
@@ -267,9 +265,9 @@ export const MoodSelector = () => {
                         <div className="w-1.5 h-1.5 bg-current rounded-full shadow-[0_0_10px_currentColor]"/>
                         
                         {isDragging && (
-                             <div className="absolute top-0 left-full ml-4 bg-black/80 backdrop-blur border border-white/20 rounded px-3 py-2 whitespace-nowrap flex flex-col items-start gap-1 pointer-events-none animate-in fade-in slide-in-from-left-2 z-[60] shadow-xl">
-                                <div className="flex items-center justify-between w-full gap-4 border-b border-white/10 pb-1 mb-0.5">
-                                     <span className="text-[10px] font-black text-white uppercase tracking-wider">{currentScale}</span>
+                             <div className="absolute top-0 left-full ml-4 bg-[var(--bg-glass)] backdrop-blur border border-[var(--border)] rounded px-3 py-2 whitespace-nowrap flex flex-col items-start gap-1 pointer-events-none animate-in fade-in slide-in-from-left-2 z-[60] shadow-xl">
+                                <div className="flex items-center justify-between w-full gap-4 border-b border-[var(--border)] pb-1 mb-0.5">
+                                     <span className="text-[10px] font-black text-[var(--text-main)] uppercase tracking-wider">{currentScale}</span>
                                      <span className="text-[9px] font-mono text-[var(--accent)]">{calculatedBpm} BPM</span>
                                 </div>
                                 <div className="flex flex-col gap-0.5">
@@ -284,27 +282,27 @@ export const MoodSelector = () => {
 
                 {/* Hints */}
                 <div className={cn("absolute bottom-20 left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center gap-1 transition-opacity duration-700 delay-500", showHint ? "opacity-100" : "opacity-0")}>
-                     <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 flex items-center gap-3">
+                     <div className="bg-[var(--bg-glass)] backdrop-blur-md px-4 py-2 rounded-full border border-[var(--border)] flex items-center gap-3">
                          <MousePointer2 size={14} className="text-[var(--accent)] animate-bounce" />
-                         <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">Scroll/Pinch for Tension</span>
+                         <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Scroll/Pinch for Tension</span>
                      </div>
                 </div>
 
                 {/* Settings Toggle */}
                 <div className="absolute top-6 right-6 pointer-events-auto z-20 flex flex-col items-end gap-2">
-                    <button onClick={() => setShowSettings(!showSettings)} className={cn("w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200", showSettings ? "bg-[var(--accent)] text-black border-[var(--accent)]" : "bg-black/20 border-white/10 text-white/40 hover:text-white hover:bg-black/40")}>
+                    <button onClick={() => setShowSettings(!showSettings)} className={cn("w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200", showSettings ? "bg-[var(--accent)] text-black border-[var(--accent)]" : "bg-[var(--bg-soft)] border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-soft-hover)]")}>
                         <Settings size={14} />
                     </button>
                     {showSettings && (
-                        <div className="bg-black/80 backdrop-blur-xl border border-white/10 p-4 rounded-xl shadow-2xl w-64 animate-in fade-in slide-in-from-top-2">
-                            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-white/5">
+                        <div className="bg-[var(--bg-glass)] backdrop-blur-xl border border-[var(--border)] p-4 rounded-xl shadow-2xl w-64 animate-in fade-in slide-in-from-top-2">
+                            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-[var(--border)]">
                                 <Sliders size={12} className="text-[var(--accent)]"/>
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-white/70">Input Mapping</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Input Mapping</span>
                             </div>
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <div className="flex justify-between items-center text-[10px]"><span className="text-white/60">Pad Sensitivity</span><span className="font-mono text-[var(--accent)]">{sensitivity.toFixed(1)}</span></div>
-                                    <input type="range" min="0.5" max="3.0" step="0.1" value={sensitivity} onChange={(e) => setSensitivity(parseFloat(e.target.value))} className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[var(--accent)]" />
+                                    <div className="flex justify-between items-center text-[10px]"><span className="text-[var(--text-dim)]">Pad Sensitivity</span><span className="font-mono text-[var(--accent)]">{sensitivity.toFixed(1)}</span></div>
+                                    <input type="range" min="0.5" max="3.0" step="0.1" value={sensitivity} onChange={(e) => setSensitivity(parseFloat(e.target.value))} className="w-full h-1 bg-[var(--border)] rounded-lg appearance-none cursor-pointer accent-[var(--accent)]" />
                                 </div>
                             </div>
                         </div>
@@ -313,7 +311,7 @@ export const MoodSelector = () => {
 
                 {/* Zones Toggle */}
                 <div className="absolute bottom-6 right-6 pointer-events-auto transition-all duration-300 z-20">
-                     <button onClick={() => setShowZones(!showZones)} className="text-[10px] text-white/40 hover:text-white border border-white/10 px-3 py-1.5 rounded-full uppercase tracking-wider backdrop-blur-md bg-black/20 hover:bg-black/40 transition-colors">
+                     <button onClick={() => setShowZones(!showZones)} className="text-[10px] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border)] px-3 py-1.5 rounded-full uppercase tracking-wider backdrop-blur-md bg-[var(--bg-soft)] hover:bg-[var(--bg-soft-hover)] transition-colors">
                         {showZones ? 'Hide Zones' : 'Show Zones'}
                      </button>
                 </div>
@@ -332,9 +330,9 @@ export const MoodSelector = () => {
                          const isVisible = showZones || isDragging || isHover;
                          return (
                             <div key={i} className={cn("absolute flex flex-col items-center justify-center text-center -translate-x-1/2 -translate-y-1/2 transition-all duration-300", isHover ? "z-10 scale-110 opacity-100" : isVisible ? "opacity-40 scale-100" : "opacity-0 scale-90")} style={{ left: `${x}%`, top: `${y}%` }}>
-                                <span className={cn("text-[10px] font-black tracking-widest uppercase whitespace-nowrap transition-colors", isHover ? "text-white" : "text-white/60")}>{gem.label}</span>
+                                <span className={cn("text-[10px] font-black tracking-widest uppercase whitespace-nowrap transition-colors", isHover ? "text-[var(--text-main)]" : "text-[var(--text-dim)]")}>{gem.label}</span>
                                 <div className={cn("transition-all duration-300 ease-out overflow-hidden flex flex-col items-center", isHover ? "h-auto opacity-100 mt-1" : "h-0 opacity-0")}>
-                                     <span className="text-[8px] font-mono text-[var(--accent)] bg-black/90 backdrop-blur px-2 py-0.5 rounded border border-white/10 shadow-xl whitespace-nowrap">{gem.desc}</span>
+                                     <span className="text-[8px] font-mono text-[var(--accent)] bg-[var(--bg-glass)] backdrop-blur px-2 py-0.5 rounded border border-[var(--border)] shadow-xl whitespace-nowrap">{gem.desc}</span>
                                 </div>
                             </div>
                         )

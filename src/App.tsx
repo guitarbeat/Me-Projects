@@ -1,6 +1,5 @@
-
 import React, { Suspense } from 'react';
-import { useStore, useDerivedData, Chord } from './lib';
+import { useStore, useDerivedData, Chord, useUrlSync } from './lib';
 import { ProgressionStrip, cn, ControlPanel, SplitView, ResizableTopPanel, MoodSelector } from './components';
 import { Loader2 } from 'lucide-react';
 
@@ -21,6 +20,9 @@ export default function App() {
         playOne
     } = useStore();
 
+    // Enable deep linking/URL synchronization
+    useUrlSync();
+
     // --- DERIVED DATA ---
     const { chords, tensionChords } = useDerivedData();
 
@@ -28,18 +30,18 @@ export default function App() {
     const contextChord = progression.slice().reverse().find(c => !c.isRest) || null;
 
     return (
-        <div className="flex flex-col h-screen w-full bg-[#09090b] text-[var(--text-main)] overflow-hidden font-sans relative selection:bg-[var(--accent)] selection:text-black">
+        <div className="flex flex-col h-screen w-full bg-[var(--bg-main)] text-[var(--text-main)] overflow-hidden font-sans relative selection:bg-[var(--accent)] selection:text-black transition-colors duration-300">
             
             {/* Background Texture */}
-            <div className="absolute inset-0 pointer-events-none z-0 opacity-40" style={{
-                backgroundImage: 'radial-gradient(circle at 50% 0%, #1c1917 0%, #000000 100%)'
+            <div className="absolute inset-0 pointer-events-none z-0 opacity-40 mix-blend-overlay" style={{
+                backgroundImage: 'radial-gradient(circle at 50% 0%, var(--bg-surface) 0%, var(--bg-main) 100%)'
             }}/>
 
             {/* Top Control Panel */}
             <ResizableTopPanel 
-                minHeight={60} 
-                maxHeight={120} 
-                defaultHeight={60}
+                minHeight={80} 
+                maxHeight={140} 
+                defaultHeight={88}
                 children={<ControlPanel />}
             />
 

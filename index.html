@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -15,30 +16,79 @@
     <meta name="apple-mobile-web-app-title" content="Harmonic">
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: ['class', '[data-theme="dark"]'],
+        theme: {
+          extend: {
+            colors: {
+              border: "var(--border)",
+              input: "var(--input)",
+              ring: "var(--ring)",
+              background: "var(--bg-main)",
+              foreground: "var(--text-main)",
+            }
+          }
+        },
+        safelist: [
+          { pattern: /text-(emerald|sky|rose|stone)-(100|400|500|600|900)/, variants: ['dark'] },
+          { pattern: /bg-(emerald|sky|rose|stone)-(100|400|500|900|950)(\/(10|20|30|40|50))?/, variants: ['hover', 'dark', 'dark:hover'] },
+          { pattern: /border-(emerald|sky|rose|stone)-(500)(\/(30|40|50))?/, variants: ['dark'] }
+        ]
+      }
+    </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
       :root {
         /* 
-         * --- COLOR PALETTE ---
+         * --- LIGHT THEME (Default) ---
          */
-        --bg-main: #141110;       
-        --bg-panel: #1c1817;      
-        --bg-surface: #292422;    
-        --bg-element: #38312e;    
-        --bg-glass: rgba(28, 24, 23, 0.9); 
+        --bg-main: #fafaf9;       /* stone-50 */
+        --bg-panel: #ffffff;      /* white */
+        --bg-surface: #f5f5f4;    /* stone-100 */
+        --bg-element: #e7e5e4;    /* stone-200 */
+        --bg-glass: rgba(255, 255, 255, 0.85);
         
-        --text-main: #d8c8b8; 
-        --text-muted: #beb3ac; 
-        --text-dim: #756a65;   
+        --text-main: #0c0a09;     /* stone-950 */
+        --text-muted: #57534e;    /* stone-600 */
+        --text-dim: #a8a29e;      /* stone-400 */
         
-        --border: #38312e;        
-        --border-hover: #5c504a;  
+        --border: #e7e5e4;        /* stone-200 */
+        --border-hover: #d6d3d1;  /* stone-300 */
+        --border-soft: rgba(0, 0, 0, 0.1);
         
-        --accent: #d13a34;        
+        --accent: #dc2626;        /* red-600 */
 
+        --bg-soft: rgba(0, 0, 0, 0.05);
+        --bg-soft-hover: rgba(0, 0, 0, 0.08);
+        
         /* --- MOTION CURVES --- */
         --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
         --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      [data-theme="dark"] {
+        /* 
+         * --- DARK THEME ---
+         */
+        --bg-main: #0c0a09;       /* stone-950 */
+        --bg-panel: #1c1917;      /* stone-900 */
+        --bg-surface: #292524;    /* stone-800 */
+        --bg-element: #1c1917;    /* stone-900 */
+        --bg-glass: rgba(28, 24, 23, 0.85); 
+        
+        --text-main: #e7e5e4;     /* stone-200 */
+        --text-muted: #a8a29e;    /* stone-400 */
+        --text-dim: #57534e;      /* stone-600 */
+        
+        --border: #292524;        /* stone-800 */
+        --border-hover: #44403c;  /* stone-700 */
+        --border-soft: rgba(255, 255, 255, 0.1);
+        
+        --accent: #ef4444;        /* red-500 */
+        
+        --bg-soft: rgba(255, 255, 255, 0.05);
+        --bg-soft-hover: rgba(255, 255, 255, 0.1);
       }
 
       body {
@@ -49,6 +99,7 @@
         height: 100vh;
         overflow: hidden;
         -webkit-font-smoothing: antialiased;
+        transition: background-color 0.3s ease, color 0.3s ease;
       }
       
       /* Utilities */
@@ -70,7 +121,7 @@
       
       .interact-lift:hover {
         transform: translateY(-2px);
-        box-shadow: 0 12px 24px -10px rgba(0,0,0,0.3);
+        box-shadow: 0 12px 24px -10px rgba(0,0,0,0.15);
         border-color: var(--border-hover);
         z-index: 10;
       }
@@ -82,19 +133,19 @@
 
       .interact-lift-sm:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px -4px rgba(0,0,0,0.2);
+        box-shadow: 0 4px 12px -4px rgba(0,0,0,0.1);
         border-color: var(--border-hover);
-        filter: brightness(1.05);
         z-index: 5;
       }
+
       .interact-lift-sm:active {
         transform: translateY(0) scale(0.98);
         box-shadow: none;
         transition-duration: 100ms;
       }
 
-      .interact-push:hover { transform: translateY(-1px); filter: brightness(1.1); }
-      .interact-push:active { transform: translateY(1px) scale(0.97); filter: brightness(0.95); transition-duration: 100ms; }
+      .interact-push:hover { transform: translateY(-1px); }
+      .interact-push:active { transform: translateY(1px) scale(0.97); transition-duration: 100ms; }
 
       .interact-scale:hover { transform: scale(1.1); color: var(--text-main); }
       .interact-scale:active { transform: scale(0.9); transition-duration: 100ms; }
@@ -105,6 +156,24 @@
         transform: translateY(-1px);
       }
     </style>
+    <script>
+      (function() {
+        try {
+          var localTheme = localStorage.getItem('theme');
+          var supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          
+          if (localTheme === 'dark' || (!localTheme && supportDarkMode)) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0c0a09');
+          } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', '#fafaf9');
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      })();
+    </script>
     <script type="importmap">
 {
   "imports": {

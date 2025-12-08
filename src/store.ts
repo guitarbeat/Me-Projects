@@ -6,6 +6,7 @@ import { findClosestScale, getTempoFromArousal } from './theory';
 
 interface AppState {
     // --- STATE ---
+    theme: 'light' | 'dark';
     key: Note;
     scale: ScaleType;
     complexity: ChordComplexity;
@@ -30,6 +31,7 @@ interface AppState {
     playIndex: number | null;
 
     // --- ACTIONS ---
+    toggleTheme: () => void;
     setKey: (k: Note) => void;
     setScale: (s: ScaleType) => void;
     setComplexity: (c: ChordComplexity) => void;
@@ -52,6 +54,12 @@ interface AppState {
 
 export const useStore = create<AppState>((set, get) => ({
     // Initial State
+    theme: (() => {
+        if (typeof document === 'undefined') return 'dark';
+        const attr = document.documentElement.getAttribute('data-theme');
+        if (attr === 'light' || attr === 'dark') return attr as 'light' | 'dark';
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    })(),
     key: 'C',
     scale: ScaleType.Major,
     complexity: 'triad',
@@ -70,6 +78,14 @@ export const useStore = create<AppState>((set, get) => ({
     playIndex: null,
 
     // Actions
+    toggleTheme: () => set((state) => {
+        const newTheme = state.theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', newTheme === 'dark' ? '#0c0a09' : '#fafaf9');
+        localStorage.setItem('theme', newTheme);
+        return { theme: newTheme };
+    }),
+
     setKey: (key) => set({ key }),
     
     setScale: (scale) => {
@@ -127,11 +143,6 @@ export const useStore = create<AppState>((set, get) => ({
         if (!state.isScaleLocked) {
              newScale = findClosestScale(v, a, currentTension, state.scale);
         }
-
-        // 3. Update BPM if actively dragging (optional, can be annoying if explicit, let's stick to scale-based snap for BPM or explicit control)
-        // Kept simple for now: BPM changes on Scale snap (in setScale) or manual control.
-        // However, if we change scale via setMood, we should trigger setScale logic or do it manually?
-        // Let's just update scale state here to avoid loop, BPM can drift naturally.
         
         set({ 
             mood: { valence: v, arousal: a, tension: currentTension },

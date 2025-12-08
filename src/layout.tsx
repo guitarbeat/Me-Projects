@@ -1,73 +1,66 @@
 
-import React, { useState, useRef } from 'react';
-import { Play, Square, ListMusic, Network, Pause, Magnet, Trash2, Lock, Unlock, Music, Activity, Layers, Hexagon, MoveVertical, ChevronUp, ChevronDown, ChevronsUpDown } from 'lucide-react';
-import { InstrumentType, ChordComplexity, Note, ScaleType, CIRCLE_KEYS } from './lib';
-import { cn, Button, IconButton, Stat, ToolbarGroup } from './ui';
+import React, { useState, useRef, useEffect } from 'react';
+import { ChevronsUpDown, ChevronsLeftRight, Play, Pause, Square, Layers, Music, Activity, Lock, Unlock, Magnet, Trash2, Network, ListMusic, Hexagon } from 'lucide-react';
+import { InstrumentType, Chord, Note, ScaleType, CIRCLE_KEYS, ChordComplexity } from './lib';
+import { cn, Surface, IconButton, Badge, DataPoint, DragHandle, Button } from './ui';
+import { DraggableChord } from './sequencer';
 
-// --- DRAGGABLE HOOK ---
-const useDrag = (onDrag: (dy: number) => void, onEnd?: () => void) => {
-    const startY = useRef(0);
+// --- SHARED HOOKS ---
+
+const useDrag = (onDrag: (delta: number) => void, onEnd?: () => void) => {
+    const startVal = useRef(0);
     const [isDragging, setIsDragging] = useState(false);
-    return {
-        isDragging,
-        handlers: {
-            onPointerDown: (e: React.PointerEvent) => { 
-                setIsDragging(true); 
-                startY.current = e.clientY; 
-                (e.target as Element).setPointerCapture(e.pointerId); 
-            },
-            onPointerMove: (e: React.PointerEvent) => { 
-                if (isDragging) onDrag(e.clientY - startY.current); 
-            },
-            onPointerUp: (e: React.PointerEvent) => { 
-                setIsDragging(false); 
-                (e.target as Element).releasePointerCapture(e.pointerId); 
-                if(onEnd) onEnd(); 
+    
+    const handlers = {
+        onPointerDown: (e: React.PointerEvent) => {
+            setIsDragging(true);
+            startVal.current = e.clientY;
+            try {
+                (e.target as Element).setPointerCapture(e.pointerId);
+            } catch (err) {
+                // Ignore if capture fails
             }
+            e.preventDefault();
+        },
+        onPointerMove: (e: React.PointerEvent) => {
+            if (isDragging) onDrag(e.clientY - startVal.current);
+        },
+        onPointerUp: (e: React.PointerEvent) => {
+            setIsDragging(false);
+            try {
+                (e.target as Element).releasePointerCapture(e.pointerId);
+            } catch (err) {}
+            if (onEnd) onEnd();
         }
     };
+    return { isDragging, handlers };
 };
 
-// --- WRAPPERS ---
-export const PanelWrapper = ({ minimise, children, overlay, anchor, bgColor, isDragging }: any) => (
-    <div 
-        className={cn(
-            "relative w-full h-full overflow-hidden shadow-2xl ring-1 ring-white/5 rounded-2xl bg-[var(--bg-panel)] flex flex-col will-change-transform",
-            isDragging ? "transition-none" : "transition-all duration-300 ease-[var(--ease-out-expo)]"
-        )}
-        style={{ 
-            transform: `scale(${1 - (1 - (1 - minimise)) * 0.05})`, 
-            transformOrigin: anchor === 'top' ? 'top center' : 'bottom center', 
-            backgroundColor: bgColor 
-        }}
-    >
-        <div 
-            className="flex-1 w-full h-full transition-all duration-300 ease-[var(--ease-out-expo)] flex items-center justify-center overflow-hidden relative"
-            style={{ 
-                filter: `blur(${minimise * 16}px)`, 
-                opacity: Math.max(0, 1 - minimise * 1.5), 
-                pointerEvents: minimise > 0.3 ? 'none' : 'auto' 
-            }}
-        >
-            {children}
-        </div>
-        <div 
-            className={cn(
-                "absolute inset-0 flex items-center justify-center z-50 transition-opacity duration-300", 
-                minimise > 0.5 ? "pointer-events-auto" : "pointer-events-none"
-            )} 
-            style={{ opacity: Math.max(0, (minimise - 0.4) * 2) }}
-        >
-            {minimise > 0.1 && (
-                <div className="bg-black/60 backdrop-blur-xl border border-white/10 p-2 rounded-2xl shadow-2xl hover:scale-105 transition-transform duration-300">
-                    {overlay}
-                </div>
-            )}
-        </div>
-    </div>
-);
+// --- LAYOUT COMPONENTS ---
 
-// --- DRAGGABLE PANELS ---
+export const PanelWrapper = ({ minimise, children, overlay, anchor, bgColor, isDragging }: any) => {
+    const scale = 1 - (1 - (1 - minimise)) * 0.05;
+    const blur = minimise * 16;
+    const transformOrigin = anchor === 'top' ? 'top center' : 'bottom center';
+    
+    return (
+        <div 
+            className={cn("relative w-full h-full overflow-hidden shadow-2xl ring-1 ring-white/5 flex flex-col will-change-transform bg-[var(--bg-main)]", isDragging ? "transition-none" : "transition-all duration-500 ease-[var(--ease-out-expo)]")}
+            style={{ transform: `scale(${scale})`, transformOrigin, backgroundColor: bgColor, borderRadius: minimise > 0.05 ? '24px' : '0px' }}
+        >
+            <div className="flex-1 w-full h-full flex items-center justify-center overflow-hidden relative transition-all duration-500"
+                style={{ filter: `blur(${blur}px)`, opacity: Math.max(0, 1 - minimise * 1.5), pointerEvents: minimise > 0.3 ? 'none' : 'auto' }}>
+                {children}
+            </div>
+            
+            {/* Overlay for minimized state */}
+            <div className={cn("absolute inset-0 flex items-center justify-center z-50 transition-opacity duration-500 pointer-events-none", minimise > 0.5 && "pointer-events-auto")} 
+                style={{ opacity: Math.max(0, (minimise - 0.4) * 2) }}>
+                {minimise > 0.1 && <Surface variant="overlay" className="p-2 hover:scale-105 transition-transform duration-300">{overlay}</Surface>}
+            </div>
+        </div>
+    );
+};
 
 export const ResizableTopPanel = ({ children, minHeight, maxHeight, defaultHeight }: any) => {
     const [h, setH] = useState(defaultHeight);
@@ -77,46 +70,145 @@ export const ResizableTopPanel = ({ children, minHeight, maxHeight, defaultHeigh
     const { isDragging, handlers } = useDrag((dy) => {
         if (collapsed && dy > 20) { setCollapsed(false); setH(minHeight); startH.current = minHeight; return; }
         const newH = Math.min(Math.max(startH.current + dy, minHeight), maxHeight);
-        if (startH.current + dy < minHeight - 20) setCollapsed(true);
+        if (startH.current + dy < minHeight - 40) setCollapsed(true);
         else setH(newH);
     }, () => startH.current = h);
 
     return (
-        <div 
-            className={cn(
-                "w-full relative z-[60] bg-[var(--bg-main)] shadow-lg transition-all ease-[var(--ease-out-expo)] group/panel",
-                isDragging ? "duration-0" : "duration-300"
-            )} 
-            style={{ height: collapsed ? 12 : h + 12 }}
-        >
-            <div 
-                className={cn(
-                    "w-full overflow-hidden transition-all duration-300 ease-[var(--ease-out-expo)] pb-3 border-b border-[var(--border)]", 
-                    collapsed ? "opacity-0 -translate-y-4" : "opacity-100"
-                )} 
-                style={{ height: h }}
-            >
+        <div className={cn("w-full relative z-[60] bg-[#0c0a09] shadow-lg transition-all ease-[var(--ease-out-expo)] group/panel border-b border-[var(--border)]", isDragging ? "duration-0" : "duration-500")} 
+             style={{ height: collapsed ? 12 : h }}>
+            <div className={cn("w-full h-full overflow-hidden transition-all duration-500 ease-[var(--ease-out-expo)] relative", collapsed ? "opacity-0 -translate-y-4" : "opacity-100")} 
+                 style={{ paddingBottom: 16 }}>
                 {children}
             </div>
-            
-            {/* DRAG HANDLE */}
-            <div 
-                className="absolute bottom-0 inset-x-0 h-3 flex items-center justify-center cursor-row-resize hover:bg-white/5 group/handle interact-base" 
-                onClick={() => setCollapsed(!collapsed)}
-                {...handlers}
-            >
-                <div 
-                    className={cn(
-                        "w-16 h-1 rounded-full bg-[var(--border)] group-hover/handle:bg-[var(--accent)] transition-all duration-300 opacity-50 group-hover/handle:opacity-100", 
-                        isDragging && "w-24 bg-[var(--accent)] opacity-100"
-                    )} 
-                />
+            <DragHandle className="absolute bottom-0 inset-x-0 h-3 z-50" active={isDragging} {...handlers} onClick={() => setCollapsed(!collapsed)} />
+        </div>
+    );
+};
+
+interface ControlPanelProps {
+    isPlaying: boolean;
+    togglePlay: () => void;
+    timeSig: { num: number, den: number };
+    setTimeSig: (val: { num: number, den: number }) => void;
+    complexity: ChordComplexity;
+    setComplexity: (c: ChordComplexity) => void;
+    onRest: () => void;
+    onSnap: () => void;
+    onClear: () => void;
+    currentKey: Note;
+    setKey: (n: Note) => void;
+    scale: ScaleType;
+    setScale: (s: ScaleType) => void;
+    isScaleLocked: boolean;
+    toggleScaleLock: () => void;
+    showPath: boolean;
+    togglePath: () => void;
+    instrument: InstrumentType;
+    setInstrument: (i: InstrumentType) => void;
+    view: string;
+    setView: (v: string) => void;
+    progressionCount: number;
+    scaleMeta: { desc: string; characteristic: string };
+    analysis: { vibe: string; mode: string; texture: string };
+    availableChords: Chord[];
+}
+
+export const ControlPanel = (props: ControlPanelProps) => {
+    return (
+        <div className="w-full h-full flex flex-col p-2 gap-2 select-none">
+            {/* ROW 1: Main Controls */}
+            <div className="flex flex-wrap items-center gap-2 min-h-[40px] shrink-0">
+                
+                {/* Key Center */}
+                <Surface variant="element" className="flex items-center p-1 gap-2 h-10 px-2 shrink-0">
+                    <div className="flex flex-col">
+                        <span className="text-[8px] font-black uppercase tracking-widest text-[var(--text-dim)]">Key</span>
+                        <div className="flex items-center gap-1">
+                            <select value={props.currentKey} onChange={e => props.setKey(e.target.value as Note)} className="bg-transparent font-bold text-sm outline-none cursor-pointer hover:text-[var(--accent)]">
+                                {CIRCLE_KEYS.map(k => <option key={k} value={k}>{k}</option>)}
+                            </select>
+                            <select value={props.scale} onChange={e => props.setScale(e.target.value as ScaleType)} disabled={props.isScaleLocked} className="bg-transparent text-xs font-medium text-[var(--text-muted)] outline-none cursor-pointer w-24 truncate hover:text-white">
+                                {Object.values(ScaleType).map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                        </div>
+                    </div>
+                    <div className="w-px h-6 bg-[var(--border)]" />
+                    <IconButton icon={props.isScaleLocked ? Lock : Unlock} size="sm" onClick={props.toggleScaleLock} className={props.isScaleLocked ? "text-[var(--accent)]" : "text-[var(--text-dim)]"} />
+                </Surface>
+
+                {/* Transport */}
+                <Surface variant="element" className="flex items-center p-1 gap-1 h-10 shrink-0">
+                    <Button onClick={props.togglePlay} active={props.isPlaying} className={cn("w-20", props.isPlaying && "text-[var(--accent)]")}><Play size={14} fill={props.isPlaying?"currentColor":"none"}/> {props.isPlaying?"Stop":"Play"}</Button>
+                    <div className="w-px h-4 bg-[var(--border)] mx-1" />
+                    <IconButton onClick={props.onRest} icon={Pause} className="rotate-90" title="Add Rest" />
+                    <IconButton onClick={props.onSnap} icon={Magnet} title="Quantize" />
+                    <IconButton onClick={props.onClear} icon={Trash2} variant="danger" title="Clear All" />
+                </Surface>
+
+                {/* Complexity */}
+                <Surface variant="element" className="flex items-center p-1 gap-1 h-10 shrink-0">
+                    {['triad', '7th', '9th', '11th'].map(c => (
+                        <button key={c} onClick={() => props.setComplexity(c as ChordComplexity)} 
+                            className={cn("px-2 py-1 rounded text-[10px] font-bold uppercase transition-all", props.complexity === c ? "bg-[var(--accent)] text-black" : "text-[var(--text-muted)] hover:text-white hover:bg-[var(--bg-surface)]")}>
+                            {c}
+                        </button>
+                    ))}
+                </Surface>
+
+                <div className="flex-1" />
+
+                {/* Analysis Stats (Hidden on small screens) */}
+                <div className="hidden md:flex items-center gap-2">
+                    <DataPoint label="Vibe" value={props.analysis.vibe} icon={Music} color="text-yellow-400" className="h-10 w-24" />
+                    <DataPoint label="Texture" value={props.analysis.texture} icon={Layers} color="text-emerald-400" className="h-10 w-24" />
+                </div>
+
+                {/* View Switcher */}
+                <Surface variant="element" className="flex items-center p-0.5 gap-0.5 h-10 shrink-0">
+                    <button onClick={() => props.setView('sequencer')} className={cn("px-3 h-full rounded flex items-center gap-2 text-[10px] font-bold uppercase transition-all", props.view === 'sequencer' ? "bg-[var(--bg-surface)] text-white shadow-sm" : "text-[var(--text-dim)] hover:text-white")}>
+                        <ListMusic size={14} /> Seq
+                    </button>
+                    <button onClick={() => props.setView('harmony')} className={cn("px-3 h-full rounded flex items-center gap-2 text-[10px] font-bold uppercase transition-all", props.view === 'harmony' ? "bg-[var(--bg-surface)] text-white shadow-sm" : "text-[var(--text-dim)] hover:text-white")}>
+                        <Network size={14} /> Map
+                    </button>
+                </Surface>
+            </div>
+
+            {/* ROW 2: Palette & Instruments */}
+            <div className="flex-1 min-h-0 flex gap-2">
+                {/* Chord Palette - Scrollable */}
+                <Surface variant="panel" className="flex-1 bg-[var(--bg-element)]/50 flex flex-col overflow-hidden relative">
+                     <div className="absolute top-0 left-0 px-2 py-1 bg-[var(--bg-panel)] border-b border-r border-[var(--border)] rounded-br-lg z-10">
+                        <span className="text-[8px] font-black uppercase tracking-widest text-[var(--text-dim)]">Chord Palette</span>
+                     </div>
+                     <div className="flex-1 overflow-x-auto custom-scrollbar flex items-center px-4 gap-2 pt-4">
+                        {props.availableChords.map((c, i) => (
+                            <DraggableChord key={i} chord={c} className="h-10 w-auto min-w-[70px] bg-[var(--bg-surface)]" />
+                        ))}
+                     </div>
+                </Surface>
+
+                {/* Instrument Selector */}
+                <Surface variant="panel" className="w-auto bg-[var(--bg-element)]/50 flex items-center px-2 gap-1 shrink-0">
+                    {[
+                        { id: 'rhodes', icon: Square },
+                        { id: 'pad', icon: Layers },
+                        { id: 'pluck', icon: Music },
+                        { id: 'synth', icon: Activity }
+                    ].map(inst => (
+                        <button key={inst.id} onClick={() => props.setInstrument(inst.id as InstrumentType)}
+                            className={cn("p-2 rounded-md transition-all hover:scale-105", props.instrument === inst.id ? "text-[var(--accent)] bg-[var(--bg-surface)] shadow-sm" : "text-[var(--text-dim)] hover:text-white")} title={inst.id}>
+                            <inst.icon size={16} />
+                        </button>
+                    ))}
+                </Surface>
             </div>
         </div>
     );
 };
 
-export const SplitView = ({ top, bottom, topOverlay, bottomOverlay }: any) => {
+export const SplitView = ({ top, bottom, topOverlay, bottomOverlay }: { top: React.ReactNode, bottom: React.ReactNode, topOverlay?: React.ReactNode, bottomOverlay?: React.ReactNode }) => {
     const [split, setSplit] = useState(0.5);
     const [isDragging, setIsDragging] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
@@ -127,137 +219,39 @@ export const SplitView = ({ top, bottom, topOverlay, bottomOverlay }: any) => {
         const raw = (e.clientY - rect.top) / rect.height;
         const detents = [0.15, 0.5, 0.85];
         let snap = raw;
-        for (const d of detents) {
-            if (Math.abs(raw - d) < 0.05) {
-                snap = d;
-                break;
-            }
-        }
+        for (const d of detents) if (Math.abs(raw - d) < 0.05) { snap = d; break; }
         setSplit(Math.max(0.1, Math.min(0.9, snap)));
     };
 
     return (
         <div ref={ref} className="absolute inset-0 flex flex-col bg-black">
-            <div 
-                className={cn(
-                    "relative min-h-0 w-full p-2 pb-1 will-change-[flex]",
-                    isDragging ? "transition-none" : "transition-all duration-300 ease-[var(--ease-out-expo)]"
-                )} 
-                style={{ flex: split }}
-            >
-                <PanelWrapper 
-                    minimise={split < 0.3 ? 1-((split-0.05)/0.25) : 0} 
-                    overlay={topOverlay} 
-                    anchor="bottom" 
-                    bgColor="var(--bg-panel)"
-                    isDragging={isDragging}
-                >
-                    <div className="w-full h-full flex items-center justify-center">
-                        {top}
-                    </div>
+            <div className={cn("relative min-h-0 w-full will-change-[flex]", isDragging ? "transition-none" : "transition-all duration-500 ease-[var(--ease-out-expo)]", "pb-1")} style={{ flex: split }}>
+                <PanelWrapper minimise={split < 0.3 ? 1-((split-0.05)/0.25) : 0} overlay={topOverlay} anchor="bottom" bgColor="var(--bg-panel)" isDragging={isDragging}>
+                    {top}
                 </PanelWrapper>
             </div>
             
-            {/* SPLITTER HANDLE: CHEVRON BISECTING LINE */}
-            <div 
-                className="relative h-4 -my-2 z-50 flex items-center justify-center cursor-row-resize group interact-base select-none touch-none"
-                onPointerDown={(e) => { 
-                    setIsDragging(true); 
-                    (e.target as Element).setPointerCapture(e.pointerId); 
-                }}
-                onPointerMove={(e) => { 
-                    if(isDragging) onMove(e); 
-                }}
-                onPointerUp={(e) => { 
-                    setIsDragging(false); 
-                    (e.target as Element).releasePointerCapture(e.pointerId); 
-                }}
-            >
+            <div className="relative z-50 flex items-center justify-center interact-base touch-none group h-4 -my-2 w-full cursor-row-resize"
+                 onPointerDown={(e) => { 
+                     setIsDragging(true); 
+                     try { (e.target as Element).setPointerCapture(e.pointerId); } catch(err){}
+                 }}
+                 onPointerMove={(e) => { if(isDragging) onMove(e); }}
+                 onPointerUp={(e) => { 
+                     setIsDragging(false); 
+                     try { (e.target as Element).releasePointerCapture(e.pointerId); } catch(err){}
+                 }}>
                  <div className="absolute inset-x-4 h-px bg-[var(--border)] group-hover:bg-[var(--accent)] transition-colors opacity-50 group-hover:opacity-100" />
-                 
-                 <div 
-                    className={cn(
-                        "relative z-10 bg-[var(--bg-main)] border border-[var(--border)] rounded-full p-0.5 group-hover:border-[var(--accent)] group-hover:text-[var(--accent)] text-[var(--text-dim)] transition-all shadow-sm",
-                        isDragging ? "border-[var(--accent)] text-[var(--accent)] scale-110 shadow-[0_0_15px_rgba(209,58,52,0.3)]" : "scale-100"
-                    )}
-                 >
+                 <div className={cn("relative z-10 bg-[var(--bg-main)] border border-[var(--border)] rounded-full p-0.5 text-[var(--text-dim)] transition-all shadow-sm", isDragging ? "border-[var(--accent)] text-[var(--accent)] scale-110" : "scale-100")}>
                      <ChevronsUpDown size={12} strokeWidth={2.5} />
                  </div>
             </div>
 
-            <div 
-                className={cn(
-                    "relative min-h-0 w-full p-2 pt-1 will-change-[flex]",
-                    isDragging ? "transition-none" : "transition-all duration-300 ease-[var(--ease-out-expo)]"
-                )} 
-                style={{ flex: 1 - split }}
-            >
-                <PanelWrapper 
-                    minimise={split > 0.7 ? (split-0.7)/0.25 : 0} 
-                    overlay={bottomOverlay} 
-                    anchor="top" 
-                    bgColor="var(--bg-panel)"
-                    isDragging={isDragging}
-                >
-                    <div className="w-full h-full flex items-center justify-center">
-                        {bottom}
-                    </div>
+            <div className={cn("relative min-h-0 w-full will-change-[flex]", isDragging ? "transition-none" : "transition-all duration-500 ease-[var(--ease-out-expo)]", "pt-1")} style={{ flex: 1 - split }}>
+                <PanelWrapper minimise={split > 0.7 ? (split-0.7)/0.25 : 0} overlay={bottomOverlay} anchor="top" bgColor="var(--bg-panel)" isDragging={isDragging}>
+                    {bottom}
                 </PanelWrapper>
             </div>
         </div>
     );
 };
-
-// --- CONTROL PANEL ---
-export const ControlPanel = (p: any) => (
-    <div className="w-full h-full flex flex-col p-2 gap-2 select-none">
-        {/* ROW 1 */}
-        <div className="flex items-center gap-2 h-9 overflow-x-auto scrollbar-hide shrink-0 min-w-0">
-            <ToolbarGroup className="pl-2 pr-1 gap-2">
-                <select value={p.currentKey} onChange={e => p.setKey(e.target.value as Note)} className="bg-transparent text-sm font-black text-[var(--text-main)] outline-none cursor-pointer appearance-none hover:text-[var(--accent)] text-center w-6">{CIRCLE_KEYS.map(k=><option key={k} value={k}>{k}</option>)}</select>
-                <select value={p.scale} onChange={e => p.setScale(e.target.value as ScaleType)} className="bg-transparent text-xs font-bold text-[var(--text-muted)] outline-none cursor-pointer appearance-none hover:text-white uppercase w-20 truncate">{Object.values(ScaleType).map(s=><option key={s} value={s}>{s}</option>)}</select>
-                <div className="w-px h-4 bg-[var(--border)]" />
-                <IconButton icon={p.isScaleLocked ? Lock : Unlock} size="sm" onClick={p.toggleScaleLock} className={p.isScaleLocked ? "text-[var(--accent)]" : "text-[var(--text-dim)]"} />
-            </ToolbarGroup>
-
-            <div className="flex items-center gap-1 opacity-80 hover:opacity-100 transition-opacity min-w-0 shrink">
-                <Stat label="Vibe" value={p.scaleMeta.desc} icon={Music} color="text-yellow-400" />
-                <Stat label="Char" value={p.scaleMeta.characteristic} icon={Hexagon} color="text-purple-400" />
-                <Stat label="Mood" value={p.analysis.vibe} icon={Activity} color="text-blue-400" />
-            </div>
-            <div className="flex-1 min-w-[8px]" />
-            
-            <ToolbarGroup className="ml-auto">
-                {[ {id:'sequencer', icon: ListMusic, label:'Seq'}, {id:'harmony', icon: Network, label:'Map'} ].map(v => (
-                    <button key={v.id} onClick={() => p.setView(v.id)} className={cn("px-2 py-1 rounded-md flex items-center gap-1.5 text-[9px] font-bold uppercase transition-all whitespace-nowrap", p.view===v.id ? "bg-[var(--bg-surface)] text-white shadow-sm" : "text-[var(--text-dim)] hover:text-white")}>
-                        <v.icon size={10} /> {v.label} {v.id==='sequencer' && <span className="opacity-50">{p.progressionCount}</span>}
-                    </button>
-                ))}
-            </ToolbarGroup>
-        </div>
-
-        {/* ROW 2 */}
-        <div className="flex items-center gap-2 h-9 overflow-x-auto scrollbar-hide shrink-0 min-w-0">
-            <ToolbarGroup>
-                <Button onClick={p.togglePlay} className={cn("w-10 h-6", p.isPlaying && "bg-[var(--accent)] text-black")}>{p.isPlaying ? <Pause size={14} fill="currentColor"/> : <Play size={14} fill="currentColor"/>}</Button>
-                <div className="w-px h-4 bg-[var(--border)] mx-1" />
-                <IconButton size="sm" onClick={p.onRest} icon={Pause} className="rotate-90" title="Rest" />
-                <IconButton size="sm" onClick={p.onSnap} icon={Magnet} title="Snap" />
-                <IconButton size="sm" onClick={p.onClear} icon={Trash2} variant="danger" title="Clear" />
-            </ToolbarGroup>
-
-            <ToolbarGroup>
-                {['triad', '7th', '9th', '11th'].map(c => (
-                    <button key={c} onClick={() => p.setComplexity(c as ChordComplexity)} className={cn("px-2 py-1 rounded text-[9px] font-bold uppercase transition-all whitespace-nowrap", p.complexity===c ? "bg-[var(--accent)] text-black" : "text-[var(--text-dim)] hover:text-white")}>{c}</button>
-                ))}
-            </ToolbarGroup>
-            <div className="flex-1 min-w-[8px]" />
-
-            <ToolbarGroup className="ml-auto">
-                {[ {id:'rhodes', icon: Square}, {id:'pad', icon: Layers}, {id:'pluck', icon: Music}, {id:'synth', icon: Activity} ].map(i => (
-                    <button key={i.id} onClick={() => p.setInstrument(i.id as InstrumentType)} className={cn("w-7 h-6 flex items-center justify-center rounded transition-all", p.instrument===i.id ? "text-[var(--accent)] bg-[var(--bg-surface)]" : "text-[var(--text-dim)] hover:text-white")}><i.icon size={12}/></button>
-                ))}
-            </ToolbarGroup>
-        </div>
-    </div>
-);

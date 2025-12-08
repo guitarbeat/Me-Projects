@@ -112,6 +112,37 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
 
     const accentColor = SCALE_DEFS[currentScale].palette.accent;
 
+    // Helper: Select best scale based on 3D distance (Valence, Arousal, Tension)
+    const updateScaleSelection = (v: number, a: number, t: number) => {
+        if (isScaleLocked) return;
+
+        let minDist = Infinity;
+        let closest: ScaleType = currentScale;
+
+        Object.entries(SCALE_DEFS).forEach(([st, def]) => {
+            const sDef = def as ScaleDef;
+            const tv = sDef.scaleCoordinates.v;
+            const ta = sDef.scaleCoordinates.a;
+            const tt = sDef.scaleCoordinates.t; // Now required in ScaleDef
+
+            // 3D Euclidean Distance
+            let d = Math.sqrt(
+                Math.pow(v - tv, 2) + 
+                Math.pow(a - ta, 2) + 
+                Math.pow(t - tt, 2)
+            );
+            
+            // Hysteresis: "Gravity" well for the current scale
+            if (st === currentScale) {
+                d *= 0.75; 
+            }
+
+            if (d < minDist) { minDist = d; closest = st as ScaleType; }
+        });
+
+        if (closest !== currentScale) onManualScaleSelect(closest);
+    };
+
     const updateMoodPad = (clientX: number, clientY: number, commit: boolean = true) => {
         if (!ref.current) return;
         const rect = ref.current.getBoundingClientRect();
@@ -121,22 +152,20 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
 
         const x = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
         const y = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
-        const v = (x * 2) - 1;
-        const a = -((y * 2) - 1);
+        
+        // Calculate raw normalized coordinates (-1 to 1)
+        const rawV = (x * 2) - 1;
+        const rawA = -((y * 2) - 1);
+        
+        // Apply sensitivity curve (power of 1.3) to provide finer control near the center (Neutral)
+        // and reduce jitter when selecting subtle moods.
+        const v = Math.sign(rawV) * Math.pow(Math.abs(rawV), 1.3);
+        const a = Math.sign(rawA) * Math.pow(Math.abs(rawA), 1.3);
         
         if (commit) {
-            onMoodChange(v, a, moodRef.current.tension);
-            
-            if (!isScaleLocked) {
-                let minDist = Infinity;
-                let closest: ScaleType = currentScale;
-                Object.entries(SCALE_DEFS).forEach(([st, def]) => {
-                    const sDef = def as ScaleDef;
-                    const d = Math.sqrt(Math.pow(v - sDef.scaleCoordinates.v, 2) + Math.pow(a - sDef.scaleCoordinates.a, 2));
-                    if (d < minDist) { minDist = d; closest = st as ScaleType; }
-                });
-                if (closest !== currentScale) onManualScaleSelect(closest);
-            }
+            const t = moodRef.current.tension;
+            onMoodChange(v, a, t);
+            updateScaleSelection(v, a, t);
             
             const newBpm = getTempoFromArousal(a);
             if (newBpm !== lastBpm.current) {
@@ -183,6 +212,8 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
             const newTension = Math.max(0, Math.min(1, moodRef.current.tension + delta));
             if (newTension !== moodRef.current.tension) {
                 onMoodChange(moodRef.current.valence, moodRef.current.arousal, newTension);
+                // Trigger scale re-evaluation on tension change
+                updateScaleSelection(moodRef.current.valence, moodRef.current.arousal, newTension);
             }
         };
         
@@ -192,27 +223,61 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
         return () => {
             if (el) el.removeEventListener('wheel', handleWheel);
         };
-    }, [onMoodChange]);
+    }, [onMoodChange, currentScale, isScaleLocked]);
 
-    const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
+    const handlePointerDown = (e: React.PointerEvent) => {
         if ((e.target as HTMLElement).closest('.chord-node')) return;
         
+        e.preventDefault(); // Prevent text selection / touch scrolling
         setIsDragging(true);
         setShowHint(false);
-        const clientX = 'touches' in e ? (e as React.TouchEvent).touches[0].clientX : (e as React.MouseEvent).clientX;
-        const clientY = 'touches' in e ? (e as React.TouchEvent).touches[0].clientY : (e as React.MouseEvent).clientY;
-        updateMoodPad(clientX, clientY, true);
-        (e.target as HTMLElement).setPointerCapture('pointerId' in e ? (e as any).pointerId : 0);
+        
+        updateMoodPad(e.clientX, e.clientY, true);
+        
+        try {
+            (e.target as Element).setPointerCapture(e.pointerId);
+        } catch (e) {
+            // Ignore if pointer capture fails (e.g. pointer already released)
+        }
     };
 
-    const handlePointerMove = (e: React.MouseEvent | React.TouchEvent) => {
-        if ('touches' in e && (e as React.TouchEvent).touches.length === 2) {
+    const handlePointerMove = (e: React.PointerEvent) => {
+        // Handle passive hover (preview) for mouse
+        if (!isDragging) {
+            if (e.pointerType === 'mouse' && !hoveredChord) {
+                 updateMoodPad(e.clientX, e.clientY, false);
+            }
+            return;
+        }
+
+        // Handle dragging (primary pointer only)
+        if (e.isPrimary) {
+            if (requestRef.current !== undefined) cancelAnimationFrame(requestRef.current);
+            requestRef.current = requestAnimationFrame(() => {
+                updateMoodPad(e.clientX, e.clientY, true);
+            });
+        }
+    };
+
+    const handlePointerUp = (e: React.PointerEvent) => {
+        setIsDragging(false);
+        setInitialPinchDist(null);
+        if (requestRef.current !== undefined) cancelAnimationFrame(requestRef.current);
+        if (onPreviewMood) onPreviewMood(null);
+        
+        try {
+            (e.target as Element).releasePointerCapture(e.pointerId);
+        } catch (e) {}
+    };
+
+    const handleTouchMove = (e: React.TouchEvent) => {
+        if (e.touches.length === 2) {
              setIsScrolling(true);
              if(scrollTimeout.current) clearTimeout(scrollTimeout.current);
              scrollTimeout.current = setTimeout(() => setIsScrolling(false), 800);
 
-             const touch1 = (e as React.TouchEvent).touches[0];
-             const touch2 = (e as React.TouchEvent).touches[1];
+             const touch1 = e.touches[0];
+             const touch2 = e.touches[1];
              const dist = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
              
              if (initialPinchDist === null) {
@@ -223,38 +288,9 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
                  const delta = (scaleFactor - 1) * 1.5; 
                  const newTension = Math.max(0, Math.min(1, initialPinchTension + delta));
                  onMoodChange(moodRef.current.valence, moodRef.current.arousal, newTension);
+                 updateScaleSelection(moodRef.current.valence, moodRef.current.arousal, newTension);
              }
-             return;
-        } else {
-             if (initialPinchDist !== null) setInitialPinchDist(null);
         }
-
-        const clientX = 'touches' in e ? (e as React.TouchEvent).touches[0].clientX : (e as React.MouseEvent).clientX;
-        const clientY = 'touches' in e ? (e as React.TouchEvent).touches[0].clientY : (e as React.MouseEvent).clientY;
-
-        if (isDragging) {
-            if (requestRef.current !== undefined) cancelAnimationFrame(requestRef.current);
-            requestRef.current = requestAnimationFrame(() => {
-                updateMoodPad(clientX, clientY, true);
-            });
-        } else {
-            // Passive Hover - Update beam/cursor locally, but maybe don't commit?
-            // Actually, for consistency, we only preview on hover if we aren't dragging.
-            // But we already handle hover via 'hoveredChord'. 
-            // If the mouse is over the mood pad, we might want to preview that mood too?
-            // The current implementation of updateMoodPad calls onPreviewMood(v, a).
-            // So if we call it here with commit=false, it works as a preview.
-            if (!hoveredChord) {
-                updateMoodPad(clientX, clientY, false);
-            }
-        }
-    };
-
-    const handlePointerUp = () => {
-        setIsDragging(false);
-        setInitialPinchDist(null);
-        if (requestRef.current !== undefined) cancelAnimationFrame(requestRef.current);
-        if (onPreviewMood) onPreviewMood(null); // Clear preview on release
     };
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -275,6 +311,7 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
             e.preventDefault();
             setShowHint(false);
             onMoodChange(newV, newA, mood.tension);
+            updateScaleSelection(newV, newA, mood.tension);
         }
     };
 
@@ -318,13 +355,11 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
                     tabIndex={0}
                     role="slider"
                     aria-label="Mood Selector"
-                    onMouseDown={handlePointerDown}
-                    onMouseMove={handlePointerMove}
-                    onMouseUp={handlePointerUp}
-                    onMouseLeave={handlePointerUp}
-                    onTouchStart={handlePointerDown}
-                    onTouchMove={handlePointerMove}
-                    onTouchEnd={handlePointerUp}
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
+                    onPointerLeave={handlePointerUp}
+                    onTouchMove={handleTouchMove}
                     onKeyDown={handleKeyDown}
                     style={{ transformStyle: 'preserve-3d' }}
                 >
@@ -392,18 +427,22 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
                     {/* GHOST CURSOR (From Tonnetz Linkage) */}
                     {hoveredChord && hoveredChord.sentiment && (
                         <div 
-                            className="absolute z-40 w-10 h-10 -ml-5 -mt-5 rounded-full border border-dashed border-white/50 flex items-center justify-center animate-pulse pointer-events-none transition-all duration-300 ease-out"
+                            className="absolute z-40 w-12 h-12 -ml-6 -mt-6 rounded-full border border-dashed border-white/60 flex items-center justify-center animate-pulse pointer-events-none transition-all duration-300 ease-out"
                             style={{ 
                                 left: `${(hoveredChord.sentiment.valence + 1) * 50}%`, 
                                 top: `${(1 - hoveredChord.sentiment.arousal) * 50}%`,
-                                boxShadow: '0 0 20px rgba(255,255,255,0.1)'
+                                boxShadow: '0 0 30px rgba(255,255,255,0.15)',
+                                transform: 'scale(1.1)'
                             }}
                         >
-                            <div className="w-1.5 h-1.5 bg-white rounded-full" />
-                            <div className="absolute top-full mt-2 bg-black/80 backdrop-blur border border-white/20 px-2 py-1 rounded text-[9px] text-white font-mono whitespace-nowrap z-50">
-                                {hoveredChord.symbol}
+                            <div className="w-1.5 h-1.5 bg-white rounded-full shadow-[0_0_10px_white]" />
+                            <div className="absolute top-full mt-2 bg-black/90 backdrop-blur border border-white/20 px-2 py-1.5 rounded text-[10px] text-white flex flex-col items-center gap-0.5 z-50 shadow-xl whitespace-nowrap min-w-[60px]">
+                                <span className="font-bold text-[var(--accent)]">{hoveredChord.symbol}</span>
+                                <span className="text-[8px] text-white/70 font-mono">
+                                    {getCompassLabel(hoveredChord.sentiment.valence, hoveredChord.sentiment.arousal)}
+                                </span>
                             </div>
-                            <Crosshair className="absolute text-white/30 w-full h-full opacity-50" strokeWidth={1}/>
+                            <Crosshair className="absolute text-white/40 w-full h-full opacity-60" strokeWidth={1}/>
                         </div>
                     )}
 
@@ -478,17 +517,30 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
                 </div>
 
                 {/* EMOTIONAL ZONES OVERLAY */}
-                <div className="absolute inset-0 pointer-events-none transition-opacity duration-500" style={{ opacity: showZones || isDragging ? 0.8 : 0 }}>
+                <div className="absolute inset-0 pointer-events-none">
                      {EMOTIONAL_ZONES.map((gem, i) => {
                          const x = (gem.v + 1) / 2 * 100;
                          const y = (-gem.a + 1) / 2 * 100;
-                         const isHover = cursorPos && Math.hypot(cursorPos.x / containerRef.current!.offsetWidth * 100 - x, cursorPos.y / containerRef.current!.offsetHeight * 100 - y) < 15;
+                         
+                         let isHover = false;
+                         if (cursorPos && containerRef.current) {
+                             const cx = cursorPos.x / containerRef.current.offsetWidth * 100;
+                             const cy = cursorPos.y / containerRef.current.offsetHeight * 100;
+                             isHover = Math.hypot(cx - x, cy - y) < 12; // 12% radius
+                         }
+                         
+                         const isVisible = showZones || isDragging || isHover;
                          
                          return (
-                            <div key={i} className={cn("absolute flex flex-col items-center justify-center text-center -translate-x-1/2 -translate-y-1/2 transition-all duration-300", isHover ? "scale-110 opacity-100" : "opacity-30")}
+                            <div key={i} className={cn(
+                                    "absolute flex flex-col items-center justify-center text-center -translate-x-1/2 -translate-y-1/2 transition-all duration-300", 
+                                    isHover ? "z-10 scale-110 opacity-100" : isVisible ? "opacity-40 scale-100" : "opacity-0 scale-90"
+                                 )}
                                  style={{ left: `${x}%`, top: `${y}%` }}>
-                                <span className="text-[10px] font-black tracking-widest text-white uppercase whitespace-nowrap">{gem.label}</span>
-                                {isHover && <span className="text-[8px] font-mono text-[var(--accent)] bg-black/80 px-1 rounded">{gem.desc}</span>}
+                                <span className={cn("text-[10px] font-black tracking-widest uppercase whitespace-nowrap transition-colors", isHover ? "text-white" : "text-white/60")}>{gem.label}</span>
+                                <div className={cn("transition-all duration-300 ease-out overflow-hidden flex flex-col items-center", isHover ? "h-auto opacity-100 mt-1" : "h-0 opacity-0")}>
+                                     <span className="text-[8px] font-mono text-[var(--accent)] bg-black/90 backdrop-blur px-2 py-0.5 rounded border border-white/10 shadow-xl whitespace-nowrap">{gem.desc}</span>
+                                </div>
                             </div>
                         )
                      })}

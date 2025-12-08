@@ -1,8 +1,11 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { ScaleType, Note, InstrumentType, generateChordsForScale, audioEngine, useProgression, usePlayback, useMood, Chord, ChordComplexity, getTensionChords, getMusicalCharacteristics, SCALE_DEFS } from './lib';
-import { ProgressionStrip, HarmonicSpace, cn, MoodSelector, ControlPanel, SplitView, ResizableTopPanel } from './components';
-import { Music, Layout } from 'lucide-react';
+import { ProgressionStrip, cn, ControlPanel, SplitView, ResizableTopPanel, MoodSelector } from './components';
+import { Music, Layout, Loader2 } from 'lucide-react';
+
+// Lazy load heavy visualization components
+const HarmonicSpace = React.lazy(() => import('./tonnetz').then(module => ({ default: module.HarmonicSpace })));
 
 export default function App() {
     // --- APP STATE ---
@@ -64,7 +67,7 @@ export default function App() {
             }}/>
 
             {/* Consolidated Top Control Panel - COMPACT MODE */}
-            <ResizableTopPanel minHeight={84} maxHeight={180} defaultHeight={98}>
+            <ResizableTopPanel minHeight={84} maxHeight={220} defaultHeight={140}>
                 <ControlPanel 
                     isPlaying={isPlaying} 
                     togglePlay={togglePlay} 
@@ -92,6 +95,7 @@ export default function App() {
                     // Metadata
                     scaleMeta={scaleMeta}
                     analysis={char}
+                    availableChords={chords}
                 />
             </ResizableTopPanel>
 
@@ -130,24 +134,28 @@ export default function App() {
                                             onResize={(index: number, duration: number) => handleProgression('resize', { index, duration })}
                                             timeSignature={timeSig}
                                             activeIndex={playIndex}
+                                            currentKey={key}
+                                            scaleType={scale}
+                                            showPalette={false}
                                         />
                                     </div>
 
                                     <div className={cn("h-full w-full", topView === 'harmony' ? 'block' : 'hidden')}>
-                                        <HarmonicSpace 
-                                            currentKey={key} 
-                                            scaleType={scale} 
-                                            chords={chords} 
-                                            tensionChords={tensionChords}
-                                            onAddChord={(c: Chord) => handleProgression('add', c)} 
-                                            onChordClick={playOne} 
-                                            contextChord={contextChord || null} 
-                                            mood={mood}
-                                            complexity={complexity}
-                                            // Linkage Props
-                                            targetMood={targetMood}
-                                            onHoverChord={setHoveredChord}
-                                        />
+                                        <Suspense fallback={<div className="flex h-full w-full items-center justify-center"><Loader2 className="animate-spin" size={16} /></div>}>
+                                            <HarmonicSpace 
+                                                currentKey={key} 
+                                                scaleType={scale} 
+                                                chords={chords} 
+                                                tensionChords={tensionChords}
+                                                onAddChord={(c: Chord) => handleProgression('add', c)} 
+                                                onChordClick={playOne} 
+                                                contextChord={contextChord || null} 
+                                                mood={mood}
+                                                complexity={complexity}
+                                                targetMood={targetMood}
+                                                onHoverChord={setHoveredChord}
+                                            />
+                                        </Suspense>
                                     </div>
                                 </div>
                             </div>
@@ -168,7 +176,6 @@ export default function App() {
                                     progression={progression}
                                     activeIndex={playIndex}
                                     showPath={showPath}
-                                    // Linkage Props
                                     hoveredChord={hoveredChord}
                                     onPreviewMood={setTargetMood}
                                 />

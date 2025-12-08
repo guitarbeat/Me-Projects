@@ -1,194 +1,127 @@
 
+import * as Tone from 'tone';
 import { InstrumentType, Chord } from './types';
 
 export class AudioEngine {
-    private ctx: AudioContext | null = null;
-    private masterGain: GainNode | null = null;
+    private polySynth: Tone.PolySynth;
     private instrument: InstrumentType = 'rhodes';
+    private _mood = { valence: 0, arousal: 0, tension: 0 };
     
-    private isPlaying: boolean = false;
-    private nextNoteTime: number = 0;
-    private currentChordIndex: number = 0;
-    private timerID: number | null = null;
-    private _progression: Chord[] = [];
-    private _bpm: number = 120;
-    
-    private _valence: number = 0;
-    private _arousal: number = 0;
-    private _tension: number = 0;
-
-    private _onStep: ((idx: number) => void) | null = null;
-    private _onComplete: (() => void) | null = null;
-
-    constructor() {}
-
-    resume() {
-        if (!this.ctx) {
-            this.init();
-        }
-        if (this.ctx && this.ctx.state === 'suspended') {
-            this.ctx.resume();
-        }
+    constructor() {
+        // Initialize PolySynth with a default voice
+        this.polySynth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: "triangle" },
+            envelope: { attack: 0.05, decay: 0.2, sustain: 0.4, release: 1 }
+        }).toDestination();
+        
+        // Add a reverb and limiter to the chain for better sound
+        const reverb = new Tone.Reverb(2).toDestination();
+        const limiter = new Tone.Limiter(-10).toDestination();
+        this.polySynth.connect(reverb);
+        reverb.connect(limiter);
+        this.polySynth.volume.value = -8;
     }
 
-    private init() {
-        if (typeof window !== 'undefined') {
-            const AudioCtor = window.AudioContext || (window as any).webkitAudioContext;
-            if (AudioCtor) {
-                this.ctx = new AudioCtor();
-                this.masterGain = this.ctx.createGain();
-                this.masterGain.gain.value = 0.4;
-                this.masterGain.connect(this.ctx.destination);
-            }
+    async resume() {
+        await Tone.start();
+        if (Tone.context.state !== 'running') {
+            await Tone.context.resume();
         }
     }
 
     setInstrument(inst: InstrumentType) {
         this.instrument = inst;
+        // Simple synth switching logic
+        switch (inst) {
+            case 'rhodes':
+                this.polySynth.set({ oscillator: { type: 'sine' }, envelope: { attack: 0.02, decay: 0.5, sustain: 0.2, release: 2 } });
+                break;
+            case 'pad':
+                this.polySynth.set({ oscillator: { type: 'triangle' }, envelope: { attack: 0.5, decay: 0.5, sustain: 0.8, release: 2 } });
+                break;
+            case 'pluck':
+                this.polySynth.set({ oscillator: { type: 'square' }, envelope: { attack: 0.01, decay: 0.2, sustain: 0, release: 1 } });
+                break;
+            case 'synth':
+                this.polySynth.set({ oscillator: { type: 'sawtooth' }, envelope: { attack: 0.05, decay: 0.1, sustain: 0.3, release: 0.5 } });
+                break;
+        }
     }
 
     setMood(valence: number, arousal: number, tension: number = 0) {
-        this._valence = valence;
-        this._arousal = arousal;
-        this._tension = tension;
+        this._mood = { valence, arousal, tension };
+        
+        // Map mood to synthesis parameters (Tone.js makes this easy)
+        // Tension -> Detune
+        this.polySynth.set({ detune: tension * 50 }); // +/- 50 cents
+        
+        // Arousal -> Envelope modifications
+        if (arousal > 0.5) {
+            // More aggressive
+            this.polySynth.set({ envelope: { attack: 0.01 }});
+        }
     }
 
-    private noteToFreq(note: string, octave: number = 4): number {
-        const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-        const map: {[key:string]: string} = { 'Db':'C#', 'Eb':'D#', 'Gb':'F#', 'Ab':'G#', 'Bb':'A#' };
-        const norm = map[note] || note;
-        const idx = notes.indexOf(norm);
-        if (idx === -1) return 261.63; 
-        
-        const absSemitones = (octave * 12 + idx) - (4 * 12 + 9);
-        return 440 * Math.pow(2, absSemitones / 12);
-    }
-
-    playChord(chord: Chord, duration: number = 2.0, when?: number) {
-        if (!this.ctx) this.init();
-        const ctx = this.ctx!;
-        if (!ctx || !this.masterGain) return;
-        
-        if (ctx.state === 'suspended') ctx.resume();
-
-        const startTime = when || ctx.currentTime;
-        const notes = chord.notes;
-        
-        // Better Voicing Logic for Clarity:
-        // Root: Octave 3
-        // 3rd, 5th, 7th: Octave 4
-        // 9th, 11th: Octave 5 (to avoid muddiness)
-        const frequencies = notes.map((n, i) => {
-            let octave = 4;
-            if (i === 0) octave = 3; // Root
-            else if (i > 3) octave = 5; // Extensions (9th, 11th)
-            return this.noteToFreq(n, octave);
+    playChord(chord: Chord, duration: number | string = "2n", time?: number) {
+        // Voicing Logic: Spread notes
+        const notes = chord.notes.map((n, i) => {
+            // Simple voicing: Root at 3, others at 4, extensions at 5
+            if (i === 0) return n + "3";
+            if (i > 3) return n + "5";
+            return n + "4";
         });
         
-        const baseGain = 0.35 + (this._arousal * 0.25);
-        const volume = Math.max(0.1, Math.min(0.8, baseGain)) / (frequencies.length || 1);
-        
-        const isStaccato = this._arousal > 0.2;
-        const attack = isStaccato ? 0.01 : 0.05 + (Math.abs(this._valence) * 0.05);
-        const release = isStaccato ? 0.1 : duration * 0.2; 
-        
-        frequencies.forEach((freq, i) => {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            
-            osc.type = this.instrument === 'pad' ? 'triangle' : this.instrument === 'synth' ? 'sawtooth' : 'sine';
-            const detune = (Math.random() - 0.5) * this._tension * 50;
-            osc.frequency.value = freq;
-            osc.detune.value = detune;
-
-            osc.connect(gain);
-            gain.connect(this.masterGain!);
-
-            gain.gain.setValueAtTime(0, startTime);
-            gain.gain.linearRampToValueAtTime(volume, startTime + attack);
-            gain.gain.setTargetAtTime(0, startTime + duration - release, release / 3);
-
-            osc.start(startTime);
-            osc.stop(startTime + duration + release);
-        });
+        this.polySynth.triggerAttackRelease(notes, duration, time);
     }
 
     playProgression(progression: Chord[], bpm: number, onStep: (idx: number)=>void, onComplete: ()=>void) {
-        this.stop(); 
+        // Stop any previous transport
+        Tone.Transport.stop();
+        Tone.Transport.cancel();
         
-        if (progression.length === 0) {
-            if (onComplete) onComplete();
-            return;
-        }
-
-        this.resume();
-
-        this.isPlaying = true;
-        this._progression = progression;
-        this._bpm = bpm;
-        this._onStep = onStep;
-        this._onComplete = onComplete;
-        this.currentChordIndex = 0;
+        Tone.Transport.bpm.value = bpm;
         
-        const ctx = this.ctx!;
-        this.nextNoteTime = ctx.currentTime + 0.1;
-        this.scheduler();
-    }
-
-    private scheduler() {
-        if (!this.isPlaying || !this.ctx) return;
+        let accumulatedTime = 0;
         
-        const lookahead = 25.0; 
-        const scheduleAheadTime = 0.1; 
-
-        while (this.nextNoteTime < this.ctx.currentTime + scheduleAheadTime && this.currentChordIndex < this._progression.length) {
-            this.scheduleChord(this.currentChordIndex, this.nextNoteTime);
-            const secondsPerBeat = 60.0 / this._bpm;
-            this.nextNoteTime += secondsPerBeat * this._progression[this.currentChordIndex].duration;
-            this.currentChordIndex++;
-        }
-        
-        if (this.currentChordIndex >= this._progression.length) {
-            if (this.ctx.currentTime > this.nextNoteTime + 0.5) {
-                this.isPlaying = false;
-                if (this._onComplete) this._onComplete();
-                return;
+        progression.forEach((chord, index) => {
+            if (!chord.isRest) {
+                // Schedule audio
+                Tone.Transport.schedule((time) => {
+                    // Convert duration (beats) to Tone notation if strictly 4/4, 
+                    // or just calculate seconds. Tone.Transport handles beats natively.
+                    // Duration is in quarter notes usually.
+                    const dur = chord.duration * (60/bpm);
+                    this.playChord(chord, dur, time);
+                    
+                    // UI Callback (wrapped in Draw to ensure sync with animation frame)
+                    Tone.Draw.schedule(() => {
+                        onStep(index);
+                    }, time);
+                }, accumulatedTime);
             }
-        }
+            
+            // Advance time (beats * seconds_per_beat is handled by Tone if we used measure notation,
+            // but here we are scheduling on a timeline in seconds for simplicity with variable chord lengths)
+            // Ideally: accumulatedTime += chord.duration (in quarter notes)
+            // Tone.Transport time is in seconds by default unless formatted
+            // Let's stick to seconds for simplicity with variable BPM
+            const beatDur = 60/bpm;
+            accumulatedTime += (chord.duration * beatDur);
+        });
 
-        this.timerID = window.setTimeout(() => this.scheduler(), lookahead);
-    }
+        // Schedule completion
+        Tone.Transport.schedule((time) => {
+            Tone.Draw.schedule(() => onComplete(), time);
+            Tone.Transport.stop();
+        }, accumulatedTime + 0.5);
 
-    private scheduleChord(index: number, time: number) {
-        if (this._onStep && this.ctx) {
-             const delay = (time - this.ctx.currentTime) * 1000;
-             setTimeout(() => {
-                 if(this.isPlaying) this._onStep!(index);
-             }, Math.max(0, delay));
-        }
-        
-        const chord = this._progression[index];
-        if(!chord.isRest) {
-            const secondsPerBeat = 60.0 / this._bpm;
-            const duration = secondsPerBeat * chord.duration;
-            this.playChord(chord, duration, time);
-        }
+        Tone.Transport.start();
     }
 
     stop() {
-        this.isPlaying = false;
-        if (this.timerID) clearTimeout(this.timerID);
-        
-        if(this.masterGain && this.ctx) {
-            this.masterGain.gain.cancelScheduledValues(this.ctx.currentTime);
-            this.masterGain.gain.setValueAtTime(this.masterGain.gain.value, this.ctx.currentTime);
-            this.masterGain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.1);
-            setTimeout(() => {
-                if(this.masterGain && this.ctx) {
-                    this.masterGain.gain.setValueAtTime(0.4, this.ctx.currentTime); 
-                }
-            }, 150);
-        }
+        Tone.Transport.stop();
+        Tone.Transport.cancel();
+        this.polySynth.releaseAll();
     }
 }
 

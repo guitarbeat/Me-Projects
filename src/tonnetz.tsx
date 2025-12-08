@@ -210,9 +210,15 @@ export const TonnetzGrid = ({ currentKey, scaleType, chords, secondaryDominants,
     const activeNotes = useMemo(() => new Set(contextChord?.notes || []), [contextChord]);
 
     const handleDrag = (e: React.PointerEvent) => {
-        if(e.type === 'pointerdown') { setDrag({active:true, last:{x:e.clientX, y:e.clientY}}); (e.target as Element).setPointerCapture(e.pointerId); }
+        if(e.type === 'pointerdown') { 
+            setDrag({active:true, last:{x:e.clientX, y:e.clientY}}); 
+            try { (e.target as Element).setPointerCapture(e.pointerId); } catch(err){}
+        }
         else if(e.type === 'pointermove' && drag.active && drag.last) { setView(v => ({...v, x: v.x + e.clientX - drag.last!.x, y: v.y + e.clientY - drag.last!.y})); setDrag(prev => ({...prev, last:{x:e.clientX, y:e.clientY}})); }
-        else if(e.type === 'pointerup') { setDrag({active:false, last:null}); (e.target as Element).releasePointerCapture(e.pointerId); }
+        else if(e.type === 'pointerup') { 
+            setDrag({active:false, last:null}); 
+            try { (e.target as Element).releasePointerCapture(e.pointerId); } catch(err){}
+        }
     };
 
     const handleChordAction = useCallback((t: any) => {

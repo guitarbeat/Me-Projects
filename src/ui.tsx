@@ -6,26 +6,39 @@ import { LucideIcon } from 'lucide-react';
 export const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
 
 // --- PRIMITIVES ---
-export const Surface = ({ children, className, variant='panel', active, ...props }: React.HTMLAttributes<HTMLDivElement> & { variant?: 'panel'|'element'|'ghost', active?: boolean }) => {
+
+// Unified Surface component for panels, cards, and tooltips
+export const Surface = ({ children, className, variant='panel', active, ...props }: React.HTMLAttributes<HTMLDivElement> & { variant?: 'panel'|'element'|'ghost'|'overlay', active?: boolean }) => {
     const vars = { 
       panel: "bg-[var(--bg-panel)] border border-[var(--border)] rounded-xl", 
       element: "bg-[var(--bg-element)] border border-[var(--border)] rounded-lg shadow-sm", 
-      ghost: "bg-transparent border border-transparent" 
+      ghost: "bg-transparent border border-transparent",
+      overlay: "bg-black/80 backdrop-blur-xl border border-white/10 shadow-2xl rounded-lg"
     };
     return <div className={cn("transition-all duration-300", vars[variant], active && "border-[var(--accent)] bg-[var(--bg-surface)] ring-1 ring-[var(--accent)]", className)} {...props}>{children}</div>;
 };
 
-export const Button = ({ variant='secondary', size='md', className, children, icon: Icon, active, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary'|'secondary'|'ghost'|'danger', size?: 'sm'|'md'|'icon', icon?: LucideIcon, active?: boolean }) => {
+// Unified Button component handles both text buttons and icon-only buttons
+export const Button = ({ variant='secondary', size='md', className, children, icon: Icon, active, title, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary'|'secondary'|'ghost'|'danger', size?: 'sm'|'md'|'icon', icon?: LucideIcon, active?: boolean }) => {
     const v = { 
         primary: "bg-[var(--accent)] text-black shadow-lg shadow-[var(--accent)]/20 border-transparent hover:brightness-110", 
-        secondary: "bg-[var(--bg-element)] text-[var(--text-main)] border-[var(--border)] hover:bg-[var(--bg-surface)]", 
-        ghost: "bg-transparent text-[var(--text-muted)] border-transparent hover:text-[var(--text-main)]", 
+        secondary: "bg-[var(--bg-element)] text-[var(--text-main)] border-[var(--border)] hover:bg-[var(--bg-surface)] hover:text-white", 
+        ghost: "bg-transparent text-[var(--text-muted)] border-transparent hover:text-white hover:bg-white/5", 
         danger: "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20" 
     };
     const s = { sm: "px-2 h-6 text-[10px]", md: "px-3 h-8 text-xs", icon: "p-1.5 h-7 w-7" };
     
     return (
-        <button className={cn("flex items-center justify-center gap-1.5 rounded-md font-medium transition-all disabled:opacity-50 outline-none focus:ring-2 focus:ring-[var(--accent)] shrink-0", v[variant], s[size], active && "bg-[var(--bg-surface)] text-[var(--text-main)] border-[var(--border)] shadow-sm", className)} {...props}>
+        <button 
+            title={title}
+            className={cn(
+                "flex items-center justify-center gap-1.5 rounded-md font-medium transition-all disabled:opacity-50 outline-none focus:ring-2 focus:ring-[var(--accent)] shrink-0 select-none", 
+                v[variant], s[size], 
+                active && "bg-[var(--bg-surface)] text-white border-[var(--border)] shadow-inner", 
+                className
+            )} 
+            {...props}
+        >
             {Icon && <Icon size={size === 'sm' ? 12 : 14}/>}{children}
         </button>
     );
@@ -38,11 +51,21 @@ export const Badge = ({children, variant='default', className}: any) => (
 );
 
 export const Stat = ({ label, value, icon: Icon, color }: any) => (
-    <div className="flex items-center gap-1.5 px-2 py-1 bg-white/5 rounded border border-white/5 select-none min-w-0 shrink">
+    <div className="flex items-center gap-1.5 px-2 py-1 bg-white/5 rounded border border-white/5 select-none min-w-0 shrink transition-colors hover:bg-white/10">
         {Icon && <Icon size={10} className={cn(color, "shrink-0")} />}
         <div className="flex flex-col leading-none min-w-0">
             <span className="text-[7px] font-bold text-white/30 uppercase truncate">{label}</span>
-            <span className="text-[9px] font-bold text-white/90 truncate max-w-[80px] sm:max-w-[120px]">{value}</span>
+            <span className="text-[9px] font-bold text-white/90 truncate max-w-[80px]">{value}</span>
+        </div>
+    </div>
+);
+
+export const DataPoint = ({ label, value, icon: Icon, color, className }: any) => (
+    <div className={cn("flex flex-col bg-white/5 rounded p-2 border border-white/5 min-w-0", className)}>
+        <span className="text-[7px] font-bold text-white/30 uppercase mb-0.5 truncate">{label}</span>
+        <div className="flex items-center gap-1.5 min-w-0">
+            {Icon && <Icon size={10} className={cn(color, "shrink-0")} />}
+            <span className="text-[10px] font-medium text-white/90 truncate">{value}</span>
         </div>
     </div>
 );
@@ -51,13 +74,9 @@ export const ToolbarGroup = ({ children, className }: { children?: React.ReactNo
     <div className={cn("flex items-center bg-[var(--bg-element)] rounded-lg p-0.5 border border-[var(--border)] shrink-0 gap-0.5 min-w-0", className)}>{children}</div>
 );
 
-// --- ERROR BOUNDARY ---
-export class GlobalErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean, error: any}> {
-  state = { hasError: false, error: null };
-  readonly props!: Readonly<{ children: React.ReactNode }>;
-  static getDerivedStateFromError(error: any) { return { hasError: true, error }; }
-  render() {
-    if (this.state.hasError) return <div className="p-10 bg-[#141110] text-[#d8c8b8] h-screen font-mono overflow-auto"><h1 className="text-xl text-[#d13a34] mb-4">Error</h1><pre className="bg-[#1c1817] p-4 rounded border border-[#38312e]">{this.state.error?.toString()}</pre></div>;
-    return this.props.children;
-  }
-}
+// --- DRAG HANDLE PRIMITIVE ---
+export const DragHandle = ({ vertical = false, active, className, ...props }: any) => (
+    <div className={cn("flex items-center justify-center transition-all group interact-base cursor-grab active:cursor-grabbing", vertical ? "w-4 h-full cursor-col-resize" : "h-4 w-full cursor-row-resize", className)} {...props}>
+        <div className={cn("rounded-full bg-[var(--border)] transition-all group-hover:bg-[var(--accent)] opacity-50 group-hover:opacity-100", vertical ? "w-1 h-8" : "h-1 w-12", active && "bg-[var(--accent)] opacity-100 scale-110")} />
+    </div>
+);

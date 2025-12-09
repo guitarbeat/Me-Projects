@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#141110">
+    <meta name="theme-color" content="#000000">
     <meta name="description" content="A professional musical composition tool for exploring harmony, scales, and chord progressions.">
     <title>Harmonic Studio</title>
     
@@ -29,37 +28,32 @@
               foreground: "var(--text-main)",
             }
           }
-        },
-        safelist: [
-          { pattern: /text-(emerald|sky|rose|stone)-(100|400|500|600|900)/, variants: ['dark'] },
-          { pattern: /bg-(emerald|sky|rose|stone)-(100|400|500|900|950)(\/(10|20|30|40|50))?/, variants: ['hover', 'dark', 'dark:hover'] },
-          { pattern: /border-(emerald|sky|rose|stone)-(500)(\/(30|40|50))?/, variants: ['dark'] }
-        ]
+        }
       }
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
     <style>
       :root {
         /* 
-         * --- LIGHT THEME (Default) ---
+         * --- COLOR PALETTE (Light Theme) ---
          */
         --bg-main: #fafaf9;       /* stone-50 */
         --bg-panel: #ffffff;      /* white */
         --bg-surface: #f5f5f4;    /* stone-100 */
         --bg-element: #e7e5e4;    /* stone-200 */
-        --bg-glass: rgba(255, 255, 255, 0.85);
+        --bg-glass: rgba(255, 255, 255, 0.8);
         
-        --text-main: #0c0a09;     /* stone-950 */
+        --text-main: #1c1917;     /* stone-900 */
         --text-muted: #57534e;    /* stone-600 */
         --text-dim: #a8a29e;      /* stone-400 */
         
         --border: #e7e5e4;        /* stone-200 */
         --border-hover: #d6d3d1;  /* stone-300 */
-        --border-soft: rgba(0, 0, 0, 0.1);
+        --border-soft: rgba(0, 0, 0, 0.08);
         
         --accent: #dc2626;        /* red-600 */
 
-        --bg-soft: rgba(0, 0, 0, 0.05);
+        --bg-soft: rgba(0, 0, 0, 0.04);
         --bg-soft-hover: rgba(0, 0, 0, 0.08);
         
         /* --- MOTION CURVES --- */
@@ -69,26 +63,26 @@
 
       [data-theme="dark"] {
         /* 
-         * --- DARK THEME ---
+         * --- COLOR PALETTE (Dark Theme - Pure Black) ---
          */
-        --bg-main: #0c0a09;       /* stone-950 */
-        --bg-panel: #1c1917;      /* stone-900 */
-        --bg-surface: #292524;    /* stone-800 */
-        --bg-element: #1c1917;    /* stone-900 */
-        --bg-glass: rgba(28, 24, 23, 0.85); 
+        --bg-main: #000000;       /* Pure Black */
+        --bg-panel: #000000;      /* Pure Black */
+        --bg-surface: #0a0a0a;    /* Zinc 950 */
+        --bg-element: #171717;    /* Zinc 900 */
+        --bg-glass: rgba(0, 0, 0, 0.7); 
         
-        --text-main: #e7e5e4;     /* stone-200 */
-        --text-muted: #a8a29e;    /* stone-400 */
-        --text-dim: #57534e;      /* stone-600 */
+        --text-main: #ededed;     /* Zinc 100 */
+        --text-muted: #a1a1aa;    /* Zinc 400 */
+        --text-dim: #52525b;      /* Zinc 600 */
         
-        --border: #292524;        /* stone-800 */
-        --border-hover: #44403c;  /* stone-700 */
-        --border-soft: rgba(255, 255, 255, 0.1);
+        --border: #27272a;        /* Zinc 800 - Visible on black */
+        --border-hover: #3f3f46;  /* Zinc 700 */
+        --border-soft: rgba(255, 255, 255, 0.15);
         
-        --accent: #ef4444;        /* red-500 */
+        --accent: #dc2626;
         
-        --bg-soft: rgba(255, 255, 255, 0.05);
-        --bg-soft-hover: rgba(255, 255, 255, 0.1);
+        --bg-soft: rgba(255, 255, 255, 0.07);
+        --bg-soft-hover: rgba(255, 255, 255, 0.12);
       }
 
       body {
@@ -121,21 +115,24 @@
       
       .interact-lift:hover {
         transform: translateY(-2px);
-        box-shadow: 0 12px 24px -10px rgba(0,0,0,0.15);
+        box-shadow: 0 12px 24px -10px rgba(0,0,0,0.5);
         border-color: var(--border-hover);
         z-index: 10;
       }
       .interact-lift:active {
         transform: translateY(0) scale(0.99);
-        box-shadow: 0 2px 8px -4px rgba(0,0,0,0.1);
+        box-shadow: 0 2px 8px -4px rgba(0,0,0,0.5);
         transition-duration: 150ms;
       }
 
       .interact-lift-sm:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px -4px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 12px -4px rgba(0,0,0,0.3);
         border-color: var(--border-hover);
         z-index: 5;
+      }
+      [data-theme="dark"] .interact-lift-sm:hover {
+        filter: brightness(1.1);
       }
 
       .interact-lift-sm:active {
@@ -145,7 +142,10 @@
       }
 
       .interact-push:hover { transform: translateY(-1px); }
+      [data-theme="dark"] .interact-push:hover { filter: brightness(1.1); }
+      
       .interact-push:active { transform: translateY(1px) scale(0.97); transition-duration: 100ms; }
+      [data-theme="dark"] .interact-push:active { filter: brightness(0.95); }
 
       .interact-scale:hover { transform: scale(1.1); color: var(--text-main); }
       .interact-scale:active { transform: scale(0.9); transition-duration: 100ms; }
@@ -162,9 +162,10 @@
           var localTheme = localStorage.getItem('theme');
           var supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
           
-          if (localTheme === 'dark' || (!localTheme && supportDarkMode)) {
+          // Default to Dark Mode if no preference is set
+          if (localTheme === 'dark' || (!localTheme && true)) {
             document.documentElement.setAttribute('data-theme', 'dark');
-            document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0c0a09');
+            document.querySelector('meta[name="theme-color"]').setAttribute('content', '#000000');
           } else {
             document.documentElement.setAttribute('data-theme', 'light');
             document.querySelector('meta[name="theme-color"]').setAttribute('content', '#fafaf9');

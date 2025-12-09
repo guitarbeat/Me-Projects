@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useCallback } from 'react';
 import { Plus, Minus, Maximize2, Network, Layers } from 'lucide-react';
-import { buildChord, getCompassLabel, estimateChordSentiment, generateSecondaryDominants, getHarmonicSuggestions, getScaleNotes, ChordComplexity, Note, ScaleType, Chord } from './lib';
+import { buildChord, getCompassLabel, estimateChordSentiment, generateSecondaryDominants, getHarmonicSuggestions, getScaleNotes, ChordComplexity, Note, ScaleType, Chord, useStore, useDerivedData } from './lib';
 import { cn, Badge } from './ui';
 
 // --- HELPERS ---
@@ -260,36 +260,25 @@ const generateGridData = (key: Note, scale: ScaleType, chords: any[], secondary:
     return { points, tris, extMap, links };
 };
 
-export interface HarmonicSpaceProps {
-    currentKey: Note;
-    scaleType: ScaleType;
-    chords: Chord[];
-    tensionChords: Chord[];
-    onAddChord: (c: Chord) => void;
-    onChordClick: (c: Chord) => void;
-    contextChord: Chord | null;
-    mood: { valence: number, arousal: number, tension: number };
-    complexity: ChordComplexity;
-    targetMood: { v: number, a: number } | null;
-    onHoverChord: (c: Chord | null) => void;
-}
-
 // --- MAIN COMPONENT ---
-export const HarmonicSpace = ({ 
-    currentKey, 
-    scaleType, 
-    chords, 
-    tensionChords, 
-    onAddChord, 
-    onChordClick, 
-    contextChord, 
-    mood, 
-    complexity, 
-    targetMood, 
-    onHoverChord 
-}: HarmonicSpaceProps) => {
+export const HarmonicSpace = () => {
+
+    const { 
+        key: currentKey, 
+        scale: scaleType, 
+        mood, 
+        complexity, 
+        targetMood, 
+        handleProgression, 
+        playOne, 
+        setHoveredChord,
+        progression 
+    } = useStore();
+
+    const { chords, tensionChords } = useDerivedData();
 
     // Derived logic inside component
+    const contextChord = useMemo(() => progression.slice().reverse().find(c => !c.isRest) || null, [progression]);
     const secondaryDominants = useMemo(() => generateSecondaryDominants(currentKey, scaleType), [currentKey, scaleType]);
     const suggestedIndices = useMemo(() => getHarmonicSuggestions(contextChord), [contextChord]);
     
@@ -324,19 +313,19 @@ export const HarmonicSpace = ({
             let ext = complexity === 'triad' ? '' : complexity === '11th' ? '11' : complexity === '9th' ? '9' : '7';
             chordToPlay = buildChord(t.root, t.type, ext);
         }
-        onChordClick(chordToPlay);
-        onAddChord(chordToPlay);
-    }, [complexity, onChordClick, onAddChord]);
+        playOne(chordToPlay);
+        handleProgression('add', chordToPlay);
+    }, [complexity, playOne, handleProgression]);
 
     const handleEnter = (t: any) => {
         setHover(t);
         const info = t.chordInfo;
         if (info) {
              const sentiment = estimateChordSentiment(info, currentKey, scaleType);
-             onHoverChord({ ...info, sentiment }); 
+             setHoveredChord({ ...info, sentiment }); 
         }
     };
-    const handleLeave = () => { setHover(null); onHoverChord(null); };
+    const handleLeave = () => { setHover(null); setHoveredChord(null); };
 
     return (
         <div className="w-full h-full relative overflow-hidden bg-[var(--bg-main)] touch-none select-none flex items-center justify-center cursor-move"
@@ -354,7 +343,7 @@ export const HarmonicSpace = ({
                     </filter>
                 </defs>
                 <g transform={`translate(${view.x}, ${view.y}) scale(${view.k})`} className="transition-transform duration-75">
-                    <g opacity={0.15}>{points.map((p,i)=><React.Fragment key={i}><line x1={p.sx} y1={p.sy} x2={p.sx+X_VEC.x} y2={p.sy} stroke={p.isDiatonic?"var(--text-main)":"var(--border)"}/><line x1={p.sx} y1={p.sy} x2={p.sx+Y_VEC.x} y2={p.sy+Y_VEC.y} stroke={p.isDiatonic?"var(--text-main)":"var(--border)"}/><line x1={p.sx} y1={p.sy} x2={p.sx+X_VEC.x-Y_VEC.x} y2={p.sy+X_VEC.y-Y_VEC.y} stroke={p.isDiatonic?"var(--text-main)":"var(--border)"}/></React.Fragment>)}</g>
+                    <g opacity={0.15}>{points.map((p,i)=><React.Fragment key={i}><line x1={p.sx} y1={p.sy} x2={p.sx+X_VEC.x} y2={p.sy} stroke={p.isDiatonic?"var(--text-main)":"var(--border)"} strokeWidth={p.isDiatonic?1.5:1} /><line x1={p.sx} y1={p.sy} x2={p.sx+Y_VEC.x} y2={p.sy+Y_VEC.y} stroke={p.isDiatonic?"var(--text-main)":"var(--border)"} strokeWidth={p.isDiatonic?1.5:1} /><line x1={p.sx} y1={p.sy} x2={p.sx+X_VEC.x-Y_VEC.x} y2={p.sy+X_VEC.y-Y_VEC.y} stroke={p.isDiatonic?"var(--text-main)":"var(--border)"} strokeWidth={p.isDiatonic?1.5:1} /></React.Fragment>)}</g>
                     <g>{links.map(l => {
                         const active = activeIds.root === l.rootId;
                         const isHover = hover && (hover.id === l.rootId || extMap[hover.id]?.includes(l.targetId));
@@ -362,7 +351,7 @@ export const HarmonicSpace = ({
                     })}</g>
                     <g>{tris.map(t => {
                         const score = getSentimentMatch(t.chordInfo, currentKey, scaleType, targetMood);
-                        return <TonnetzTriangle key={t.id} t={t} mood={mood} matchScore={score} state={{isActive:activeIds.set.has(t.id), isHover:hover?.id===t.id, isLinked: hover && (extMap[hover.id]?.includes(t.id) || extMap[t.id]?.includes(hover.id)), isSuggested:t.isSuggested, isTension:t.isTension}} onClick={handleChordAction} onEnter={handleEnter} onLeave={handleLeave} />;
+                        return <TonnetzTriangle key={t.id} t={t} mood={mood} matchScore={score} state={{isActive:activeIds.set.has(t.id), isHover:hover?.id===t.id, isLinked: hover && (extMap[hover.id]?.includes(t.id) || extMap[t.id]?.includes(hover.id)), isSuggested:t.isSuggested, isTension: t.isTension}} onClick={handleChordAction} onEnter={handleEnter} onLeave={handleLeave} />;
                     })}</g>
                     <g>{points.map((p, i) => <TonnetzNode key={i} x={p.sx} y={p.sy} note={p.note} isKey={p.note === currentKey} isDiatonic={p.isDiatonic} active={activeNotes.has(p.note)} mood={mood} />)}</g>
                 </g>
@@ -374,20 +363,20 @@ export const HarmonicSpace = ({
                  {hover && (() => {
                      const sent = estimateChordSentiment(hover.chordInfo, currentKey, scaleType);
                      return (
-                        <div className="bg-[var(--bg-glass)] backdrop-blur border border-[var(--border)] p-3 rounded-lg shadow-xl animate-in fade-in w-56">
+                        <div className="bg-[var(--bg-glass)] backdrop-blur border border-[var(--border-soft)] p-3 rounded-lg shadow-xl animate-in fade-in w-56">
                             <div className="flex items-center justify-between">
                                 <span className="text-sm font-bold text-[var(--text-main)]">{hover.chordInfo.symbol}</span>
-                                <Badge variant={hover.diatonic ? "default" : "accent"}>{hover.diatonic ? "Diatonic" : "Chromatic"}</Badge>
+                                <Badge variant={hover.diatonic ? "default" : "accent"}>{hover.diatonic ? "Diatonic" : hover.isTension ? "Tension" : "Chromatic"}</Badge>
                             </div>
                             <div className="text-[10px] text-[var(--text-muted)] mt-1 mb-2">{hover.chordInfo.romanNumeral || 'Non-Functional'}</div>
-                            <div className="flex items-center gap-3 pt-2 border-t border-[var(--border)]">
-                                <div className="relative w-8 h-8 rounded-full border border-[var(--border)] bg-[var(--bg-soft)]">
-                                    <div className="absolute top-1/2 left-0 right-0 h-px bg-[var(--border)]"/><div className="absolute left-1/2 top-0 bottom-0 w-px bg-[var(--border)]"/>
+                            <div className="flex items-center gap-3 pt-2 border-t border-[var(--border-soft)]">
+                                <div className="relative w-8 h-8 rounded-full border border-[var(--border-soft)] bg-[var(--bg-soft)]">
+                                    <div className="absolute top-1/2 left-0 right-0 h-px bg-[var(--border-soft)]"/><div className="absolute left-1/2 top-0 bottom-0 w-px bg-[var(--border-soft)]"/>
                                     <div className="absolute w-2 h-2 bg-[var(--accent)] rounded-full -ml-1 -mt-1 shadow-[0_0_5px_var(--accent)]" style={{ left: `${(sent.valence + 1) * 50}%`, top: `${(1 - sent.arousal) * 50}%` }}/>
                                 </div>
                                 <div className="flex flex-col"><span className="text-[9px] font-bold text-[var(--text-main)]">{getCompassLabel(sent.valence, sent.arousal)}</span></div>
                             </div>
-                            {complexity !== 'triad' && extMap[hover.id] && (<div className="mt-2 pt-1 border-t border-[var(--border)] flex items-center gap-1"><Layers size={8} className="text-[var(--text-dim)]"/><span className="text-[9px] text-[var(--text-dim)]">Extended Structure</span></div>)}
+                            {complexity !== 'triad' && extMap[hover.id] && (<div className="mt-2 pt-1 border-t border-[var(--border-soft)] flex items-center gap-1"><Layers size={8} className="text-[var(--text-dim)]"/><span className="text-[9px] text-[var(--text-dim)]">Extended Structure</span></div>)}
                         </div>
                      );
                  })()}

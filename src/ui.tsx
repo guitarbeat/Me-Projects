@@ -1,40 +1,16 @@
-
 import React from 'react';
 import { LucideIcon, ChevronRight, Home } from 'lucide-react';
 
 // --- UTILITIES ---
-
 export const cn = (...classes: (string | undefined | null | false)[]) => classes.filter(Boolean).join(' ');
 
 // --- PRIMITIVES ---
 
-export interface TypoProps extends React.HTMLAttributes<HTMLElement> {
-    variant?: 'h1' | 'h2' | 'h3' | 'label' | 'mono' | 'body' | 'sub';
-    as?: any;
-    className?: string;
-    children?: React.ReactNode;
-}
-
-export const Typo = ({ variant='body', as, children, className, ...props }: TypoProps) => {
-    const Component = as || (variant?.startsWith('h') ? variant : 'div');
-    const s = { 
-      h1: "text-2xl font-light text-[var(--text-main)]", 
-      h2: "text-lg font-medium text-[var(--text-main)]", 
-      h3: "text-sm font-medium text-[var(--text-main)]", 
-      label: "text-[9px] font-black uppercase tracking-wider text-[var(--text-dim)]", 
-      mono: "font-mono text-[10px] text-[var(--text-muted)]", 
-      body: "text-sm text-[var(--text-muted)] leading-relaxed", 
-      sub: "text-xs text-[var(--text-dim)]" 
-    };
-    return <Component className={cn(s[variant as keyof typeof s] || 'body', className)} {...props}>{children}</Component>;
-};
-
-// Unified Surface component
-export const Surface = ({ children, className, variant='panel', active, ...props }: React.HTMLAttributes<HTMLDivElement> & { variant?: 'panel'|'element'|'card'|'ghost'|'overlay'|'tooltip', active?: boolean }) => {
+// Unified Surface component for panels, cards, and tooltips
+export const Surface = ({ children, className, variant='panel', active, ...props }: React.HTMLAttributes<HTMLDivElement> & { variant?: 'panel'|'element'|'ghost'|'overlay'|'tooltip', active?: boolean }) => {
     const vars = { 
       panel: "bg-[var(--bg-panel)] border border-[var(--border)] rounded-xl", 
       element: "bg-[var(--bg-element)] border border-[var(--border)] rounded-lg shadow-sm", 
-      card: "bg-[var(--bg-surface)] border border-[var(--border)] rounded-xl shadow-sm", 
       ghost: "bg-transparent border border-transparent",
       overlay: "bg-[var(--bg-glass)] backdrop-blur-xl border border-[var(--border-soft)] shadow-2xl rounded-lg",
       tooltip: "bg-[var(--bg-glass)] backdrop-blur-xl border border-[var(--border-soft)] shadow-2xl rounded-lg z-[100] text-xs text-[var(--text-main)] px-3 py-2 pointer-events-none"
@@ -42,7 +18,7 @@ export const Surface = ({ children, className, variant='panel', active, ...props
     return <div className={cn("transition-all duration-300", vars[variant], active && "border-[var(--accent)] bg-[var(--bg-surface)] ring-1 ring-[var(--accent)]", className)} {...props}>{children}</div>;
 };
 
-// Unified Button component
+// Unified Button component handles both text buttons and icon-only buttons
 export const Button = ({ variant='secondary', size='md', className, children, icon: Icon, active, title, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary'|'secondary'|'ghost'|'danger', size?: 'sm'|'md'|'icon', icon?: LucideIcon, active?: boolean }) => {
     const v = { 
         primary: "bg-[var(--accent)] text-black shadow-lg shadow-[var(--accent)]/20 border-transparent hover:brightness-110", 
@@ -98,12 +74,14 @@ export const ToolbarGroup = ({ children, className }: { children?: React.ReactNo
     <div className={cn("flex items-center bg-[var(--bg-element)] rounded-lg p-0.5 border border-[var(--border)] shrink-0 gap-0.5 min-w-0", className)}>{children}</div>
 );
 
+// --- DRAG HANDLE PRIMITIVE ---
 export const DragHandle = ({ vertical = false, active, className, ...props }: any) => (
     <div className={cn("flex items-center justify-center transition-all group interact-base cursor-grab active:cursor-grabbing", vertical ? "w-4 h-full cursor-col-resize" : "h-4 w-full cursor-row-resize", className)} {...props}>
         <div className={cn("rounded-full bg-[var(--border)] transition-all group-hover:bg-[var(--accent)] opacity-50 group-hover:opacity-100", vertical ? "w-1 h-8" : "h-1 w-12", active && "bg-[var(--accent)] opacity-100 scale-110")} />
     </div>
 );
 
+// --- BREADCRUMBS ---
 export const Breadcrumbs = ({ items }: { items: { label: string, active?: boolean, onClick?: () => void }[] }) => {
     return (
         <nav aria-label="Breadcrumb" className="flex items-center h-full">
@@ -134,23 +112,3 @@ export const Breadcrumbs = ({ items }: { items: { label: string, active?: boolea
         </nav>
     );
 };
-
-export class GlobalErrorBoundary extends React.Component<{ children?: React.ReactNode }, { hasError: boolean; error: any }> {
-  constructor(props: { children?: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-  static getDerivedStateFromError(error: any) { return { hasError: true, error }; }
-  componentDidCatch(error: any, errorInfo: any) { console.error("Global Uncaught error:", error, errorInfo); }
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div style={{padding: 40, color: 'var(--text-main)', background: 'var(--bg-main)', height: '100vh', fontFamily: 'monospace', overflow: 'auto'}}>
-          <h1 style={{fontSize: '24px', marginBottom: '20px', color: 'var(--accent)'}}>Application Error</h1>
-          <pre style={{whiteSpace: 'pre-wrap', background: 'var(--bg-panel)', padding: '20px', borderRadius: '8px', border: '1px solid var(--border)'}}>{this.state.error?.toString()}</pre>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}

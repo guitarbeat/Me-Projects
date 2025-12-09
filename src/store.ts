@@ -57,7 +57,7 @@ export const useStore = create<AppState>((set, get) => ({
     theme: (() => {
         if (typeof document === 'undefined') return 'dark';
         const attr = document.documentElement.getAttribute('data-theme');
-        if (attr === 'light' || attr === 'dark') return attr as 'light' | 'dark';
+        if (attr === 'light' || attr === 'dark') return attr;
         return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     })(),
     key: 'C',
@@ -81,7 +81,7 @@ export const useStore = create<AppState>((set, get) => ({
     toggleTheme: () => set((state) => {
         const newTheme = state.theme === 'dark' ? 'light' : 'dark';
         document.documentElement.setAttribute('data-theme', newTheme);
-        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', newTheme === 'dark' ? '#0c0a09' : '#fafaf9');
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', newTheme === 'dark' ? '#141110' : '#fafaf9');
         localStorage.setItem('theme', newTheme);
         return { theme: newTheme };
     }),

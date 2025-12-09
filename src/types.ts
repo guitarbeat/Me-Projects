@@ -47,6 +47,7 @@ export interface Chord {
   scale?: number;
   duration: number;
   isRest?: boolean;
+  sentiment?: { valence: number; arousal: number; };
 }
 
 export interface ScaleDef {

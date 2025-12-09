@@ -1,9 +1,13 @@
+
 import { create } from 'zustand';
 import { Chord, Note, ScaleType, InstrumentType, ChordComplexity } from './types';
 import { audioEngine } from './audio';
+import { SCALE_DEFS } from './constants';
+import { findClosestScale, getTempoFromArousal } from './theory';
 
 interface AppState {
     // --- STATE ---
+    theme: 'light' | 'dark';
     key: Note;
     scale: ScaleType;
     complexity: ChordComplexity;
@@ -28,6 +32,7 @@ interface AppState {
     playIndex: number | null;
 
     // --- ACTIONS ---
+    toggleTheme: () => void;
     setKey: (k: Note) => void;
     setScale: (s: ScaleType) => void;
     setComplexity: (c: ChordComplexity) => void;
@@ -50,6 +55,12 @@ interface AppState {
 
 export const useStore = create<AppState>((set, get) => ({
     // Initial State
+    theme: (() => {
+        if (typeof document === 'undefined') return 'dark';
+        const attr = document.documentElement.getAttribute('data-theme');
+        if (attr === 'light' || attr === 'dark') return attr;
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    })(),
     key: 'C',
     scale: ScaleType.Major,
     complexity: 'triad',
@@ -63,21 +74,58 @@ export const useStore = create<AppState>((set, get) => ({
     targetMood: null,
     hoveredSequenceIndex: null,
     progression: [],
-    mood: { valence: 0.8, arousal: 0.2, tension: 0.0 },
+    mood: { valence: 0.75, arousal: 0.5, tension: 0.0 }, // Matches Major Scale Default
     isPlaying: false,
     playIndex: null,
 
     // Actions
+    toggleTheme: () => set((state) => {
+        const newTheme = state.theme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        document.querySelector('meta[name="theme-color"]')?.setAttribute('content', newTheme === 'dark' ? '#141110' : '#fafaf9');
+        localStorage.setItem('theme', newTheme);
+        return { theme: newTheme };
+    }),
+
     setKey: (key) => set({ key }),
-    setScale: (scale) => !get().isScaleLocked && set({ scale }),
+    
+    setScale: (scale) => {
+        const state = get();
+        if (!state.isScaleLocked) {
+            const def = SCALE_DEFS[scale];
+            if (def) {
+                const { v, a, t } = def.scaleCoordinates;
+                // Update Mood to match Scale
+                set({ scale, mood: { valence: v, arousal: a, tension: t } });
+                audioEngine.setMood(v, a, t);
+                
+                // Optional: Snap BPM if significant change to reinforce genre feel
+                const targetBpm = getTempoFromArousal(a);
+                if (Math.abs(targetBpm - state.bpm) > 5) {
+                    set({ bpm: targetBpm });
+                    audioEngine.setBpm(targetBpm);
+                }
+            }
+        } else {
+             set({ scale });
+        }
+    },
+    
     setComplexity: (complexity) => set({ complexity }),
     toggleScaleLock: () => set((s) => ({ isScaleLocked: !s.isScaleLocked })),
-    setBpm: (bpm) => set({ bpm }),
+    
+    setBpm: (bpm) => {
+        set({ bpm });
+        audioEngine.setBpm(bpm);
+    },
+    
     setTimeSig: (timeSig) => set({ timeSig }),
+    
     setInstrument: (instrument) => {
         set({ instrument });
         audioEngine.setInstrument(instrument);
     },
+    
     togglePath: () => set((s) => ({ showPath: !s.showPath })),
     setView: (view) => set({ view }),
     setHoveredChord: (hoveredChord) => set({ hoveredChord }),
@@ -85,9 +133,22 @@ export const useStore = create<AppState>((set, get) => ({
     setHoveredSequenceIndex: (hoveredSequenceIndex) => set({ hoveredSequenceIndex }),
 
     setMood: (v, a, t) => {
-        const currentTension = t !== undefined ? t : get().mood.tension;
-        set({ mood: { valence: v, arousal: a, tension: currentTension } });
+        const state = get();
+        const currentTension = t !== undefined ? t : state.mood.tension;
+        
+        // 1. Update Audio Engine immediately
         audioEngine.setMood(v, a, currentTension);
+        
+        // 2. Snap to Scale if unlocked
+        let newScale = state.scale;
+        if (!state.isScaleLocked) {
+             newScale = findClosestScale(v, a, currentTension, state.scale);
+        }
+        
+        set({ 
+            mood: { valence: v, arousal: a, tension: currentTension },
+            scale: newScale
+        });
     },
 
     handleProgression: (action, payload) => {

@@ -1,8 +1,58 @@
 
 import { useEffect, useMemo } from 'react';
-import { generateChordsForScale, getTensionChords, getMusicalCharacteristics, SCALE_DEFS } from './lib';
+import { generateChordsForScale, getTensionChords, getMusicalCharacteristics } from './theory';
+import { SCALE_DEFS } from './constants';
 import { useStore } from './store';
 import { Chord } from './types';
+
+// --- URL SYNC HOOK ---
+export const useUrlSync = () => {
+    const store = useStore();
+    
+    // Init from URL on mount
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        
+        // Skip if running in a blob/sandbox environment where location is restricted
+        if (window.location.protocol === 'blob:') return;
+
+        const params = new URLSearchParams(window.location.search);
+        
+        // Batch updates would be ideal, but individual setters work for now
+        if (params.has('key')) store.setKey(params.get('key') as any);
+        if (params.has('scale')) store.setScale(params.get('scale') as any);
+        if (params.has('bpm')) store.setBpm(parseInt(params.get('bpm')!));
+        if (params.has('inst')) store.setInstrument(params.get('inst') as any);
+        if (params.has('view')) store.setView(params.get('view')!);
+    }, []);
+
+    // Sync state to URL
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        // Skip if running in a blob/sandbox environment where location is restricted
+        if (window.location.protocol === 'blob:') return;
+
+        const params = new URLSearchParams();
+        params.set('key', store.key);
+        params.set('scale', store.scale);
+        params.set('bpm', store.bpm.toString());
+        params.set('inst', store.instrument);
+        params.set('view', store.view);
+        
+        const url = `${window.location.pathname}?${params.toString()}`;
+        
+        try {
+            // Use replaceState to avoid cluttering history stack with every knob turn
+            window.history.replaceState({}, '', url);
+        } catch (e) {
+            // Ignored: likely running in a restricted iframe or blob context
+            console.debug('URL sync skipped:', e);
+        }
+    }, [store.key, store.scale, store.bpm, store.instrument, store.view]);
+};
+
+// --- EXISTING HOOKS ---
 
 // Helper hook to calculate derived musical data from the store
 export const useDerivedData = () => {

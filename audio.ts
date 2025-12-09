@@ -62,6 +62,10 @@ export class AudioEngine {
         }
     }
 
+    setBpm(bpm: number) {
+        Tone.Transport.bpm.value = bpm;
+    }
+
     playChord(chord: Chord, duration: number | string = "2n", time?: number) {
         // Voicing Logic: Spread notes
         const notes = chord.notes.map((n, i) => {
@@ -87,9 +91,6 @@ export class AudioEngine {
             if (!chord.isRest) {
                 // Schedule audio
                 Tone.Transport.schedule((time) => {
-                    // Convert duration (beats) to Tone notation if strictly 4/4, 
-                    // or just calculate seconds. Tone.Transport handles beats natively.
-                    // Duration is in quarter notes usually.
                     const dur = chord.duration * (60/bpm);
                     this.playChord(chord, dur, time);
                     
@@ -100,11 +101,7 @@ export class AudioEngine {
                 }, accumulatedTime);
             }
             
-            // Advance time (beats * seconds_per_beat is handled by Tone if we used measure notation,
-            // but here we are scheduling on a timeline in seconds for simplicity with variable chord lengths)
-            // Ideally: accumulatedTime += chord.duration (in quarter notes)
-            // Tone.Transport time is in seconds by default unless formatted
-            // Let's stick to seconds for simplicity with variable BPM
+            // Advance time
             const beatDur = 60/bpm;
             accumulatedTime += (chord.duration * beatDur);
         });

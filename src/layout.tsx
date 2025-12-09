@@ -1,13 +1,14 @@
 
-import React, { useState, useRef, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useRef, useEffect, useLayoutEffect, useCallback } from 'react';
 import { cn, IconButton } from './ui';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { useStore, ScaleType, CIRCLE_KEYS } from './lib';
+import { useStore, ScaleType, CIRCLE_KEYS, InstrumentType, ChordComplexity } from './lib';
 import { ChordPalette } from './sequencer';
 import { 
     Play, Pause, Lock, Unlock, Link as LinkIcon, Trash2, 
     ListMusic, Network, Cloud, Keyboard, Music2, Zap, Gauge,
-    ChevronsUp, ChevronsDown, ChevronUp, ChevronDown, MoreHorizontal
+    ChevronsUp, ChevronsDown, ChevronUp, ChevronDown,
+    MoreHorizontal
 } from 'lucide-react';
 
 // --- SHARED LAYOUT LOGIC ---
@@ -19,39 +20,43 @@ import {
 function useDynamicLayout(ref: React.RefObject<HTMLElement>) {
     const [metrics, setMetrics] = useState({ radius: 24, padding: 12, gap: 8 });
     
-    useLayoutEffect(() => {
+    useEffect(() => {
         const update = () => {
-            // Use window as fallback if ref not ready, but prefer ref for container-aware context
-            const w = ref.current?.offsetWidth || window.innerWidth;
-            const h = ref.current?.offsetHeight || window.innerHeight;
+            if (!ref.current) return;
+            const w = ref.current.offsetWidth;
+            const h = ref.current.offsetHeight;
             const minDim = Math.min(w, h);
             
-            // Dynamic scaling logic
-            const radius = Math.max(16, Math.min(32, minDim * 0.05));
+            // Dynamic scaling logic: Tighter on small screens, spacious on large
+            // Adjusted for better "island" separation
+            const radius = Math.max(16, Math.min(28, minDim * 0.05));
             const padding = Math.max(8, Math.min(20, minDim * 0.025));
             
             setMetrics({ 
                 radius, 
                 padding, 
-                gap: Math.max(4, padding / 2) 
+                gap: Math.max(4, padding * 0.5) 
             });
         };
 
-        const obs = new ResizeObserver(update);
-        if (ref.current) obs.observe(ref.current);
-        window.addEventListener('resize', update);
-        update(); // Initial call
+        // Initial update
+        update();
+
+        const obs = new ResizeObserver(() => {
+            requestAnimationFrame(update);
+        });
         
-        return () => {
-            obs.disconnect();
-            window.removeEventListener('resize', update);
-        };
-    }, []);
+        if (ref.current) {
+            obs.observe(ref.current);
+        }
+        
+        return () => obs.disconnect();
+    }, [ref]);
 
     return metrics;
 }
 
-// --- STYLED COMPONENTS ---
+// --- STYLED HANDLE ---
 
 interface HandleProps {
     className?: string;
@@ -61,38 +66,56 @@ interface HandleProps {
     onToggle?: () => void;
 }
 
-const Handle = ({ className, vertical = false, isDragging, collapsed, onToggle }: HandleProps) => (
-    <PanelResizeHandle className={cn("group flex items-center justify-center z-50 outline-none touch-none transition-all", vertical ? "w-5 h-full cursor-col-resize -mx-2.5" : "h-6 w-full cursor-row-resize -my-3", className)}>
-        <div 
-            onClick={(e) => { 
-                // Only trigger toggle if strictly clicking the pill, not dragging
-                if (onToggle) {
-                    e.stopPropagation();
-                    onToggle();
-                }
-            }}
-            className={cn(
-            "rounded-full bg-[var(--bg-element)] backdrop-blur-md border border-[var(--border)] transition-all duration-300 shadow-sm flex items-center justify-center",
-            "group-hover:bg-[var(--bg-surface)] group-hover:border-[var(--accent)] group-hover:scale-105 cursor-pointer",
-            "group-active:bg-[var(--accent)] group-active:border-[var(--accent)] group-active:scale-110 group-active:shadow-[0_0_15px_var(--accent)]",
-            vertical 
-                ? "w-1.5 h-12 group-hover:h-16" 
-                : "h-3 w-16 group-hover:w-24 group-hover:h-5"
-        )}>
-            {!vertical && onToggle && (
-                <div className="opacity-0 group-hover:opacity-100 transition-opacity text-[var(--accent)] duration-200">
-                    {collapsed ? <ChevronDown size={12} strokeWidth={3} /> : <ChevronUp size={12} strokeWidth={3} />}
-                </div>
-            )}
-        </div>
-    </PanelResizeHandle>
-);
+const Handle = ({ className, vertical = false, isDragging, collapsed, onToggle }: HandleProps) => {
+    return (
+        <PanelResizeHandle className={cn("group flex items-center justify-center z-50 outline-none touch-none transition-all focus:outline-none", vertical ? "w-5 h-full cursor-col-resize -mx-2.5" : "h-6 w-full cursor-row-resize -my-3", className)}>
+            <div 
+                onPointerDown={(e) => e.stopPropagation()} 
+                onClick={(e) => { 
+                    if (onToggle) {
+                        e.stopPropagation();
+                        e.preventDefault(); 
+                        onToggle();
+                    }
+                }}
+                className={cn(
+                    "rounded-full bg-[var(--bg-element)] backdrop-blur-md border border-[var(--border)] transition-all duration-300 shadow-sm flex items-center justify-center relative overflow-hidden",
+                    "group-hover:bg-[var(--bg-surface)] group-hover:border-[var(--accent)] group-hover:scale-105 cursor-pointer",
+                    "active:scale-95",
+                    vertical 
+                        ? "w-1.5 h-12 group-hover:h-16" 
+                        : "h-1.5 w-16 group-hover:w-24 group-hover:h-5",
+                    (isDragging || collapsed) && !vertical && "w-24 h-5 bg-[var(--accent)] border-[var(--accent)]"
+                )}
+            >
+                {/* Visual Indicator for Toggle */}
+                {!vertical && onToggle && (
+                    <div className={cn(
+                        "absolute inset-0 flex items-center justify-center transition-opacity duration-200 text-black", 
+                        (collapsed || isDragging || className?.includes('hover')) ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                    )}>
+                        {collapsed ? <MoreHorizontal size={14} strokeWidth={3} /> : <ChevronUp size={12} strokeWidth={3} />}
+                    </div>
+                )}
+                
+                {/* Drag Indicator (Dots) - visible when not hovering/active */}
+                {!collapsed && !isDragging && !className?.includes('hover') && (
+                     <div className={cn("flex gap-0.5 opacity-0 group-hover:opacity-0 transition-opacity duration-200", !vertical && "flex-row", vertical && "flex-col")}>
+                         <div className="w-0.5 h-0.5 rounded-full bg-[var(--text-muted)]" />
+                         <div className="w-0.5 h-0.5 rounded-full bg-[var(--text-muted)]" />
+                         <div className="w-0.5 h-0.5 rounded-full bg-[var(--text-muted)]" />
+                     </div>
+                )}
+            </div>
+        </PanelResizeHandle>
+    );
+};
 
 // --- RESIZABLE TOP PANEL ---
 
 export const ResizableTopPanel = ({ 
     children, 
-    minHeight = 80, 
+    minHeight = 110, 
     maxHeight = 400, 
     defaultHeight = 180 
 }: { 
@@ -114,37 +137,46 @@ export const ResizableTopPanel = ({
     // Layout Metrics
     const { radius, padding, gap } = useDynamicLayout(wrapperRef);
 
-    // Auto-stabilize height on window resize
-    useEffect(() => {
-        const handleResize = () => {
-            const safeMax = window.innerHeight * 0.6; 
-            if (height > safeMax && !isCollapsed) {
-                setHeight(safeMax);
-            }
-        };
-        window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, [height, isCollapsed]);
+    // Calculate minimized dimensions
+    // When collapsed, we want it to be basically just padding + handle area.
+    // Let's say handle area is ~12px visual height, plus padding top/bottom.
+    const collapsedHeight = padding * 2 + 16; 
 
     // Drag Logic
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
             if (!isDragging) return;
             e.preventDefault();
+            
+            // Calculate delta
             const delta = e.clientY - startY.current;
             const absoluteMax = Math.min(maxHeight, window.innerHeight * 0.7);
             
-            // If dragging, we are not collapsed
-            if (isCollapsed) setIsCollapsed(false);
-
+            // Allow dragging down to minHeight, but not into collapsed zone manually unless handled separately
+            // Actually, let's allow dragging to resize.
             const newHeight = Math.max(minHeight, Math.min(absoluteMax, startHeight.current + delta));
+            
             setHeight(newHeight);
+            
+            if (isCollapsed && Math.abs(delta) > 5) {
+                setIsCollapsed(false);
+            }
         };
 
         const handleMouseUp = () => {
-            setIsDragging(false);
-            document.body.style.cursor = '';
-            document.body.style.userSelect = '';
+            if (isDragging) {
+                setIsDragging(false);
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+                
+                // Snap logic: if dragged too small, just clamp to minHeight
+                if (height < minHeight) {
+                    setHeight(minHeight);
+                    setIsCollapsed(false); // dragging usually implies user wants to see it
+                } else {
+                    setLastHeight(height);
+                }
+            }
         };
 
         if (isDragging) {
@@ -158,38 +190,47 @@ export const ResizableTopPanel = ({
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [isDragging, minHeight, maxHeight, isCollapsed]);
+    }, [isDragging, minHeight, maxHeight, isCollapsed, height]);
 
     const handleMouseDown = (e: React.MouseEvent) => {
-        if (e.button !== 0) return; // Only left click
+        if (e.button !== 0) return;
         setIsDragging(true);
         startY.current = e.clientY;
-        startHeight.current = height;
-    };
-
-    const toggleCollapse = () => {
+        startHeight.current = isCollapsed ? collapsedHeight : height;
         if (isCollapsed) {
-            setHeight(lastHeight);
-            setIsCollapsed(false);
-        } else {
-            setLastHeight(height);
-            setHeight(minHeight);
-            setIsCollapsed(true);
+             setIsCollapsed(false);
+             setHeight(lastHeight);
         }
     };
+
+    const toggleCollapse = useCallback(() => {
+        if (isCollapsed) {
+            // Expand
+            setHeight(Math.max(lastHeight, minHeight));
+            setIsCollapsed(false);
+        } else {
+            // Collapse
+            setLastHeight(height);
+            setHeight(collapsedHeight);
+            setIsCollapsed(true);
+        }
+    }, [isCollapsed, height, lastHeight, minHeight, collapsedHeight]);
 
     // Shared Card Style
     const containerStyle: React.CSSProperties = {
         borderRadius: `${radius}px`,
-        boxShadow: '0 0 0 1px var(--border), 0 10px 40px -10px rgba(0,0,0,0.5)',
-        transition: isDragging ? 'none' : 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+        boxShadow: '0 0 0 1px var(--border), 0 4px 20px -5px rgba(0,0,0,0.3)',
+        // Hardware acceleration to fix anti-aliasing clipping
+        transform: 'translate3d(0,0,0)',
+        isolation: 'isolate', 
+        transition: isDragging ? 'none' : 'height 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.2s',
     };
 
     return (
         <div 
             ref={wrapperRef} 
-            style={{ height: isCollapsed ? minHeight : height }} 
-            className="relative z-30 shrink-0 transition-[height] duration-400 cubic-bezier(0.16, 1, 0.3, 1) will-change-[height]"
+            style={{ height: height }} 
+            className="relative z-30 shrink-0 w-full transition-[height] duration-400 cubic-bezier(0.16, 1, 0.3, 1) will-change-[height]"
         >
             <div 
                 className="absolute inset-0 transition-all duration-300" 
@@ -199,28 +240,27 @@ export const ResizableTopPanel = ({
                 }}
             >
                 <div className="h-full w-full bg-[var(--bg-panel)] overflow-hidden relative group" style={containerStyle}>
-                    {children}
+                    <div className={cn("h-full w-full transition-opacity duration-300 delay-75", isCollapsed ? "opacity-0 pointer-events-none" : "opacity-100")}>
+                        {children}
+                    </div>
                 </div>
             </div>
 
-            {/* Custom Resize Handle / Minimize Toggle */}
+            {/* Manual Resize Handle with Toggle */}
             <div 
+                className="absolute bottom-0 left-0 right-0 h-5 cursor-row-resize flex items-center justify-center z-50 -mb-2.5"
                 onMouseDown={handleMouseDown}
-                onDoubleClick={toggleCollapse}
-                className="absolute bottom-0 left-0 right-0 h-5 cursor-row-resize flex items-center justify-center group z-50 hover:bg-transparent -mb-2.5 touch-none"
             >
-                <div 
+                 <div 
                     onClick={(e) => { e.stopPropagation(); toggleCollapse(); }}
                     className={cn(
-                        "rounded-full bg-[var(--bg-element)] backdrop-blur-md border border-[var(--border)] transition-all duration-300 shadow-sm flex items-center justify-center",
-                        "group-hover:bg-[var(--bg-surface)] group-hover:border-[var(--accent)] group-hover:scale-105 cursor-pointer",
-                        "active:scale-95",
-                        isDragging ? "bg-[var(--accent)] w-24 h-4 shadow-[0_0_10px_var(--accent)]" : "h-1.5 w-16 group-hover:h-4 group-hover:w-20"
+                        "h-1.5 w-16 rounded-full bg-[var(--bg-element)] border border-[var(--border)] shadow-sm flex items-center justify-center transition-all duration-300",
+                        "hover:bg-[var(--accent)] hover:border-[var(--accent)] hover:w-24 hover:h-5 hover:text-black",
+                        isDragging ? "w-24 h-5 bg-[var(--accent)] border-[var(--accent)] text-black" : "text-transparent",
+                        isCollapsed && "bg-[var(--accent)] border-[var(--accent)] w-16 h-1.5 text-black hover:scale-110"
                     )}
                 >
-                    <div className={cn("transition-opacity duration-200 text-[var(--accent)]", isDragging ? "opacity-0" : "opacity-0 group-hover:opacity-100")}>
-                        {isCollapsed ? <ChevronDown size={12} strokeWidth={3}/> : <ChevronUp size={12} strokeWidth={3}/>}
-                    </div>
+                     {isCollapsed ? null : <ChevronUp size={12} strokeWidth={3}/>}
                 </div>
             </div>
         </div>
@@ -240,24 +280,22 @@ export const SplitView = ({ top, bottom, topOverlay, bottomOverlay }: SplitViewP
     const containerRef = useRef<HTMLDivElement>(null);
     const { radius, padding, gap } = useDynamicLayout(containerRef);
 
-    const containerStyle: React.CSSProperties = {
+    const cardStyle: React.CSSProperties = {
         borderRadius: `${radius}px`,
-        boxShadow: '0 0 0 1px var(--border), 0 20px 50px -10px rgba(0,0,0,0.8)',
-        transition: 'all 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+        boxShadow: '0 0 0 1px var(--border), 0 10px 40px -10px rgba(0,0,0,0.5)',
+        // Hardware acceleration ensures border-radius clips children properly
+        transform: 'translate3d(0,0,0)', 
+        isolation: 'isolate',
+        transition: 'border-radius 0.2s',
     };
 
     return (
         <div ref={containerRef} className="h-full w-full bg-[var(--bg-main)] overflow-hidden relative">
-            {/* Ambient Background Glows */}
-            <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                <div className="absolute top-0 left-1/4 w-[500px] h-[500px] bg-[var(--accent)] blur-[150px] rounded-full mix-blend-screen opacity-10 animate-pulse" style={{animationDuration:'10s'}}/>
-                <div className="absolute bottom-0 right-1/4 w-[600px] h-[600px] bg-blue-500 blur-[200px] rounded-full mix-blend-screen opacity-5" />
-            </div>
-
+            
             <PanelGroup direction="vertical" className="relative z-10">
                 <Panel defaultSize={55} minSize={20} className="relative transition-all duration-300">
-                    <div className="absolute inset-0" style={{ padding: `${padding}px`, paddingBottom: `${gap}px` }}>
-                        <div className="h-full w-full bg-[var(--bg-panel)] border-none overflow-hidden relative group" style={containerStyle}>
+                    <div className="absolute inset-0 transition-all duration-300" style={{ padding: `${padding}px`, paddingBottom: `${gap}px` }}>
+                        <div className="h-full w-full bg-[var(--bg-panel)] border-none overflow-hidden relative group" style={cardStyle}>
                             {top}
                             {topOverlay && (
                                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none z-20 w-auto max-w-[90%] flex justify-center">
@@ -273,8 +311,8 @@ export const SplitView = ({ top, bottom, topOverlay, bottomOverlay }: SplitViewP
                 <Handle />
 
                 <Panel defaultSize={45} minSize={20} className="relative transition-all duration-300">
-                    <div className="absolute inset-0" style={{ padding: `${padding}px`, paddingTop: `${gap}px` }}>
-                        <div className="h-full w-full bg-[var(--bg-panel)] border-none overflow-hidden relative group" style={containerStyle}>
+                    <div className="absolute inset-0 transition-all duration-300" style={{ padding: `${padding}px`, paddingTop: `${gap}px` }}>
+                        <div className="h-full w-full bg-[var(--bg-panel)] border-none overflow-hidden relative group" style={cardStyle}>
                             {bottom}
                             {bottomOverlay && (
                                 <div className="absolute top-6 left-1/2 -translate-x-1/2 pointer-events-none z-20 w-auto max-w-[90%] flex justify-center">
@@ -307,25 +345,32 @@ export const ControlPanel = () => {
         toggleTheme
     } = useStore();
 
+    const instruments: { id: InstrumentType, icon: any, label: string }[] = [
+        { id: 'rhodes', icon: Keyboard, label: 'Keys' },
+        { id: 'pad', icon: Cloud, label: 'Pad' },
+        { id: 'pluck', icon: Music2, label: 'Pluck' },
+        { id: 'synth', icon: Zap, label: 'Synth' }
+    ];
+
     return (
         <div className="w-full h-full flex flex-col select-none font-sans text-[var(--text-main)]">
             
             {/* PRIMARY TOOLBAR */}
-            <div className="flex flex-wrap items-center justify-between px-4 py-3 gap-3 min-h-[56px] relative z-20 bg-[var(--bg-panel)]">
+            <div className="flex flex-wrap items-center justify-between px-3 py-3 gap-2 min-h-[56px] relative z-20 bg-[var(--bg-panel)] shrink-0">
                 
                  {/* GROUP 1: GLOBAL SETTINGS */}
-                 <div className="flex items-center gap-2 sm:gap-4">
+                 <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto no-scrollbar">
                     {/* App Title / Theme */}
                     <button 
                         onClick={toggleTheme} 
-                        className="flex items-center gap-2.5 opacity-80 hover:opacity-100 transition-all outline-none group bg-[var(--bg-element)]/50 p-1.5 pr-3 rounded-full border border-transparent hover:border-[var(--border)] hover:bg-[var(--bg-element)] hover:shadow-sm"
+                        className="flex items-center gap-2 opacity-80 hover:opacity-100 transition-all outline-none group bg-[var(--bg-element)] p-1.5 pr-3 rounded-full border border-transparent hover:border-[var(--border)]"
                         title="Toggle Theme"
                     >
                         <div className={cn("w-2.5 h-2.5 rounded-full transition-all duration-500", isPlaying ? "bg-[var(--accent)] shadow-[0_0_10px_var(--accent)] scale-110" : "bg-[var(--text-dim)] group-hover:bg-[var(--text-main)]")} />
                         <span className="text-[10px] font-black tracking-widest uppercase hidden md:block">Harmonic</span>
                     </button>
                     
-                    <div className="w-px h-6 bg-[var(--border)] opacity-50" />
+                    <div className="w-px h-6 bg-[var(--border)] opacity-50 hidden sm:block" />
 
                     {/* Musical Context Group */}
                     <div className="flex items-center gap-2">
@@ -375,14 +420,14 @@ export const ControlPanel = () => {
                 </div>
 
                 {/* GROUP 2: ACTION & TOOLS */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 ml-auto">
                     
                     {/* Complexity Selector */}
                      <div className="hidden xl:flex items-center bg-[var(--bg-element)] rounded-lg border border-[var(--border)] p-0.5 h-8 shadow-sm gap-0.5">
-                        {['triad', '7th', '9th', '11th'].map((c) => (
+                        {(['triad', '7th', '9th', '11th'] as ChordComplexity[]).map((c) => (
                             <button 
                                 key={c} 
-                                onClick={() => setComplexity(c as any)} 
+                                onClick={() => setComplexity(c)} 
                                 className={cn(
                                     "px-3 h-full rounded-md text-[9px] font-bold uppercase transition-all border border-transparent", 
                                     complexity === c 
@@ -463,15 +508,10 @@ export const ControlPanel = () => {
 
                      {/* Instrument Selector */}
                     <div className="flex flex-col gap-2 w-full">
-                        {[
-                            { id: 'rhodes', icon: Keyboard, label: 'Keys' },
-                            { id: 'pad', icon: Cloud, label: 'Pad' },
-                            { id: 'pluck', icon: Music2, label: 'Pluck' },
-                            { id: 'synth', icon: Zap, label: 'Synth' }
-                        ].map(inst => (
+                        {instruments.map(inst => (
                             <button 
                                 key={inst.id} 
-                                onClick={() => setInstrument(inst.id as any)}
+                                onClick={() => setInstrument(inst.id)}
                                 className={cn(
                                     "w-full aspect-square rounded-xl flex items-center justify-center transition-all duration-200 border border-transparent", 
                                     instrument === inst.id 

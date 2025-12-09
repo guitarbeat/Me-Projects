@@ -1,81 +1,74 @@
 
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { Thermometer, MousePointer2, Play, Activity, Wind, Crosshair, Settings, Sliders, Music2 } from 'lucide-react';
-import { ScaleType, SCALE_DEFS, EMOTIONAL_ZONES, getTempoFromArousal, getCompassLabel, Chord, ScaleDef, InstrumentType } from './lib';
+import { Thermometer, MousePointer2, Activity, Wind, Music2, Settings, Sliders } from 'lucide-react';
+import { SCALE_DEFS, EMOTIONAL_ZONES, getTempoFromArousal, getCompassLabel, ScaleDef } from './lib';
 import { cn } from './ui';
+import { useStore } from './store';
 
 // --- HELPERS ---
 
-const getMusicalAttributes = (v: number, a: number, t: number, inst: InstrumentType) => {
+const getMusicalAttributes = (v: number, a: number, t: number, inst: string) => {
     // 1. Dynamics (Arousal)
-    let dynamics = 'mf';
-    if (a > 0.8) dynamics = 'fff (Massive)';
-    else if (a > 0.6) dynamics = 'ff (Fortissimo)';
-    else if (a > 0.2) dynamics = 'f (Forte)';
-    else if (a > -0.2) dynamics = 'mf (Balanced)';
-    else if (a > -0.6) dynamics = 'mp (Gentle)';
-    else dynamics = 'pp (Whisper)';
+    let dynamics = 'Mezzo-Forte';
+    if (a > 0.8) dynamics = 'Fortissimo (High Impact)';
+    else if (a > 0.5) dynamics = 'Forte (Energetic)';
+    else if (a > 0.2) dynamics = 'Mezzo-Forte (Active)';
+    else if (a > -0.2) dynamics = 'Mezzo-Piano (Neutral)';
+    else if (a > -0.6) dynamics = 'Piano (Subtle)';
+    else dynamics = 'Pianissimo (Delicate)';
 
     // 2. Articulation (Arousal + Tension) - Instrument Specific
     let articulation = 'Natural';
     if (inst === 'pad') {
-        if (t > 0.7) articulation = 'Gated / Stutter';
-        else if (a > 0.5) articulation = 'Swell / Bloom';
-        else if (a < -0.4) articulation = 'Static / Drone';
-        else articulation = 'Evolving';
+        if (t > 0.8) articulation = 'Distorted / Granular';
+        else if (t > 0.5) articulation = 'Shimmer / Movement';
+        else if (a > 0.5) articulation = 'Bright / Swelling';
+        else if (a < -0.5) articulation = 'Deep / Drone';
+        else articulation = 'Evolving Atmospheric';
     } else if (inst === 'pluck' || inst === 'rhodes') {
-        if (t > 0.7) articulation = 'Tremolo / Trill';
-        else if (a > 0.6) articulation = 'Percussive / Snap';
-        else if (a < -0.4) articulation = 'Dampened / Muted';
-        else articulation = 'Sustain';
+        if (t > 0.7) articulation = 'Detuned / Lo-Fi';
+        else if (a > 0.6) articulation = 'Sharp / Percussive';
+        else if (a < -0.4) articulation = 'Soft / Muted';
+        else articulation = 'Clear / Resonant';
     } else {
-        // Synth / Default
-        if (t > 0.7) articulation = 'Distorted / Glitch';
-        else if (a > 0.6) articulation = 'Staccato / Stab';
-        else if (a < -0.4) articulation = 'Legato / Glide';
-        else articulation = 'Detached';
+        // Synth
+        if (t > 0.7) articulation = 'Bitcrushed / Glitch';
+        else if (a > 0.6) articulation = 'Staccato / Punchy';
+        else if (a < -0.4) articulation = 'Sine / Legato';
+        else articulation = 'Clean Saw / Pluck';
     }
 
-    // 3. Texture/Stability (Tension + Valence)
-    let stability = 'Stable';
-    if (t > 0.85) stability = 'Breaking Point';
-    else if (t > 0.6) stability = 'Dissonant / Complex';
-    else if (t > 0.35) stability = 'Unresolved';
-    else if (t > 0.15) stability = 'Floating';
-    else stability = 'Grounded';
+    // 3. Harmonic Stability (Tension)
+    let stability = 'Consonant';
+    if (t > 0.9) stability = 'Chaotic / Breaking';
+    else if (t > 0.7) stability = 'Dissonant / Complex';
+    else if (t > 0.4) stability = 'Suspended / Tense';
+    else if (t > 0.2) stability = 'Colored / Jazzy';
+    else stability = 'Grounded / Resolved';
 
     return { dynamics, articulation, stability };
 };
 
 // --- MOOD SELECTOR ---
 
-interface MoodSelectorProps {
-    theme: string;
-    currentScale: ScaleType;
-    onManualScaleSelect: (s: ScaleType) => void;
-    onTempoChange: (bpm: number) => void;
-    mood: { valence: number; arousal: number; tension: number };
-    onMoodChange: (v: number, a: number, t: number) => void;
-    bpm: number;
-    isScaleLocked: boolean;
-    progression: Chord[];
-    activeIndex: number | null;
-    showPath: boolean;
-    onJumpToChord?: (index: number) => void;
-    hoveredChord?: any; 
-    onPreviewMood?: (mood: { v: number, a: number } | null) => void;
-    instrument: InstrumentType; 
-}
+export const MoodSelector = () => {
+    // Connect to Store
+    const { 
+        mood, setMood, 
+        scale: currentScale, 
+        isScaleLocked, 
+        bpm, 
+        instrument,
+        setTargetMood, 
+        hoveredChord 
+    } = useStore();
 
-export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempoChange, mood, onMoodChange, bpm, isScaleLocked, progression=[], activeIndex, onJumpToChord, showPath, hoveredChord, onPreviewMood, instrument }: MoodSelectorProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const ref = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [showZones, setShowZones] = useState(false);
     const [beamX, setBeamX] = useState<number>(0);
     const [showHint, setShowHint] = useState(true);
-    const [initialPinchDist, setInitialPinchDist] = useState<number | null>(null);
-    const [initialPinchTension, setInitialPinchTension] = useState<number>(0);
     const [isScrolling, setIsScrolling] = useState(false);
     const [cursorPos, setCursorPos] = useState<{x:number, y:number} | null>(null);
     
@@ -83,101 +76,16 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
     const [sensitivity, setSensitivity] = useState(1.5);
     const [showSettings, setShowSettings] = useState(false);
     
-    // Internal State Tracking for Sync
-    const internalScaleChange = useRef(false);
+    // Internal State Tracking
     const scrollTimeout = useRef<any>(null);
-    const moodRef = useRef(mood);
-    moodRef.current = mood;
     const requestRef = useRef<number | undefined>(undefined);
-    const lastBpm = useRef<number>(bpm);
 
     // Derived Data
     const attrs = useMemo(() => getMusicalAttributes(mood.valence, mood.arousal, mood.tension, instrument), [mood, instrument]);
-    const zoneLabel = getCompassLabel(mood.valence, mood.arousal);
     const calculatedBpm = getTempoFromArousal(mood.arousal);
-    const accentColor = SCALE_DEFS[currentScale].palette.accent;
-
-    // --- SYNC EFFECTS ---
-
-    // Sync Mood when Scale Changes (External Control Panel Change)
-    useEffect(() => {
-        // If the change came from dragging the pad, ignore this effect
-        if (internalScaleChange.current) {
-            internalScaleChange.current = false;
-            return;
-        }
-
-        // If Scale changes externally (via dropdown), snap Mood to that Scale's definition
-        const def = SCALE_DEFS[currentScale];
-        if (def) {
-            // We set the mood to the scale's "center of gravity"
-            onMoodChange(def.scaleCoordinates.v, def.scaleCoordinates.a, def.scaleCoordinates.t);
-            
-            // Also update BPM if needed
-            const targetBpm = getTempoFromArousal(def.scaleCoordinates.a);
-            if (Math.abs(targetBpm - bpm) > 5) {
-                onTempoChange(targetBpm);
-            }
-        }
-    }, [currentScale]);
-
-    // --- TRAJECTORY CALCULATION ---
-    const trajectory = useMemo(() => {
-        const points = progression.map((c: Chord, i: number) => {
-            let v = 0, a = 0;
-            if (c.quality === 'Major') { v = 0.5; a = 0.1; }
-            else if (c.quality === 'Minor') { v = -0.4; a = -0.1; }
-            else if (c.quality === 'Diminished') { v = -0.6; a = 0.3; }
-            else if (c.quality === 'Dominant') { v = 0.2; a = 0.4; }
-            
-            if (c.romanNumeral.includes('VII') || c.romanNumeral.includes('vii')) { a += 0.3; v -= 0.2; }
-            if (c.romanNumeral.includes('V') || c.romanNumeral.includes('v')) { a += 0.2; }
-            if (c.romanNumeral === 'I' || c.romanNumeral === 'i') { a -= 0.2; v += 0.1; }
-
-            const x = (Math.max(-1, Math.min(1, v)) + 1) / 2 * 100;
-            const y = (-Math.max(-1, Math.min(1, a)) + 1) / 2 * 100;
-            return { x, y, index: i, chord: c };
-        });
-
-        if (points.length < 2) return { path: '', points };
-
-        let d = `M ${points[0].x} ${points[0].y}`;
-        for (let i = 0; i < points.length - 1; i++) {
-            const p0 = points[i], p1 = points[i + 1];
-            const cp1x = p0.x + (p1.x - p0.x) * 0.5, cp1y = p0.y;
-            const cp2x = p0.x + (p1.x - p0.x) * 0.5, cp2y = p1.y;
-            d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p1.x} ${p1.y}`;
-        }
-        return { path: d, points };
-    }, [progression]);
+    const accentColor = SCALE_DEFS[currentScale]?.palette.accent || '#facc15';
 
     // --- INTERACTION LOGIC ---
-
-    const updateScaleSelection = (v: number, a: number, t: number) => {
-        if (isScaleLocked) return;
-
-        let minDist = Infinity;
-        let closest: ScaleType = currentScale;
-
-        Object.entries(SCALE_DEFS).forEach(([st, def]) => {
-            const sDef = def as ScaleDef;
-            const d = Math.sqrt(
-                Math.pow(v - sDef.scaleCoordinates.v, 2) + 
-                Math.pow(a - sDef.scaleCoordinates.a, 2) + 
-                Math.pow(t - sDef.scaleCoordinates.t, 2)
-            );
-            
-            // Hysteresis: "Gravity" well for the current scale to prevent jitter
-            const weightedDist = st === currentScale ? d * 0.75 : d;
-
-            if (weightedDist < minDist) { minDist = weightedDist; closest = st as ScaleType; }
-        });
-
-        if (closest !== currentScale) {
-            internalScaleChange.current = true; // Mark as internal change
-            onManualScaleSelect(closest);
-        }
-    };
 
     const updateMoodPad = (clientX: number, clientY: number, commit: boolean = true) => {
         if (!ref.current) return;
@@ -197,29 +105,23 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
         const a = Math.sign(rawA) * Math.pow(Math.abs(rawA), sensitivity);
         
         if (commit) {
-            const t = moodRef.current.tension;
-            onMoodChange(v, a, t);
-            updateScaleSelection(v, a, t);
-            
-            const newBpm = getTempoFromArousal(a);
-            if (Math.abs(newBpm - lastBpm.current) > 2) {
-                onTempoChange(newBpm);
-                lastBpm.current = newBpm;
-            }
+            // Update store directly. Store handles scale snapping and audio updates.
+            setMood(v, a, mood.tension);
         }
 
-        if (onPreviewMood) onPreviewMood({ v, a });
+        // Visual Preview
+        if (setTargetMood) setTargetMood({ v, a });
     };
 
     // Sync hovered chord sentiment to preview
     useEffect(() => {
-        if (!onPreviewMood) return;
+        if (!setTargetMood) return;
         if (hoveredChord && hoveredChord.sentiment) {
-            onPreviewMood({ v: hoveredChord.sentiment.valence, a: hoveredChord.sentiment.arousal });
+            setTargetMood({ v: hoveredChord.sentiment.valence, a: hoveredChord.sentiment.arousal });
         } else if (!isDragging) {
-             onPreviewMood(null);
+             setTargetMood(null);
         }
-    }, [hoveredChord, isDragging, onPreviewMood]);
+    }, [hoveredChord, isDragging, setTargetMood]);
 
     // Tension Scroll Handler
     useEffect(() => {
@@ -231,17 +133,16 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
             scrollTimeout.current = setTimeout(() => setIsScrolling(false), 800);
             
             const delta = Math.sign(e.deltaY) * -0.05; 
-            const newTension = Math.max(0, Math.min(1, moodRef.current.tension + delta));
+            const newTension = Math.max(0, Math.min(1, mood.tension + delta));
             
-            if (newTension !== moodRef.current.tension) {
-                onMoodChange(moodRef.current.valence, moodRef.current.arousal, newTension);
-                updateScaleSelection(moodRef.current.valence, moodRef.current.arousal, newTension);
+            if (newTension !== mood.tension) {
+                setMood(mood.valence, mood.arousal, newTension);
             }
         };
         const el = containerRef.current;
         if (el) el.addEventListener('wheel', handleWheel, { passive: false });
         return () => { if (el) el.removeEventListener('wheel', handleWheel); };
-    }, [onMoodChange, currentScale, isScaleLocked]);
+    }, [setMood, mood]);
 
     // Pointer Handlers
     const handlePointerDown = (e: React.PointerEvent) => {
@@ -263,32 +164,32 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
     };
 
     const handlePointerUp = (e: React.PointerEvent) => {
-        setIsDragging(false); setInitialPinchDist(null);
+        setIsDragging(false);
         if (requestRef.current !== undefined) cancelAnimationFrame(requestRef.current);
-        if (onPreviewMood) onPreviewMood(null);
+        if (setTargetMood) setTargetMood(null);
         try { (e.target as Element).releasePointerCapture(e.pointerId); } catch (e) {}
     };
 
     return (
-        <div ref={containerRef} className="absolute inset-0 w-full h-full bg-black overflow-hidden flex flex-row select-none">
+        <div ref={containerRef} className="absolute inset-0 w-full h-full bg-[var(--bg-main)] overflow-hidden flex flex-row select-none">
             
             {/* --- VISUALIZERS --- */}
             <div className="flex-1 relative overflow-hidden perspective-[1000px] flex flex-col min-w-0">
                 {isDragging && (
-                    <div className="fixed top-0 bottom-0 w-[1px] bg-white z-[9999] pointer-events-none" style={{ left: beamX, background: 'linear-gradient(to top, var(--accent) 0%, transparent 100%)', boxShadow: '0 0 15px var(--accent)', opacity: 0.8 }}>
+                    <div className="fixed top-0 bottom-0 w-[1px] bg-[var(--accent)] z-[9999] pointer-events-none" style={{ left: beamX, background: 'linear-gradient(to top, var(--accent) 0%, transparent 100%)', boxShadow: '0 0 15px var(--accent)', opacity: 0.8 }}>
                         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-32 h-64 bg-[var(--accent)] opacity-20 blur-3xl rounded-full" />
                     </div>
                 )}
                 
                 {/* TENSION HUD */}
                 <div className={cn("absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-opacity duration-300 z-50 flex flex-col items-center", isScrolling ? "opacity-100" : "opacity-0")}>
-                   <div className="bg-black/80 backdrop-blur-xl border border-[var(--accent)] px-6 py-4 rounded-2xl flex flex-col items-center shadow-[0_0_30px_rgba(0,0,0,0.5)]">
+                   <div className="bg-[var(--bg-glass)] backdrop-blur-xl border border-[var(--accent)] px-6 py-4 rounded-2xl flex flex-col items-center shadow-[0_0_30px_rgba(0,0,0,0.5)]">
                        <div className="flex items-center gap-2 mb-2">
                            <Thermometer size={12} className="text-[var(--accent)]" />
                            <span className="text-[10px] text-[var(--text-muted)] uppercase tracking-[0.2em]">Harmonic Tension</span>
                        </div>
-                       <div className="text-3xl font-black text-white tabular-nums tracking-tighter">{(mood.tension * 100).toFixed(0)}<span className="text-sm text-[var(--accent)]">%</span></div>
-                       <div className="w-24 h-1 bg-white/10 rounded-full mt-2 overflow-hidden"><div className="h-full bg-[var(--accent)] transition-all duration-75" style={{width: `${mood.tension*100}%`}} /></div>
+                       <div className="text-3xl font-black text-[var(--text-main)] tabular-nums tracking-tighter">{(mood.tension * 100).toFixed(0)}<span className="text-sm text-[var(--accent)]">%</span></div>
+                       <div className="w-24 h-1 bg-[var(--border)] rounded-full mt-2 overflow-hidden"><div className="h-full bg-[var(--accent)] transition-all duration-75" style={{width: `${mood.tension*100}%`}} /></div>
                    </div>
                </div>
 
@@ -313,14 +214,14 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
                             radial-gradient(circle at 0% 0%, rgba(220, 38, 38, 0.4) 0%, transparent 70%),
                             radial-gradient(circle at 0% 100%, rgba(59, 130, 246, 0.4) 0%, transparent 70%),
                             radial-gradient(circle at 100% 100%, rgba(16, 185, 129, 0.4) 0%, transparent 70%),
-                            linear-gradient(to bottom, #000000 0%, transparent 10%, transparent 90%, #000000 100%)
+                            linear-gradient(to bottom, var(--bg-main) 0%, transparent 10%, transparent 90%, var(--bg-main) 100%)
                         `,
                         opacity: 1 - (mood.tension * 0.5)
                     }}/>
                     
                     <div className="absolute inset-0 pointer-events-none transition-opacity duration-300" 
                          style={{
-                             backgroundImage: 'linear-gradient(rgba(255,255,255,0.3) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.3) 1px, transparent 1px)', 
+                             backgroundImage: 'linear-gradient(var(--border-soft) 1px, transparent 1px), linear-gradient(90deg, var(--border-soft) 1px, transparent 1px)', 
                              backgroundSize: '50px 50px',
                              opacity: Math.max(0, (1 - mood.tension * 1.5)) * 0.15,
                              transform: `scale(${1 + mood.tension * 0.8})`
@@ -337,13 +238,13 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
                             <div key={st} className="absolute w-4 h-4 -ml-2 -mt-2 rounded-full transition-all duration-500 shadow-lg pointer-events-none flex items-center justify-center group"
                                 style={{ 
                                     left: `${x}%`, top: `${y}%`, 
-                                    backgroundColor: isActive ? 'white' : 'rgba(255,255,255,0.2)', 
+                                    backgroundColor: isActive ? 'var(--text-main)' : 'var(--bg-soft-hover)', 
                                     transform: isActive ? 'scale(1.5)' : 'scale(1)',
-                                    boxShadow: isActive ? '0 0 20px rgba(255,255,255,0.6)' : 'none',
+                                    boxShadow: isActive ? '0 0 20px var(--text-main)' : 'none',
                                     opacity: isScaleLocked && !isActive ? 0.3 : 1
                                 }}
                             >
-                                <span className={cn("absolute -top-6 whitespace-nowrap text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10 transition-opacity", isActive ? "text-white opacity-100" : "text-white/50 opacity-0")}>{st}</span>
+                                <span className={cn("absolute -top-6 whitespace-nowrap text-[10px] font-bold tracking-wider px-2 py-0.5 rounded-full bg-[var(--bg-glass)] backdrop-blur-md border border-[var(--border)] transition-opacity", isActive ? "text-[var(--text-main)] opacity-100" : "text-[var(--text-muted)] opacity-0")}>{st}</span>
                             </div>
                         );
                     })}
@@ -365,9 +266,9 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
                         <div className="w-1.5 h-1.5 bg-current rounded-full shadow-[0_0_10px_currentColor]"/>
                         
                         {isDragging && (
-                             <div className="absolute top-0 left-full ml-4 bg-black/80 backdrop-blur border border-white/20 rounded px-3 py-2 whitespace-nowrap flex flex-col items-start gap-1 pointer-events-none animate-in fade-in slide-in-from-left-2 z-[60] shadow-xl">
-                                <div className="flex items-center justify-between w-full gap-4 border-b border-white/10 pb-1 mb-0.5">
-                                     <span className="text-[10px] font-black text-white uppercase tracking-wider">{currentScale}</span>
+                             <div className="absolute top-0 left-full ml-4 bg-[var(--bg-glass)] backdrop-blur border border-[var(--border)] rounded px-3 py-2 whitespace-nowrap flex flex-col items-start gap-1 pointer-events-none animate-in fade-in slide-in-from-left-2 z-[60] shadow-xl">
+                                <div className="flex items-center justify-between w-full gap-4 border-b border-[var(--border)] pb-1 mb-0.5">
+                                     <span className="text-[10px] font-black text-[var(--text-main)] uppercase tracking-wider">{currentScale}</span>
                                      <span className="text-[9px] font-mono text-[var(--accent)]">{calculatedBpm} BPM</span>
                                 </div>
                                 <div className="flex flex-col gap-0.5">
@@ -382,27 +283,27 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
 
                 {/* Hints */}
                 <div className={cn("absolute bottom-20 left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center gap-1 transition-opacity duration-700 delay-500", showHint ? "opacity-100" : "opacity-0")}>
-                     <div className="bg-black/40 backdrop-blur-md px-4 py-2 rounded-full border border-white/10 flex items-center gap-3">
+                     <div className="bg-[var(--bg-glass)] backdrop-blur-md px-4 py-2 rounded-full border border-[var(--border)] flex items-center gap-3">
                          <MousePointer2 size={14} className="text-[var(--accent)] animate-bounce" />
-                         <span className="text-[10px] font-bold uppercase tracking-widest text-white/80">Scroll/Pinch for Tension</span>
+                         <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Scroll/Pinch for Tension</span>
                      </div>
                 </div>
 
                 {/* Settings Toggle */}
                 <div className="absolute top-6 right-6 pointer-events-auto z-20 flex flex-col items-end gap-2">
-                    <button onClick={() => setShowSettings(!showSettings)} className={cn("w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200", showSettings ? "bg-[var(--accent)] text-black border-[var(--accent)]" : "bg-black/20 border-white/10 text-white/40 hover:text-white hover:bg-black/40")}>
+                    <button onClick={() => setShowSettings(!showSettings)} className={cn("w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200", showSettings ? "bg-[var(--accent)] text-black border-[var(--accent)]" : "bg-[var(--bg-soft)] border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-soft-hover)]")}>
                         <Settings size={14} />
                     </button>
                     {showSettings && (
-                        <div className="bg-black/80 backdrop-blur-xl border border-white/10 p-4 rounded-xl shadow-2xl w-64 animate-in fade-in slide-in-from-top-2">
-                            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-white/5">
+                        <div className="bg-[var(--bg-glass)] backdrop-blur-xl border border-[var(--border)] p-4 rounded-xl shadow-2xl w-64 animate-in fade-in slide-in-from-top-2">
+                            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-[var(--border)]">
                                 <Sliders size={12} className="text-[var(--accent)]"/>
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-white/70">Input Mapping</span>
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Input Mapping</span>
                             </div>
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <div className="flex justify-between items-center text-[10px]"><span className="text-white/60">Pad Sensitivity</span><span className="font-mono text-[var(--accent)]">{sensitivity.toFixed(1)}</span></div>
-                                    <input type="range" min="0.5" max="3.0" step="0.1" value={sensitivity} onChange={(e) => setSensitivity(parseFloat(e.target.value))} className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-[var(--accent)]" />
+                                    <div className="flex justify-between items-center text-[10px]"><span className="text-[var(--text-dim)]">Pad Sensitivity</span><span className="font-mono text-[var(--accent)]">{sensitivity.toFixed(1)}</span></div>
+                                    <input type="range" min="0.5" max="3.0" step="0.1" value={sensitivity} onChange={(e) => setSensitivity(parseFloat(e.target.value))} className="w-full h-1 bg-[var(--border)] rounded-lg appearance-none cursor-pointer accent-[var(--accent)]" />
                                 </div>
                             </div>
                         </div>
@@ -411,7 +312,7 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
 
                 {/* Zones Toggle */}
                 <div className="absolute bottom-6 right-6 pointer-events-auto transition-all duration-300 z-20">
-                     <button onClick={() => setShowZones(!showZones)} className="text-[10px] text-white/40 hover:text-white border border-white/10 px-3 py-1.5 rounded-full uppercase tracking-wider backdrop-blur-md bg-black/20 hover:bg-black/40 transition-colors">
+                     <button onClick={() => setShowZones(!showZones)} className="text-[10px] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border)] px-3 py-1.5 rounded-full uppercase tracking-wider backdrop-blur-md bg-[var(--bg-soft)] hover:bg-[var(--bg-soft-hover)] transition-colors">
                         {showZones ? 'Hide Zones' : 'Show Zones'}
                      </button>
                 </div>
@@ -430,9 +331,9 @@ export const MoodSelector = ({ theme, currentScale, onManualScaleSelect, onTempo
                          const isVisible = showZones || isDragging || isHover;
                          return (
                             <div key={i} className={cn("absolute flex flex-col items-center justify-center text-center -translate-x-1/2 -translate-y-1/2 transition-all duration-300", isHover ? "z-10 scale-110 opacity-100" : isVisible ? "opacity-40 scale-100" : "opacity-0 scale-90")} style={{ left: `${x}%`, top: `${y}%` }}>
-                                <span className={cn("text-[10px] font-black tracking-widest uppercase whitespace-nowrap transition-colors", isHover ? "text-white" : "text-white/60")}>{gem.label}</span>
+                                <span className={cn("text-[10px] font-black tracking-widest uppercase whitespace-nowrap transition-colors", isHover ? "text-[var(--text-main)]" : "text-[var(--text-dim)]")}>{gem.label}</span>
                                 <div className={cn("transition-all duration-300 ease-out overflow-hidden flex flex-col items-center", isHover ? "h-auto opacity-100 mt-1" : "h-0 opacity-0")}>
-                                     <span className="text-[8px] font-mono text-[var(--accent)] bg-black/90 backdrop-blur px-2 py-0.5 rounded border border-white/10 shadow-xl whitespace-nowrap">{gem.desc}</span>
+                                     <span className="text-[8px] font-mono text-[var(--accent)] bg-[var(--bg-glass)] backdrop-blur px-2 py-0.5 rounded border border-[var(--border)] shadow-xl whitespace-nowrap">{gem.desc}</span>
                                 </div>
                             </div>
                         )

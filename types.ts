@@ -2,24 +2,6 @@
 
 // --- UI TYPES ---
 
-export const SplitDetent = {
-    TopFull: 'top-full',
-    BottomFull: 'bottom-full',
-    TopMini: 'top-mini',
-    BottomMini: 'bottom-mini',
-    Fraction: 'fraction'
-} as const;
-
-export type SplitDetent = typeof SplitDetent[keyof typeof SplitDetent];
-
-export interface SplitAccessory {
-    id: string;
-    icon: any; 
-    action: () => void;
-    color?: string;
-    active?: boolean;
-}
-
 // --- MUSIC TYPES ---
 
 export type Note = string;
@@ -65,6 +47,7 @@ export interface Chord {
   scale?: number;
   duration: number;
   isRest?: boolean;
+  sentiment?: { valence: number; arousal: number; };
 }
 
 export interface ScaleDef {
@@ -73,5 +56,5 @@ export interface ScaleDef {
   coords: { x: number; y: number };
   emotions: Record<number, string>;
   meta: { title: string; desc: string; quote: string; characteristic: string; };
-  scaleCoordinates: { v: number, a: number, t: number };
+  scaleCoordinates: { v: number; a: number; t: number; };
 }

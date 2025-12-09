@@ -1,43 +1,179 @@
 
-import React, { useState, useRef, useEffect } from 'react';
-import { ChevronsUpDown, ChevronsLeftRight, Play, Pause, Square, Layers, Music, Activity, Lock, Unlock, Link as LinkIcon, Trash2, Network, ListMusic, Hexagon } from 'lucide-react';
-import { InstrumentType, Chord, Note, ScaleType, CIRCLE_KEYS, ChordComplexity } from './lib';
-import { cn, Surface, IconButton, Badge, DataPoint, DragHandle, Button } from './ui';
-import { DraggableChord } from './sequencer';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { cn, IconButton } from './ui';
 import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
+import { useStore, ScaleType, CIRCLE_KEYS, InstrumentType, ChordComplexity } from './lib';
+import { ChordPalette } from './sequencer';
+import { 
+    Play, Pause, Lock, Unlock, Link as LinkIcon, Trash2, 
+    ListMusic, Network, Cloud, Keyboard, Music2, Zap, Gauge,
+    ChevronUp, MoreHorizontal
+} from 'lucide-react';
+
+// --- SHARED LAYOUT LOGIC ---
+
+/**
+ * Hook to calculate consistent layout metrics (padding, radius, gap)
+ * based on container size, ensuring all panels behave responsively.
+ */
+function useDynamicLayout(ref: React.RefObject<HTMLElement>) {
+    const [metrics, setMetrics] = useState({ radius: 24, padding: 12, gap: 8 });
+    
+    useEffect(() => {
+        const update = () => {
+            if (!ref.current) return;
+            const w = ref.current.offsetWidth;
+            const h = ref.current.offsetHeight;
+            const minDim = Math.min(w, h);
+            
+            // Dynamic scaling logic: Tighter on small screens, spacious on large
+            // Adjusted for better "island" separation
+            const radius = Math.max(16, Math.min(28, minDim * 0.05));
+            const padding = Math.max(8, Math.min(20, minDim * 0.025));
+            
+            setMetrics({ 
+                radius, 
+                padding, 
+                gap: Math.max(4, padding * 0.5) 
+            });
+        };
+
+        // Initial update
+        update();
+
+        const obs = new ResizeObserver(() => {
+            requestAnimationFrame(update);
+        });
+        
+        if (ref.current) {
+            obs.observe(ref.current);
+        }
+        
+        return () => obs.disconnect();
+    }, [ref]);
+
+    return metrics;
+}
 
 // --- STYLED HANDLE ---
 
-const Handle = ({ className }: { className?: string }) => (
-    <PanelResizeHandle className={cn("group flex h-4 w-full items-center justify-center -my-2 z-50 cursor-row-resize outline-none touch-none", className)}>
-        <div className="absolute inset-x-4 h-px bg-[var(--border)] group-hover:bg-[var(--accent)] transition-colors opacity-50 group-hover:opacity-100" />
-        <div className="relative z-10 bg-[var(--bg-main)] border border-[var(--border)] rounded-full p-0.5 text-[var(--text-dim)] transition-all shadow-sm group-hover:border-[var(--accent)] group-hover:text-[var(--accent)] group-hover:scale-110">
-            <ChevronsUpDown size={12} strokeWidth={2.5} />
-        </div>
-    </PanelResizeHandle>
-);
+interface HandleProps {
+    className?: string;
+    vertical?: boolean;
+    isDragging?: boolean;
+    collapsed?: boolean;
+    onToggle?: () => void;
+}
+
+const Handle = ({ className, vertical = false, isDragging, collapsed, onToggle }: HandleProps) => {
+    return (
+        <PanelResizeHandle className={cn("group flex items-center justify-center z-50 outline-none touch-none transition-all focus:outline-none", vertical ? "w-5 h-full cursor-col-resize -mx-2.5" : "h-6 w-full cursor-row-resize -my-3", className)}>
+            <div 
+                onPointerDown={(e) => e.stopPropagation()} 
+                onClick={(e) => { 
+                    if (onToggle) {
+                        e.stopPropagation();
+                        e.preventDefault(); 
+                        onToggle();
+                    }
+                }}
+                className={cn(
+                    "rounded-full bg-[var(--bg-element)] backdrop-blur-md border border-[var(--border)] transition-all duration-300 shadow-sm flex items-center justify-center relative overflow-hidden",
+                    "group-hover:bg-[var(--bg-surface)] group-hover:border-[var(--accent)] group-hover:scale-105 cursor-pointer",
+                    "active:scale-95",
+                    vertical 
+                        ? "w-1.5 h-12 group-hover:h-16" 
+                        : "h-1.5 w-16 group-hover:w-24 group-hover:h-5",
+                    (isDragging || collapsed) && !vertical && "w-24 h-5 bg-[var(--accent)] border-[var(--accent)] text-[var(--bg-main)]"
+                )}
+            >
+                {/* Visual Indicator for Toggle */}
+                {!vertical && onToggle && (
+                    <div className={cn(
+                        "absolute inset-0 flex items-center justify-center transition-opacity duration-200", 
+                        (collapsed || isDragging || className?.includes('hover')) ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                    )}>
+                        {collapsed ? <MoreHorizontal size={14} strokeWidth={3} /> : <ChevronUp size={12} strokeWidth={3} />}
+                    </div>
+                )}
+                
+                {/* Drag Indicator (Dots) - visible when not hovering/active */}
+                {!collapsed && !isDragging && !className?.includes('hover') && (
+                     <div className={cn("flex gap-0.5 opacity-0 group-hover:opacity-0 transition-opacity duration-200", !vertical && "flex-row", vertical && "flex-col")}>
+                         <div className="w-0.5 h-0.5 rounded-full bg-[var(--text-muted)]" />
+                         <div className="w-0.5 h-0.5 rounded-full bg-[var(--text-muted)]" />
+                         <div className="w-0.5 h-0.5 rounded-full bg-[var(--text-muted)]" />
+                     </div>
+                )}
+            </div>
+        </PanelResizeHandle>
+    );
+};
 
 // --- RESIZABLE TOP PANEL ---
 
-export const ResizableTopPanel = ({ children, minHeight = 100, maxHeight = 300, defaultHeight = 160 }: { children: React.ReactNode, minHeight?: number, maxHeight?: number, defaultHeight?: number }) => {
+export const ResizableTopPanel = ({ 
+    children, 
+    minHeight = 110, 
+    maxHeight = 400, 
+    defaultHeight = 180 
+}: { 
+    children: React.ReactNode, 
+    minHeight?: number, 
+    maxHeight?: number, 
+    defaultHeight?: number 
+}) => {
+    const wrapperRef = useRef<HTMLDivElement>(null);
     const [height, setHeight] = useState(defaultHeight);
+    const [lastHeight, setLastHeight] = useState(defaultHeight);
     const [isDragging, setIsDragging] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(false);
+    
+    // Drag State Refs
     const startY = useRef(0);
     const startHeight = useRef(0);
+    
+    // Layout Metrics
+    const { radius, padding, gap } = useDynamicLayout(wrapperRef);
 
+    // Calculate minimized dimensions
+    // When collapsed, we want it to be basically just padding + handle area.
+    // Let's say handle area is ~12px visual height, plus padding top/bottom.
+    const collapsedHeight = padding * 2 + 16; 
+
+    // Drag Logic
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
             if (!isDragging) return;
             e.preventDefault();
+            
+            // Calculate delta
             const delta = e.clientY - startY.current;
-            const newHeight = Math.max(minHeight, Math.min(maxHeight, startHeight.current + delta));
+            const absoluteMax = Math.min(maxHeight, window.innerHeight * 0.7);
+            
+            const newHeight = Math.max(minHeight, Math.min(absoluteMax, startHeight.current + delta));
+            
             setHeight(newHeight);
+            
+            if (isCollapsed && Math.abs(delta) > 5) {
+                setIsCollapsed(false);
+            }
         };
 
         const handleMouseUp = () => {
-            setIsDragging(false);
-            document.body.style.cursor = '';
-            document.body.style.userSelect = '';
+            if (isDragging) {
+                setIsDragging(false);
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+                
+                // Snap logic: if dragged too small, just clamp to minHeight
+                if (height < minHeight) {
+                    setHeight(minHeight);
+                    setIsCollapsed(false); 
+                } else {
+                    setLastHeight(height);
+                }
+            }
         };
 
         if (isDragging) {
@@ -51,42 +187,116 @@ export const ResizableTopPanel = ({ children, minHeight = 100, maxHeight = 300, 
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [isDragging, minHeight, maxHeight]);
+    }, [isDragging, minHeight, maxHeight, isCollapsed, height]);
 
     const handleMouseDown = (e: React.MouseEvent) => {
+        if (e.button !== 0) return;
         setIsDragging(true);
         startY.current = e.clientY;
-        startHeight.current = height;
+        startHeight.current = isCollapsed ? collapsedHeight : height;
+        if (isCollapsed) {
+             setIsCollapsed(false);
+             setHeight(lastHeight);
+        }
+    };
+
+    const toggleCollapse = useCallback(() => {
+        if (isCollapsed) {
+            // Expand
+            setHeight(Math.max(lastHeight, minHeight));
+            setIsCollapsed(false);
+        } else {
+            // Collapse
+            setLastHeight(height);
+            setHeight(collapsedHeight);
+            setIsCollapsed(true);
+        }
+    }, [isCollapsed, height, lastHeight, minHeight, collapsedHeight]);
+
+    // Shared Card Style
+    const containerStyle: React.CSSProperties = {
+        borderRadius: `${radius}px`,
+        boxShadow: '0 0 0 1px var(--border), 0 4px 20px -5px rgba(0,0,0,0.3)',
+        // Hardware acceleration to fix anti-aliasing clipping
+        transform: 'translate3d(0,0,0)',
+        isolation: 'isolate', 
+        transition: isDragging ? 'none' : 'height 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.2s',
     };
 
     return (
-        <div style={{ height }} className="relative z-20 bg-[#0c0a09] border-b border-[var(--border)] shadow-lg flex flex-col shrink-0">
-            <div className="flex-1 overflow-hidden">
-                {children}
-            </div>
+        <div 
+            ref={wrapperRef} 
+            style={{ height: height }} 
+            className="relative z-30 shrink-0 w-full transition-[height] duration-400 cubic-bezier(0.16, 1, 0.3, 1) will-change-[height]"
+        >
             <div 
-                onMouseDown={handleMouseDown}
-                className="absolute bottom-0 left-0 right-0 h-3 cursor-row-resize flex items-center justify-center group z-50 hover:bg-white/5 transition-colors -mb-1.5"
+                className="absolute inset-0 transition-all duration-300" 
+                style={{ 
+                    padding: `${padding}px`, 
+                    paddingBottom: isCollapsed ? `${padding}px` : `${gap}px` 
+                }}
             >
-                <div className="w-12 h-1 rounded-full bg-[var(--border)] group-hover:bg-[var(--accent)] transition-colors opacity-50 group-hover:opacity-100" />
+                <div className="h-full w-full bg-[var(--bg-panel)] overflow-hidden relative group max-w-screen-2xl mx-auto" style={containerStyle}>
+                    <div className={cn("h-full w-full transition-opacity duration-300 delay-75", isCollapsed ? "opacity-0 pointer-events-none" : "opacity-100")}>
+                        {children}
+                    </div>
+                </div>
+            </div>
+
+            {/* Manual Resize Handle with Toggle - Centered within the padding/content area logic */}
+            <div 
+                className="absolute bottom-0 left-0 right-0 h-5 cursor-row-resize flex items-center justify-center z-50 -mb-2.5 group"
+                onMouseDown={handleMouseDown}
+            >
+                 <div 
+                    onClick={(e) => { e.stopPropagation(); toggleCollapse(); }}
+                    className={cn(
+                        "h-1.5 w-16 rounded-full bg-[var(--bg-element)] border border-[var(--border)] shadow-sm flex items-center justify-center transition-all duration-300",
+                        "hover:bg-[var(--accent)] hover:border-[var(--accent)] hover:w-24 hover:h-5 hover:text-[var(--bg-main)]",
+                        isDragging ? "w-24 h-5 bg-[var(--accent)] border-[var(--accent)] text-[var(--bg-main)]" : "text-transparent",
+                        isCollapsed && "bg-[var(--accent)] border-[var(--accent)] w-16 h-1.5 text-[var(--bg-main)] hover:scale-110"
+                    )}
+                >
+                     {isCollapsed ? null : <ChevronUp size={12} strokeWidth={3}/>}
+                </div>
             </div>
         </div>
     );
 };
 
-// --- SPLIT VIEW ---
+// --- RESPONSIVE SPLIT VIEW ---
 
-export const SplitView = ({ top, bottom, topOverlay, bottomOverlay }: { top: React.ReactNode, bottom: React.ReactNode, topOverlay?: React.ReactNode, bottomOverlay?: React.ReactNode }) => {
+interface SplitViewProps {
+    top: React.ReactNode;
+    bottom: React.ReactNode;
+    topOverlay?: React.ReactNode;
+    bottomOverlay?: React.ReactNode;
+}
+
+export const SplitView = ({ top, bottom, topOverlay, bottomOverlay }: SplitViewProps) => {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const { radius, padding, gap } = useDynamicLayout(containerRef);
+
+    const cardStyle: React.CSSProperties = {
+        borderRadius: `${radius}px`,
+        boxShadow: '0 0 0 1px var(--border), 0 10px 40px -10px rgba(0,0,0,0.5)',
+        // Hardware acceleration ensures border-radius clips children properly
+        transform: 'translate3d(0,0,0)', 
+        isolation: 'isolate',
+        transition: 'border-radius 0.2s',
+    };
+
     return (
-        <div className="h-full w-full">
-            <PanelGroup direction="vertical">
-                <Panel defaultSize={50} minSize={20} className="relative">
-                    <div className="absolute inset-0 p-1 pb-0.5">
-                        <div className="h-full w-full bg-[var(--bg-panel)] border border-[var(--border)] rounded-t-xl overflow-hidden relative">
+        <div ref={containerRef} className="h-full w-full bg-[var(--bg-main)] overflow-hidden relative">
+            
+            <PanelGroup direction="vertical" className="relative z-10">
+                <Panel defaultSize={55} minSize={20} className="relative transition-all duration-300">
+                    <div className="absolute inset-0 transition-all duration-300" style={{ padding: `${padding}px`, paddingBottom: `${gap}px` }}>
+                        <div className="h-full w-full bg-[var(--bg-panel)] border-none overflow-hidden relative group max-w-screen-2xl mx-auto" style={cardStyle}>
                             {top}
-                             {topOverlay && (
-                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none z-20">
-                                    <div className="bg-[var(--bg-surface)]/90 backdrop-blur border border-[var(--border)] p-2 rounded-lg shadow-xl">
+                            {topOverlay && (
+                                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none z-20 w-auto max-w-[90%] flex justify-center">
+                                    <div className="bg-[var(--bg-glass)] backdrop-blur-xl border border-[var(--border-soft)] p-2 rounded-full shadow-2xl animate-in slide-in-from-bottom-2 fade-in duration-500">
                                         {topOverlay}
                                     </div>
                                 </div>
@@ -97,13 +307,13 @@ export const SplitView = ({ top, bottom, topOverlay, bottomOverlay }: { top: Rea
                 
                 <Handle />
 
-                <Panel defaultSize={50} minSize={20} className="relative">
-                    <div className="absolute inset-0 p-1 pt-0.5">
-                        <div className="h-full w-full bg-[var(--bg-panel)] border border-[var(--border)] rounded-b-xl overflow-hidden relative">
+                <Panel defaultSize={45} minSize={20} className="relative transition-all duration-300">
+                    <div className="absolute inset-0 transition-all duration-300" style={{ padding: `${padding}px`, paddingTop: `${gap}px` }}>
+                        <div className="h-full w-full bg-[var(--bg-panel)] border-none overflow-hidden relative group max-w-screen-2xl mx-auto" style={cardStyle}>
                             {bottom}
-                             {bottomOverlay && (
-                                <div className="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-none z-20">
-                                    <div className="bg-[var(--bg-surface)]/90 backdrop-blur border border-[var(--border)] p-2 rounded-lg shadow-xl">
+                            {bottomOverlay && (
+                                <div className="absolute top-6 left-1/2 -translate-x-1/2 pointer-events-none z-20 w-auto max-w-[90%] flex justify-center">
+                                    <div className="bg-[var(--bg-glass)] backdrop-blur-xl border border-[var(--border-soft)] p-2 rounded-full shadow-2xl animate-in slide-in-from-top-2 fade-in duration-500">
                                         {bottomOverlay}
                                     </div>
                                 </div>
@@ -116,240 +326,209 @@ export const SplitView = ({ top, bottom, topOverlay, bottomOverlay }: { top: Rea
     );
 };
 
-// --- MAIN LAYOUT COMPONENT ---
-
-interface MainLayoutProps {
-    controls: React.ReactNode;
-    top: React.ReactNode;
-    bottom: React.ReactNode;
-    topOverlay?: React.ReactNode;
-    bottomOverlay?: React.ReactNode;
-}
-
-export const MainLayout = ({ controls, top, bottom, topOverlay, bottomOverlay }: MainLayoutProps) => {
-    return (
-        <div className="h-screen w-full flex flex-col bg-[var(--bg-main)]">
-            <PanelGroup direction="vertical">
-                {/* Control Panel Area */}
-                <Panel defaultSize={18} minSize={14} maxSize={30} className="z-20 bg-[#0c0a09] border-b border-[var(--border)] shadow-lg">
-                    <div className="h-full w-full overflow-hidden">
-                        {controls}
-                    </div>
-                </Panel>
-                
-                <Handle />
-
-                {/* Workspace Area */}
-                <Panel className="relative z-10">
-                    <PanelGroup direction="vertical">
-                        {/* Top Workspace (Sequencer/Tonnetz) */}
-                        <Panel defaultSize={50} minSize={20} className="relative">
-                            <div className="absolute inset-0 p-1 pb-0.5">
-                                <div className="h-full w-full bg-[var(--bg-panel)] border border-[var(--border)] rounded-t-xl overflow-hidden relative">
-                                    {top}
-                                    {topOverlay && (
-                                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 pointer-events-none z-20">
-                                            <div className="bg-[var(--bg-surface)]/90 backdrop-blur border border-[var(--border)] p-2 rounded-lg shadow-xl">
-                                                {topOverlay}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </Panel>
-
-                        <Handle />
-
-                        {/* Bottom Workspace (Mood) */}
-                        <Panel defaultSize={50} minSize={20} className="relative">
-                            <div className="absolute inset-0 p-1 pt-0.5">
-                                <div className="h-full w-full bg-[var(--bg-panel)] border border-[var(--border)] rounded-b-xl overflow-hidden relative">
-                                    {bottom}
-                                    {bottomOverlay && (
-                                        <div className="absolute top-4 left-1/2 -translate-x-1/2 pointer-events-none z-20">
-                                            <div className="bg-[var(--bg-surface)]/90 backdrop-blur border border-[var(--border)] p-2 rounded-lg shadow-xl">
-                                                {bottomOverlay}
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </Panel>
-                    </PanelGroup>
-                </Panel>
-            </PanelGroup>
-        </div>
-    );
-};
-
 // --- CONTROL PANEL COMPONENT ---
 
-interface ControlPanelProps {
-    isPlaying: boolean;
-    togglePlay: () => void;
-    timeSig: { num: number, den: number };
-    setTimeSig: (val: { num: number, den: number }) => void;
-    complexity: ChordComplexity;
-    setComplexity: (c: ChordComplexity) => void;
-    onRest: () => void;
-    onSnap: () => void;
-    onClear: () => void;
-    currentKey: Note;
-    setKey: (n: Note) => void;
-    scale: ScaleType;
-    setScale: (s: ScaleType) => void;
-    isScaleLocked: boolean;
-    toggleScaleLock: () => void;
-    showPath: boolean;
-    togglePath: () => void;
-    instrument: InstrumentType;
-    setInstrument: (i: InstrumentType) => void;
-    view: string;
-    setView: (v: string) => void;
-    progressionCount: number;
-    scaleMeta: { desc: string; characteristic: string };
-    analysis: { vibe: string; mode: string; texture: string };
-    availableChords: Chord[];
-}
+export const ControlPanel = () => {
+    const { 
+        isPlaying, togglePlay, 
+        complexity, setComplexity,
+        handleProgression,
+        key: currentKey, setKey, 
+        scale, setScale, 
+        isScaleLocked, toggleScaleLock,
+        instrument, setInstrument, 
+        view, setView,
+        bpm, setBpm,
+        toggleTheme
+    } = useStore();
 
-export const ControlPanel = (props: ControlPanelProps) => {
+    const instruments: { id: InstrumentType, icon: any, label: string }[] = [
+        { id: 'rhodes', icon: Keyboard, label: 'Keys' },
+        { id: 'pad', icon: Cloud, label: 'Pad' },
+        { id: 'pluck', icon: Music2, label: 'Pluck' },
+        { id: 'synth', icon: Zap, label: 'Synth' }
+    ];
+
     return (
-        <div className="w-full h-full flex flex-col select-none bg-[#0c0a09]">
-            {/* HEADER TOOLBAR */}
-            <div className="flex flex-wrap items-center justify-between p-2 gap-2 border-b border-[var(--border)] bg-[#0c0a09] min-h-[56px]">
+        <div className="w-full h-full flex flex-col select-none font-sans text-[var(--text-main)]">
+            
+            {/* PRIMARY TOOLBAR - 3 COLUMN GRID FOR PERFECT CENTERING */}
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-3 min-h-[56px] relative z-20 bg-[var(--bg-panel)] shrink-0">
                 
-                <div className="flex flex-wrap items-center gap-2">
-                    {/* KEY / SCALE GROUP */}
-                    <div className="flex items-center bg-[var(--bg-element)] rounded-md border border-[var(--border)] overflow-hidden h-9 shadow-sm">
-                        <div className="px-3 flex items-center gap-2 border-r border-[var(--border)] h-full bg-[var(--bg-panel)]/50">
-                            <span className="text-[9px] font-black text-[var(--text-dim)] uppercase tracking-wider">Key</span>
-                            <div className="relative">
-                                <select 
-                                    value={props.currentKey} 
-                                    onChange={e => props.setKey(e.target.value as Note)} 
-                                    className="bg-transparent font-bold text-sm outline-none cursor-pointer text-[var(--text-main)] hover:text-white appearance-none text-center min-w-[20px] z-10 relative"
-                                >
-                                    {CIRCLE_KEYS.map(k => <option key={k} value={k}>{k}</option>)}
-                                </select>
-                            </div>
-                        </div>
-                        <div className="px-2 h-full flex items-center justify-center min-w-[80px]">
-                            <select 
-                                value={props.scale} 
-                                onChange={e => props.setScale(e.target.value as ScaleType)} 
-                                disabled={props.isScaleLocked} 
-                                className="bg-transparent text-xs font-medium text-[var(--text-muted)] outline-none cursor-pointer w-full hover:text-white appearance-none"
-                            >
-                                {Object.values(ScaleType).map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
-                        </div>
-                        <button 
-                            onClick={props.toggleScaleLock}
-                            className={cn("px-2 h-full flex items-center justify-center transition-colors hover:bg-white/5 border-l border-[var(--border)]", props.isScaleLocked ? "text-[var(--text-main)]" : "text-[var(--text-dim)]")}
-                            title={props.isScaleLocked ? "Unlock Scale" : "Lock Scale"}
-                        >
-                            {props.isScaleLocked ? <Lock size={12} /> : <Unlock size={12} />}
-                        </button>
-                    </div>
+                 {/* LEFT: BRANDING & GLOBAL */}
+                 <div className="flex items-center gap-2 justify-center md:justify-start">
+                    <button 
+                        onClick={toggleTheme} 
+                        className="flex items-center gap-2 opacity-80 hover:opacity-100 transition-all outline-none group bg-[var(--bg-element)] p-1.5 pr-3 rounded-full border border-transparent hover:border-[var(--border)]"
+                        title="Toggle Theme"
+                    >
+                        <div className={cn("w-2.5 h-2.5 rounded-full transition-all duration-500", isPlaying ? "bg-[var(--accent)] shadow-[0_0_10px_var(--accent)] scale-110" : "bg-[var(--text-dim)] group-hover:bg-[var(--text-main)]")} />
+                        <span className="text-[10px] font-black tracking-widest uppercase hidden lg:block">Harmonic</span>
+                    </button>
+                    
+                    <div className="w-px h-6 bg-[var(--border)] opacity-50 hidden md:block" />
 
-                    {/* TRANSPORT GROUP */}
-                    <div className="flex items-center bg-[var(--bg-element)] rounded-md border border-[var(--border)] overflow-hidden h-9 p-0.5 gap-0.5 shadow-sm">
-                        <button 
-                            onClick={props.togglePlay}
-                            className={cn(
-                                "flex items-center gap-1.5 px-3 h-full rounded text-xs font-bold transition-all",
-                                props.isPlaying ? "bg-[var(--bg-surface)] text-white shadow-sm" : "text-[var(--text-muted)] hover:text-white hover:bg-white/5"
-                            )}
-                        >
-                            {props.isPlaying ? <Pause size={12} fill="currentColor"/> : <Play size={12} fill="currentColor"/>}
-                            {props.isPlaying ? "Stop" : "Play"}
-                        </button>
-                        <div className="w-px h-4 bg-[var(--border)] mx-0.5" />
-                        <IconButton icon={Square} size="sm" onClick={() => { if(props.isPlaying) props.togglePlay(); }} className="rounded hover:bg-white/5 text-[var(--text-muted)]" title="Stop" />
-                        <IconButton icon={LinkIcon} size="sm" onClick={props.onSnap} title="Quantize" className="rounded hover:bg-white/5 text-[var(--text-muted)]" />
-                        <IconButton icon={Trash2} size="sm" variant="danger" onClick={props.onClear} title="Clear All" className="rounded hover:bg-red-500/10 text-red-400" />
-                    </div>
-
-                    {/* COMPLEXITY GROUP */}
-                    <div className="flex items-center bg-[var(--bg-element)] rounded-md border border-[var(--border)] overflow-hidden h-9 p-0.5 gap-0.5 shadow-sm">
-                        {['triad', '7th', '9th', '11th'].map((c) => (
+                    {/* Complexity Selector (Moved here for better balance on desktop) */}
+                     <div className="hidden lg:flex items-center bg-[var(--bg-element)] rounded-lg border border-[var(--border)] p-0.5 h-8 shadow-sm gap-0.5">
+                        {(['triad', '7th', '9th', '11th'] as ChordComplexity[]).map((c) => (
                             <button 
                                 key={c} 
-                                onClick={() => props.setComplexity(c as ChordComplexity)} 
+                                onClick={() => setComplexity(c)} 
                                 className={cn(
-                                    "px-2.5 h-full rounded text-[10px] font-bold uppercase transition-all border border-transparent", 
-                                    props.complexity === c 
-                                        ? "bg-[var(--accent)] text-black shadow-sm border-black/10" 
-                                        : "text-[var(--text-dim)] hover:text-white hover:bg-white/5"
+                                    "px-3 h-full rounded-md text-[9px] font-bold uppercase transition-all border border-transparent", 
+                                    complexity === c 
+                                        ? "bg-[var(--bg-surface)] text-[var(--accent)] shadow-sm border-[var(--border)]" 
+                                        : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]"
                                 )}
                             >
-                                {c.replace('triad', 'TRIAD').replace('th', 'TH')}
+                                {c.replace('triad', 'Triad').replace('th', '')}
                             </button>
                         ))}
                     </div>
                 </div>
 
-                <div className="flex-1" />
-
-                <div className="flex flex-wrap items-center gap-2">
-                    {/* ANALYSIS STATS */}
-                     <div className="hidden xl:flex items-center gap-2">
-                        <div className="flex items-center gap-1.5 px-2 py-1 bg-[var(--bg-element)] rounded border border-[var(--border)]">
-                            <Music size={12} className="text-yellow-400" />
-                            <span className="text-[10px] font-bold text-[var(--text-muted)]">{props.analysis.vibe}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 px-2 py-1 bg-[var(--bg-element)] rounded border border-[var(--border)]">
-                            <Layers size={12} className="text-emerald-400" />
-                            <span className="text-[10px] font-bold text-[var(--text-muted)]">{props.analysis.texture}</span>
-                        </div>
-                    </div>
-
-                    {/* VIEW TOGGLE */}
-                    <div className="flex items-center bg-[var(--bg-element)] rounded-md border border-[var(--border)] overflow-hidden h-9 p-0.5 gap-0.5 shadow-sm">
-                        <button onClick={() => props.setView('sequencer')} className={cn("px-3 h-full rounded flex items-center gap-1.5 text-[10px] font-bold uppercase transition-all", props.view === 'sequencer' ? "bg-[var(--bg-surface)] text-white shadow-sm" : "text-[var(--text-dim)] hover:text-white hover:bg-white/5")}>
-                            <ListMusic size={14} /> SEQ
-                        </button>
-                        <button onClick={() => props.setView('harmony')} className={cn("px-3 h-full rounded flex items-center gap-1.5 text-[10px] font-bold uppercase transition-all", props.view === 'harmony' ? "bg-[var(--bg-surface)] text-white shadow-sm" : "text-[var(--text-dim)] hover:text-white hover:bg-white/5")}>
-                            <Network size={14} /> MAP
-                        </button>
-                    </div>
-
-                     {/* INSTRUMENT TOGGLE */}
-                    <div className="flex items-center bg-[var(--bg-element)] rounded-md border border-[var(--border)] overflow-hidden h-9 p-0.5 gap-0.5 shadow-sm ml-2">
-                        {[
-                            { id: 'rhodes', icon: Square },
-                            { id: 'pad', icon: Layers },
-                            { id: 'pluck', icon: Music },
-                            { id: 'synth', icon: Activity }
-                        ].map(inst => (
-                            <button 
-                                key={inst.id} 
-                                onClick={() => props.setInstrument(inst.id as InstrumentType)}
-                                className={cn(
-                                    "w-8 h-full rounded flex items-center justify-center transition-all border border-transparent", 
-                                    props.instrument === inst.id 
-                                        ? "text-[var(--accent)] border-[var(--accent)] bg-[var(--accent)]/10" 
-                                        : "text-[var(--text-dim)] hover:text-white hover:bg-white/5"
-                                )}
-                                title={inst.id}
+                {/* CENTER: MUSICAL CONTEXT */}
+                <div className="flex items-center justify-center gap-2">
+                    <div className="flex items-center bg-[var(--bg-element)] rounded-lg border border-[var(--border)] shadow-sm p-0.5 h-8 transition-all hover:border-[var(--border-hover)]">
+                        <div className="px-1 border-r border-[var(--border)] h-full flex items-center hover:bg-[var(--bg-surface)] rounded-l transition-colors">
+                            <select 
+                                value={currentKey} 
+                                onChange={(e: any) => setKey(e.target.value)} 
+                                className="bg-transparent font-bold text-xs outline-none cursor-pointer text-[var(--text-main)] hover:text-[var(--accent)] appearance-none text-center min-w-[32px] h-full"
+                                title="Root Key"
                             >
-                                <inst.icon size={16} />
-                            </button>
-                        ))}
+                                {CIRCLE_KEYS.map((k: string) => <option key={k} value={k}>{k}</option>)}
+                            </select>
+                        </div>
+                        <div className="px-2 h-full flex items-center justify-center min-w-[90px] hover:bg-[var(--bg-surface)] transition-colors relative group/scale">
+                            <select 
+                                value={scale} 
+                                onChange={(e: any) => setScale(e.target.value)} 
+                                disabled={isScaleLocked} 
+                                className="bg-transparent text-[10px] font-bold text-[var(--text-muted)] outline-none cursor-pointer w-full hover:text-[var(--text-main)] appearance-none py-1 uppercase tracking-wide"
+                                title="Scale Type"
+                            >
+                                {Object.values(ScaleType).map((s: any) => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                        </div>
+                        <button 
+                            onClick={toggleScaleLock}
+                            className={cn("px-2.5 h-full flex items-center justify-center transition-all hover:bg-[var(--bg-surface)] border-l border-[var(--border)] rounded-r", isScaleLocked ? "text-[var(--accent)] bg-[var(--accent)]/5" : "text-[var(--text-dim)]")}
+                            title={isScaleLocked ? "Scale Locked" : "Scale Unlocked"}
+                        >
+                            {isScaleLocked ? <Lock size={10} strokeWidth={2.5} /> : <Unlock size={10} />}
+                        </button>
+                    </div>
+
+                    {/* Tempo */}
+                    <div className="flex items-center gap-2 bg-[var(--bg-element)] rounded-lg border border-[var(--border)] px-2.5 h-8 shadow-sm group hover:border-[var(--accent)]/50 hover:shadow-[0_0_10px_var(--accent)_inset] transition-all cursor-text">
+                        <Gauge size={12} className="text-[var(--text-dim)] group-hover:text-[var(--accent)] transition-colors" />
+                        <input 
+                            type="number" 
+                            value={bpm} 
+                            onChange={(e) => setBpm(Math.max(40, Math.min(240, parseInt(e.target.value)||120)))}
+                            className="bg-transparent text-[10px] font-mono font-bold text-center outline-none text-[var(--text-main)] w-[3ch] appearance-none"
+                            title="BPM"
+                        />
+                    </div>
+                </div>
+
+                {/* RIGHT: TRANSPORT & TOOLS */}
+                <div className="flex items-center gap-2 justify-center md:justify-end">
+                    
+                    {/* Complexity Selector (Mobile Only) */}
+                     <div className="flex lg:hidden items-center bg-[var(--bg-element)] rounded-lg border border-[var(--border)] p-0.5 h-8 shadow-sm gap-0.5">
+                        <select 
+                            value={complexity} 
+                            onChange={(e: any) => setComplexity(e.target.value)}
+                            className="bg-transparent text-[9px] font-bold uppercase outline-none px-2 h-full text-[var(--text-dim)] appearance-none"
+                        >
+                            {(['triad', '7th', '9th', '11th'] as ChordComplexity[]).map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                    </div>
+
+                    <div className="flex items-center gap-1 bg-[var(--bg-element)] rounded-lg border border-[var(--border)] p-0.5 h-8 shadow-sm">
+                        <button 
+                            onClick={togglePlay}
+                            className={cn(
+                                "flex items-center gap-2 px-3 h-full rounded-md text-[10px] font-bold transition-all border border-transparent active:scale-95",
+                                isPlaying 
+                                    ? "bg-[var(--accent)] text-black shadow-[0_2px_10px_var(--accent)] hover:brightness-110" 
+                                    : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]"
+                            )}
+                        >
+                            {isPlaying ? <Pause size={10} fill="currentColor"/> : <Play size={10} fill="currentColor"/>}
+                            <span className="hidden sm:inline tracking-wider">{isPlaying ? "STOP" : "PLAY"}</span>
+                        </button>
+                        
+                        <div className="w-px h-4 bg-[var(--border)] mx-1" />
+                        
+                        <IconButton icon={LinkIcon} size="md" onClick={() => handleProgression('quantize')} title="Quantize" className="rounded-md h-full w-8 hover:bg-[var(--bg-surface)] text-[var(--text-dim)] hover:text-[var(--text-main)]" />
+                        <IconButton icon={Trash2} size="md" variant="danger" onClick={() => handleProgression('clear')} title="Clear Sequence" className="rounded-md h-full w-8 hover:bg-red-500/10" />
                     </div>
                 </div>
             </div>
 
-            {/* PALETTE */}
-             <div className="flex-1 min-h-0 relative bg-[var(--bg-main)]/50">
-                 <div className="absolute top-3 left-4 z-10">
-                    <span className="text-[9px] font-black text-[var(--text-dim)] uppercase tracking-widest border border-[var(--border)] px-2 py-1 rounded bg-[var(--bg-element)] shadow-sm">Chord Palette</span>
-                 </div>
-                 <div className="h-full overflow-x-auto custom-scrollbar flex items-center px-4 pt-8 gap-2">
-                    {props.availableChords.map((c, i) => (
-                        <DraggableChord key={i} chord={c} className="h-10 w-auto min-w-[70px] bg-[var(--bg-surface)] hover:bg-[var(--bg-element)] shadow-sm border border-[var(--border)]" />
-                    ))}
-                 </div>
+            {/* SECONDARY ROW: PALETTE & VIEW CONTROLS */}
+            <div className="flex-1 min-h-0 flex bg-[var(--bg-main)]/30 border-t border-[var(--border)]">
+                {/* Responsive Palette: Grows into available space */}
+                <div className="flex-1 min-w-0 bg-[var(--bg-soft)]/20 relative">
+                     <div className="absolute inset-0">
+                        <ChordPalette className="p-3" />
+                     </div>
+                </div>
+
+                {/* Right Sidebar Tools */}
+                <div className="shrink-0 flex flex-col gap-3 px-3 py-3 border-l border-[var(--border)] bg-[var(--bg-panel)]/50 backdrop-blur-sm overflow-y-auto w-[68px] items-center">
+                     {/* View Toggles */}
+                    <div className="flex flex-col gap-2 w-full">
+                        <button 
+                            onClick={() => setView('sequencer')} 
+                            title="Sequencer View"
+                            className={cn(
+                                "w-full aspect-square rounded-xl flex items-center justify-center transition-all duration-300", 
+                                view === 'sequencer' 
+                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-md border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
+                                    : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
+                            )}
+                        >
+                            <ListMusic size={20} strokeWidth={1.5} />
+                        </button>
+                        <button 
+                            onClick={() => setView('harmony')} 
+                            title="Harmonic Map View"
+                            className={cn(
+                                "w-full aspect-square rounded-xl flex items-center justify-center transition-all duration-300", 
+                                view === 'harmony' 
+                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-md border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
+                                    : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
+                            )}
+                        >
+                            <Network size={20} strokeWidth={1.5} />
+                        </button>
+                    </div>
+
+                    <div className="h-px w-8 bg-[var(--border)]" />
+
+                     {/* Instrument Selector */}
+                    <div className="flex flex-col gap-2 w-full">
+                        {instruments.map(inst => (
+                            <button 
+                                key={inst.id} 
+                                onClick={() => setInstrument(inst.id)}
+                                className={cn(
+                                    "w-full aspect-square rounded-xl flex items-center justify-center transition-all duration-200 border border-transparent", 
+                                    instrument === inst.id 
+                                        ? "text-[var(--accent)] bg-[var(--accent)]/10 border-[var(--accent)]/20 shadow-sm" 
+                                        : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]"
+                                )}
+                                title={inst.label}
+                            >
+                                <inst.icon size={18} strokeWidth={1.5} />
+                            </button>
+                        ))}
+                    </div>
+                </div>
             </div>
         </div>
     );

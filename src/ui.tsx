@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { LucideIcon, ChevronRight, Home } from 'lucide-react';
 
@@ -112,3 +113,39 @@ export const Breadcrumbs = ({ items }: { items: { label: string, active?: boolea
         </nav>
     );
 };
+
+// --- ERROR BOUNDARY ---
+export class GlobalErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
+    constructor(props: {children: React.ReactNode}) {
+        super(props);
+        this.state = { hasError: false };
+    }
+
+    static getDerivedStateFromError() {
+        return { hasError: true };
+    }
+
+    componentDidCatch(error: any, errorInfo: any) {
+        console.error("Uncaught error:", error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+             return (
+                <div className="flex items-center justify-center h-screen w-full bg-[#0a0a0a] text-red-400 font-sans">
+                    <div className="text-center p-6 border border-red-900/50 rounded-xl bg-red-950/10">
+                        <h2 className="text-sm font-bold uppercase tracking-widest mb-4">Application Error</h2>
+                        <button 
+                            onClick={() => window.location.reload()} 
+                            className="px-4 py-2 bg-red-900/20 border border-red-500/30 rounded text-xs hover:bg-red-900/40 transition-colors"
+                        >
+                            Reload Interface
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+
+        return this.props.children;
+    }
+}

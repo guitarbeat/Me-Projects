@@ -12,6 +12,10 @@ export const useUrlSync = () => {
     // Init from URL on mount
     useEffect(() => {
         if (typeof window === 'undefined') return;
+        
+        // Skip if running in a blob/sandbox environment where location is restricted
+        if (window.location.protocol === 'blob:') return;
+
         const params = new URLSearchParams(window.location.search);
         
         // Batch updates would be ideal, but individual setters work for now
@@ -25,6 +29,10 @@ export const useUrlSync = () => {
     // Sync state to URL
     useEffect(() => {
         if (typeof window === 'undefined') return;
+
+        // Skip if running in a blob/sandbox environment where location is restricted
+        if (window.location.protocol === 'blob:') return;
+
         const params = new URLSearchParams();
         params.set('key', store.key);
         params.set('scale', store.scale);
@@ -33,8 +41,14 @@ export const useUrlSync = () => {
         params.set('view', store.view);
         
         const url = `${window.location.pathname}?${params.toString()}`;
-        // Use replaceState to avoid cluttering history stack with every knob turn
-        window.history.replaceState({}, '', url);
+        
+        try {
+            // Use replaceState to avoid cluttering history stack with every knob turn
+            window.history.replaceState({}, '', url);
+        } catch (e) {
+            // Ignored: likely running in a restricted iframe or blob context
+            console.debug('URL sync skipped:', e);
+        }
     }, [store.key, store.scale, store.bpm, store.instrument, store.view]);
 };
 

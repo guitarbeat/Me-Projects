@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -94,6 +95,16 @@
         overflow: hidden;
         -webkit-font-smoothing: antialiased;
         transition: background-color 0.3s ease, color 0.3s ease;
+      }
+
+      /* Hide number input spinners */
+      input[type=number]::-webkit-inner-spin-button, 
+      input[type=number]::-webkit-outer-spin-button { 
+        -webkit-appearance: none; 
+        margin: 0; 
+      }
+      input[type=number] {
+        -moz-appearance: textfield;
       }
       
       /* Utilities */
@@ -199,14 +210,5 @@
   <body>
     <div id="root"></div>
     <script type="module" src="index.tsx"></script>
-    <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('./sw.js')
-            .then(registration => console.log('SW registered: ', registration))
-            .catch(registrationError => console.log('SW registration failed: ', registrationError));
-        });
-      }
-    </script>
   </body>
 </html>

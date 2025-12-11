@@ -13,7 +13,15 @@ export const ScaleType = {
   Phrygian: 'Phrygian',
   Lydian: 'Lydian',
   Mixolydian: 'Mixolydian',
-  Locrian: 'Locrian'
+  Locrian: 'Locrian',
+  // Harmonic Major Modes
+  HarmonicMajor: 'Harmonic Major',
+  Dorianb5: 'Dorian b5',
+  Phrygianb4: 'Phrygian b4',
+  Lydianb3: 'Lydian b3',
+  Mixolydianb2: 'Mixolydian b2',
+  LydianAug2: 'Lydian Aug #2',
+  Locrianbb7: 'Locrian bb7'
 } as const;
 
 export type ScaleType = typeof ScaleType[keyof typeof ScaleType];
@@ -48,6 +56,7 @@ export interface Chord {
   duration: number;
   isRest?: boolean;
   sentiment?: { valence: number; arousal: number; };
+  lyrics?: string; // Added for songwriting tool
 }
 
 export interface ScaleDef {

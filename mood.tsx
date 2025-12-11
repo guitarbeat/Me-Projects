@@ -1,7 +1,6 @@
-
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { Thermometer, MousePointer2, Activity, Wind, Music2, Settings, Sliders } from 'lucide-react';
-import { SCALE_DEFS, EMOTIONAL_ZONES, getTempoFromArousal, getCompassLabel, ScaleDef } from './lib';
+import { Thermometer, Activity, Wind, Music2 } from 'lucide-react';
+import { SCALE_DEFS, EMOTIONAL_ZONES, getTempoFromArousal, ScaleDef } from './lib';
 import { cn } from './ui';
 import { useStore } from './store';
 
@@ -66,19 +65,14 @@ export const MoodSelector = () => {
     const containerRef = useRef<HTMLDivElement>(null);
     const ref = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
-    const [showZones, setShowZones] = useState(false);
     const [beamX, setBeamX] = useState<number>(0);
-    const [showHint, setShowHint] = useState(true);
     const [isScrolling, setIsScrolling] = useState(false);
     const [cursorPos, setCursorPos] = useState<{x:number, y:number} | null>(null);
-    
-    // Sensitivity Configuration
-    const [sensitivity, setSensitivity] = useState(1.5);
-    const [showSettings, setShowSettings] = useState(false);
     
     // Internal State Tracking
     const scrollTimeout = useRef<any>(null);
     const requestRef = useRef<number | undefined>(undefined);
+    const SENSITIVITY = 1.5;
 
     // Derived Data
     const attrs = useMemo(() => getMusicalAttributes(mood.valence, mood.arousal, mood.tension, instrument), [mood, instrument]);
@@ -101,8 +95,8 @@ export const MoodSelector = () => {
         const rawA = -((y * 2) - 1);
         
         // Apply sensitivity curve
-        const v = Math.sign(rawV) * Math.pow(Math.abs(rawV), sensitivity);
-        const a = Math.sign(rawA) * Math.pow(Math.abs(rawA), sensitivity);
+        const v = Math.sign(rawV) * Math.pow(Math.abs(rawV), SENSITIVITY);
+        const a = Math.sign(rawA) * Math.pow(Math.abs(rawA), SENSITIVITY);
         
         if (commit) {
             // Update store directly. Store handles scale snapping and audio updates.
@@ -126,7 +120,7 @@ export const MoodSelector = () => {
     // Tension Scroll Handler
     useEffect(() => {
         const handleWheel = (e: WheelEvent) => {
-            e.preventDefault(); e.stopPropagation(); setShowHint(false);
+            e.preventDefault(); e.stopPropagation();
             
             setIsScrolling(true);
             if(scrollTimeout.current) clearTimeout(scrollTimeout.current);
@@ -147,7 +141,7 @@ export const MoodSelector = () => {
     // Pointer Handlers
     const handlePointerDown = (e: React.PointerEvent) => {
         if ((e.target as HTMLElement).closest('.chord-node')) return;
-        e.preventDefault(); setIsDragging(true); setShowHint(false);
+        e.preventDefault(); setIsDragging(true);
         updateMoodPad(e.clientX, e.clientY, true);
         try { (e.target as Element).setPointerCapture(e.pointerId); } catch (e) {}
     };
@@ -281,43 +275,7 @@ export const MoodSelector = () => {
                     </div>
                 </div>
 
-                {/* Hints */}
-                <div className={cn("absolute bottom-20 left-1/2 -translate-x-1/2 pointer-events-none flex flex-col items-center gap-1 transition-opacity duration-700 delay-500", showHint ? "opacity-100" : "opacity-0")}>
-                     <div className="bg-[var(--bg-glass)] backdrop-blur-md px-4 py-2 rounded-full border border-[var(--border)] flex items-center gap-3">
-                         <MousePointer2 size={14} className="text-[var(--accent)] animate-bounce" />
-                         <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Scroll/Pinch for Tension</span>
-                     </div>
-                </div>
-
-                {/* Settings Toggle */}
-                <div className="absolute top-6 right-6 pointer-events-auto z-20 flex flex-col items-end gap-2">
-                    <button onClick={() => setShowSettings(!showSettings)} className={cn("w-8 h-8 flex items-center justify-center rounded-full border transition-all duration-200", showSettings ? "bg-[var(--accent)] text-black border-[var(--accent)]" : "bg-[var(--bg-soft)] border-[var(--border-soft)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-soft-hover)]")}>
-                        <Settings size={14} />
-                    </button>
-                    {showSettings && (
-                        <div className="bg-[var(--bg-glass)] backdrop-blur-xl border border-[var(--border)] p-4 rounded-xl shadow-2xl w-64 animate-in fade-in slide-in-from-top-2">
-                            <div className="flex items-center gap-2 mb-4 pb-2 border-b border-[var(--border)]">
-                                <Sliders size={12} className="text-[var(--accent)]"/>
-                                <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-muted)]">Input Mapping</span>
-                            </div>
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <div className="flex justify-between items-center text-[10px]"><span className="text-[var(--text-dim)]">Pad Sensitivity</span><span className="font-mono text-[var(--accent)]">{sensitivity.toFixed(1)}</span></div>
-                                    <input type="range" min="0.5" max="3.0" step="0.1" value={sensitivity} onChange={(e) => setSensitivity(parseFloat(e.target.value))} className="w-full h-1 bg-[var(--border)] rounded-lg appearance-none cursor-pointer accent-[var(--accent)]" />
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Zones Toggle */}
-                <div className="absolute bottom-6 right-6 pointer-events-auto transition-all duration-300 z-20">
-                     <button onClick={() => setShowZones(!showZones)} className="text-[10px] text-[var(--text-muted)] hover:text-[var(--text-main)] border border-[var(--border)] px-3 py-1.5 rounded-full uppercase tracking-wider backdrop-blur-md bg-[var(--bg-soft)] hover:bg-[var(--bg-soft-hover)] transition-colors">
-                        {showZones ? 'Hide Zones' : 'Show Zones'}
-                     </button>
-                </div>
-
-                {/* Zones Overlay */}
+                {/* Zones Overlay (Visible on Drag/Hover only) */}
                 <div className="absolute inset-0 pointer-events-none">
                      {EMOTIONAL_ZONES.map((gem, i) => {
                          const x = (gem.v + 1) / 2 * 100;
@@ -328,7 +286,7 @@ export const MoodSelector = () => {
                              const cy = cursorPos.y / containerRef.current.offsetHeight * 100;
                              isHover = Math.hypot(cx - x, cy - y) < 12;
                          }
-                         const isVisible = showZones || isDragging || isHover;
+                         const isVisible = isDragging || isHover;
                          return (
                             <div key={i} className={cn("absolute flex flex-col items-center justify-center text-center -translate-x-1/2 -translate-y-1/2 transition-all duration-300", isHover ? "z-10 scale-110 opacity-100" : isVisible ? "opacity-40 scale-100" : "opacity-0 scale-90")} style={{ left: `${x}%`, top: `${y}%` }}>
                                 <span className={cn("text-[10px] font-black tracking-widest uppercase whitespace-nowrap transition-colors", isHover ? "text-[var(--text-main)]" : "text-[var(--text-dim)]")}>{gem.label}</span>

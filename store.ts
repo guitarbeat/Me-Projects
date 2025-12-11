@@ -5,6 +5,20 @@ import { audioEngine } from './audio';
 import { SCALE_DEFS } from './constants';
 import { findClosestScale, getTempoFromArousal } from './theory';
 
+export interface SavedProject {
+    id: string;
+    name: string;
+    timestamp: number;
+    state: {
+        progression: Chord[];
+        key: Note;
+        scale: ScaleType;
+        bpm: number;
+        mood: { valence: number; arousal: number; tension: number };
+        instrument: InstrumentType;
+    }
+}
+
 interface AppState {
     // --- STATE ---
     theme: 'light' | 'dark';
@@ -20,12 +34,14 @@ interface AppState {
     
     // Interaction State
     hoveredChord: Chord | null;
+    selectedChordIndex: number | null;
     targetMood: { v: number, a: number } | null;
     hoveredSequenceIndex: number | null;
 
     // Data State
     progression: Chord[];
     mood: { valence: number; arousal: number; tension: number };
+    savedProjects: SavedProject[];
 
     // Playback State
     isPlaying: boolean;
@@ -43,14 +59,20 @@ interface AppState {
     togglePath: () => void;
     setView: (v: string) => void;
     setHoveredChord: (c: Chord | null) => void;
+    setSelectedChordIndex: (i: number | null) => void;
     setTargetMood: (m: { v: number, a: number } | null) => void;
     setHoveredSequenceIndex: (i: number | null) => void;
     
     // Logic Actions
     setMood: (v: number, a: number, t?: number) => void;
-    handleProgression: (action: 'add' | 'remove' | 'clear' | 'reorder' | 'resize' | 'quantize', payload?: any) => void;
+    handleProgression: (action: 'add' | 'remove' | 'clear' | 'reorder' | 'resize' | 'quantize' | 'update', payload?: any) => void;
     togglePlay: () => void;
     playOne: (c: Chord) => void;
+    
+    // Persistence
+    saveProject: (name: string) => void;
+    loadProject: (id: string) => void;
+    deleteProject: (id: string) => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -71,10 +93,17 @@ export const useStore = create<AppState>((set, get) => ({
     showPath: false,
     view: 'sequencer',
     hoveredChord: null,
+    selectedChordIndex: null,
     targetMood: null,
     hoveredSequenceIndex: null,
     progression: [],
     mood: { valence: 0.75, arousal: 0.5, tension: 0.0 }, // Matches Major Scale Default
+    savedProjects: (() => {
+        try {
+            const data = localStorage.getItem('harmonic_projects');
+            return data ? JSON.parse(data) : [];
+        } catch { return []; }
+    })(),
     isPlaying: false,
     playIndex: null,
 
@@ -129,6 +158,7 @@ export const useStore = create<AppState>((set, get) => ({
     togglePath: () => set((s) => ({ showPath: !s.showPath })),
     setView: (view) => set({ view }),
     setHoveredChord: (hoveredChord) => set({ hoveredChord }),
+    setSelectedChordIndex: (selectedChordIndex) => set({ selectedChordIndex }),
     setTargetMood: (targetMood) => set({ targetMood }),
     setHoveredSequenceIndex: (hoveredSequenceIndex) => set({ hoveredSequenceIndex }),
 
@@ -155,6 +185,7 @@ export const useStore = create<AppState>((set, get) => ({
         set((state) => {
             const timeSig = state.timeSig;
             let newProgression = [...state.progression];
+            let newSelected = state.selectedChordIndex;
 
             switch (action) {
                 case 'add':
@@ -172,20 +203,36 @@ export const useStore = create<AppState>((set, get) => ({
                     
                     if (insertIndex !== -1 && insertIndex <= newProgression.length) {
                         newProgression.splice(insertIndex, 0, ...processed);
+                        // Shift selection if needed
+                        if (newSelected !== null && newSelected >= insertIndex) {
+                            newSelected += newChords.length;
+                        }
                     } else {
                         newProgression.push(...processed);
                     }
                     break;
                 case 'remove':
-                    if (typeof payload === 'number') newProgression = newProgression.filter((_, i) => i !== payload);
+                    if (typeof payload === 'number') {
+                        newProgression = newProgression.filter((_, i) => i !== payload);
+                        if (newSelected === payload) newSelected = null;
+                        else if (newSelected !== null && newSelected > payload) newSelected -= 1;
+                    }
                     break;
                 case 'clear':
                     newProgression = [];
+                    newSelected = null;
                     break;
                 case 'reorder':
                     if (payload && typeof payload.from === 'number' && typeof payload.to === 'number') {
                         const [moved] = newProgression.splice(payload.from, 1);
                         newProgression.splice(payload.to, 0, moved);
+                        
+                        // Update selection index if involved
+                        if (newSelected === payload.from) newSelected = payload.to;
+                        else if (newSelected !== null) {
+                            if (newSelected > payload.from && newSelected <= payload.to) newSelected -= 1;
+                            else if (newSelected < payload.from && newSelected >= payload.to) newSelected += 1;
+                        }
                     }
                     break;
                 case 'resize':
@@ -206,8 +253,13 @@ export const useStore = create<AppState>((set, get) => ({
                         return { ...c, duration: dur };
                     });
                     break;
+                case 'update':
+                    if (payload && typeof payload.index === 'number' && payload.chord) {
+                         newProgression[payload.index] = payload.chord;
+                    }
+                    break;
             }
-            return { progression: newProgression };
+            return { progression: newProgression, selectedChordIndex: newSelected };
         });
     },
 
@@ -230,5 +282,57 @@ export const useStore = create<AppState>((set, get) => ({
     playOne: (c) => {
         audioEngine.resume();
         if (!c.isRest) audioEngine.playChord(c);
-    }
+    },
+
+    // --- PERSISTENCE ---
+    saveProject: (name) => set((state) => {
+        const newProject: SavedProject = {
+            id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
+            name,
+            timestamp: Date.now(),
+            state: {
+                progression: state.progression,
+                key: state.key,
+                scale: state.scale,
+                bpm: state.bpm,
+                mood: state.mood,
+                instrument: state.instrument
+            }
+        };
+        const updated = [newProject, ...state.savedProjects];
+        try {
+            localStorage.setItem('harmonic_projects', JSON.stringify(updated));
+        } catch (e) { console.error("Save failed", e); }
+        return { savedProjects: updated };
+    }),
+
+    loadProject: (id) => set((state) => {
+        const project = state.savedProjects.find(p => p.id === id);
+        if (!project) return {};
+        
+        // Restore audio engine state
+        audioEngine.setMood(project.state.mood.valence, project.state.mood.arousal, project.state.mood.tension);
+        audioEngine.setBpm(project.state.bpm);
+        audioEngine.setInstrument(project.state.instrument);
+
+        return {
+            progression: project.state.progression,
+            key: project.state.key,
+            scale: project.state.scale,
+            bpm: project.state.bpm,
+            mood: project.state.mood,
+            instrument: project.state.instrument,
+            selectedChordIndex: null, // Clear selection
+            // unlock scale on load to respect saved mood/scale sync
+            isScaleLocked: false
+        };
+    }),
+
+    deleteProject: (id) => set((state) => {
+        const updated = state.savedProjects.filter(p => p.id !== id);
+        try {
+            localStorage.setItem('harmonic_projects', JSON.stringify(updated));
+        } catch (e) { console.error("Delete failed", e); }
+        return { savedProjects: updated };
+    }),
 }));

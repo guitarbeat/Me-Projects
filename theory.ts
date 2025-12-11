@@ -1,4 +1,5 @@
 
+
 import { Note, ScaleType, Chord, ChordComplexity } from './types';
 import { CHROMATIC_SHARPS, CHROMATIC_FLATS, SCALE_DEFS } from './constants';
 import { ScaleDef } from './types';
@@ -48,10 +49,8 @@ export const buildChord = (root: Note, quality: Chord['quality'], extension: str
                  if (quality === 'Major') intervals.push(11);
                  else if (quality === 'Dominant' || quality === 'Minor') intervals.push(10);
              }
-             // Add Major 9 (14 semitones)
              if (!intervals.includes(14)) intervals.push(14); 
 
-             // Handle flat 9 situations (phrygian/locrian context) - simplified here to standard 9 for generic build
              if (quality === 'Major') suffix = 'maj9';
              else if (quality === 'Minor') suffix = 'm9';
              else if (quality === 'Dominant') suffix = '9';
@@ -59,10 +58,7 @@ export const buildChord = (root: Note, quality: Chord['quality'], extension: str
 
         // 11ths
         if (extension.includes('11')) {
-            if (!intervals.includes(14)) intervals.push(14); // ensure 9th exists
-            
-            // Check for #11 (Lydian) context vs natural 11
-            // For generic buildChord, we default to P11 (17 semitones) unless specified #11
+            if (!intervals.includes(14)) intervals.push(14); 
             const isSharp11 = extension.includes('#11');
             intervals.push(isSharp11 ? 18 : 17);
 
@@ -73,13 +69,8 @@ export const buildChord = (root: Note, quality: Chord['quality'], extension: str
     }
 
     const notes = intervals.map(i => chromatic[(rootIdx + i) % 12]);
-    
     let symbol = `${root}${suffix}`;
-    
-    // Fallback symbol generation if standard suffixes didn't catch specific jazz cases
-    if (extension && !suffix) {
-        symbol += extension;
-    }
+    if (extension && !suffix) symbol += extension;
 
     return {
         root,
@@ -98,103 +89,118 @@ export const generateChordsForScale = (root: Note, scaleType: ScaleType, complex
     const scaleNotes = getScaleNotes(root, scaleType);
     const chords: Chord[] = [];
     
-    const romanNumerals = ['i','ii','iii','iv','v','vi','vii'];
-    
-    // Explicit typing for definitions to ensure compatibility with ChordComplexity
-    type ExtensionMap = Record<Exclude<ChordComplexity, 'triad'>, string>;
-    
-    // Definitions of extensions based on MAJOR scale degrees (Ionian)
-    // We map these to the current mode using offsets.
-    const ionianDefs: { q: Chord['quality']; ext: ExtensionMap }[] = [
-        { q: 'Major',    ext: { '7th': 'maj7', '9th': 'maj9', '11th': 'maj11' } },    // I
-        { q: 'Minor',    ext: { '7th': 'm7',   '9th': 'm9',   '11th': 'm11' } },      // ii
-        { q: 'Minor',    ext: { '7th': 'm7',   '9th': 'm7b9', '11th': 'm11' } },      // iii (Phrygian b9)
-        { q: 'Major',    ext: { '7th': 'maj7', '9th': 'maj9', '11th': 'maj#11' } },   // IV (Lydian #11)
-        { q: 'Dominant', ext: { '7th': '7',    '9th': '9',    '11th': '11' } },       // V
-        { q: 'Minor',    ext: { '7th': 'm7',   '9th': 'm9',   '11th': 'm11' } },      // vi
-        { q: 'Half-Dim', ext: { '7th': 'm7b5', '9th': 'm7b5b9', '11th': 'm11b5' } }   // vii (Locrian)
-    ];
-
-    const modeOffsets: Record<ScaleType, number> = {
-        'Major': 0, 'Natural Minor': 5, 'Dorian': 1, 'Phrygian': 2, 
-        'Lydian': 3, 'Mixolydian': 4, 'Locrian': 6
+    // Definitions for Roman Numeral Analysis
+    const degrees = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+    // Relative to Major Scale
+    const intervalToDegree: Record<number, {num: string, prefix: string}> = {
+        0: { num: 'I', prefix: '' },
+        1: { num: 'II', prefix: 'b' },
+        2: { num: 'II', prefix: '' },
+        3: { num: 'III', prefix: 'b' },
+        4: { num: 'III', prefix: '' },
+        5: { num: 'IV', prefix: '' },
+        6: { num: 'IV', prefix: '#' }, // or bV
+        7: { num: 'V', prefix: '' },
+        8: { num: 'VI', prefix: 'b' },
+        9: { num: 'VI', prefix: '' },
+        10: { num: 'VII', prefix: 'b' },
+        11: { num: 'VII', prefix: '' },
     };
-    const offset = modeOffsets[scaleType] || 0;
 
     scaleNotes.forEach((note, index) => {
-        const degreeInMajor = (index + offset) % 7;
-        const def = ionianDefs[degreeInMajor];
-        const quality = def.q;
+        // 1. Determine Chord Tones (Tertiary Harmony)
+        const rootIdx = index;
+        const thirdIdx = (index + 2) % 7;
+        const fifthIdx = (index + 4) % 7;
+        const seventhIdx = (index + 6) % 7;
+        const ninthIdx = (index + 8) % 7;
+        const eleventhIdx = (index + 10) % 7;
+
+        // 2. Calculate Intervals in Semitones
+        const getInt = (idx: number) => {
+            const def = SCALE_DEFS[scaleType].intervals;
+            let val = def[idx] - def[rootIdx];
+            if (val < 0) val += 12;
+            return val;
+        };
+
+        const i3 = getInt(thirdIdx);
+        const i5 = getInt(fifthIdx);
+        const i7 = getInt(seventhIdx);
         
-        let extString = '';
-        if (complexity !== 'triad') {
-            extString = def.ext[complexity] || '';
-        }
-
-        // --- Calculate Note Stacking ---
-        // We must select notes relative to the CURRENT degree in the scale
-        const noteIndices = [0, 2, 4]; // Root, 3rd, 5th
-        if (complexity !== 'triad') noteIndices.push(6); // 7th
-        if (complexity === '9th' || complexity === '11th') noteIndices.push(8); // 9th (index + 1 octave up)
-        if (complexity === '11th') noteIndices.push(10); // 11th (index + 3 octave up)
-
-        // Map indices to actual notes in the scale array
-        const chordNotes = noteIndices.map(i => scaleNotes[(index + i) % 7]);
-
+        // 3. Determine Quality
+        let quality: Chord['quality'] = 'Major';
         let suffix = '';
-        if (complexity === 'triad') {
-            if (quality === 'Major') suffix = '';
-            else if (quality === 'Minor') suffix = 'm';
-            else if (quality === 'Diminished') suffix = 'dim';
-            else if (quality === 'Augmented') suffix = 'aug';
-            else if (quality === 'Half-Dim') suffix = 'dim'; // Show as dim in triad mode
-        } else {
-            // For complex chords, the definition string handles the suffix
-            // e.g. 'maj#11' or 'm7b5'
-            suffix = extString;
-        }
+        let extension = '';
 
-        // --- Roman Numeral Generation ---
-        let num = romanNumerals[index];
-        
-        // Capitalization
-        if (quality === 'Major' || quality === 'Dominant') num = num.toUpperCase();
-        if (quality === 'Augmented') num = num.toUpperCase() + '+';
-        
-        // Symbols
-        if (quality === 'Diminished') num = num.toLowerCase() + '°';
-        if (quality === 'Half-Dim') num = num.toLowerCase() + 'ø';
+        // Triad Analysis
+        if (i3 === 4 && i5 === 7) quality = 'Major';
+        else if (i3 === 3 && i5 === 7) { quality = 'Minor'; suffix = 'm'; }
+        else if (i3 === 3 && i5 === 6) { quality = 'Diminished'; suffix = 'dim'; }
+        else if (i3 === 4 && i5 === 8) { quality = 'Augmented'; suffix = 'aug'; }
+        else if (i3 === 4 && i5 === 6) { quality = 'Major'; suffix = 'b5'; } // Lydian/Exotic
+        else if (i3 === 3 && i5 === 8) { quality = 'Minor'; suffix = 'm#5'; }
+        else if (i3 === 5) { quality = 'Sus4'; suffix = 'sus4'; }
+        else if (i3 === 2) { quality = 'Sus2'; suffix = 'sus2'; }
 
-        // Extensions in Roman Numeral
+        // 7th Analysis
         if (complexity !== 'triad') {
-            // Clean up base symbols to append specific extension
-            num = num.replace('°', '').replace('ø', '');
-            
-            if (quality === 'Major') num += 'maj7';
-            else if (quality === 'Dominant') num += '7';
-            else if (quality === 'Minor') num = num.toLowerCase() + '7';
-            else if (quality === 'Half-Dim') num = num.toLowerCase() + 'ø7';
-            else if (quality === 'Diminished') num = num.toLowerCase() + '°7';
-            
-            // Add higher extensions
-            if (complexity === '9th') num = num.replace('7', '9');
-            if (complexity === '11th') num = num.replace('7', '11').replace('9', '11');
+            if (quality === 'Major') {
+                if (i7 === 11) { suffix = 'maj7'; extension = '7th'; }
+                else if (i7 === 10) { quality = 'Dominant'; suffix = '7'; extension = '7th'; }
+            } else if (quality === 'Minor') {
+                if (i7 === 10) { suffix = 'm7'; extension = '7th'; }
+                else if (i7 === 11) { suffix = 'mMaj7'; extension = '7th'; }
+            } else if (quality === 'Diminished') {
+                if (i7 === 10) { quality = 'Half-Dim'; suffix = 'm7b5'; extension = '7th'; }
+                else if (i7 === 9) { suffix = 'dim7'; extension = '7th'; }
+            } else if (quality === 'Augmented') {
+                if (i7 === 10) { suffix = '+7'; extension = '7th'; }
+                else if (i7 === 11) { suffix = 'maj7#5'; extension = '7th'; }
+            }
         }
 
-        const chord: Chord = {
+        // 4. Construct Roman Numeral
+        const scaleRootInterval = SCALE_DEFS[scaleType].intervals[index];
+        const degInfo = intervalToDegree[scaleRootInterval] || { num: '?', prefix: '' };
+        
+        let roman = degInfo.num;
+        if (quality === 'Minor' || quality === 'Diminished' || quality === 'Half-Dim') roman = roman.toLowerCase();
+        
+        roman = degInfo.prefix + roman;
+        
+        if (quality === 'Augmented') roman += '+';
+        if (quality === 'Diminished' && complexity === 'triad') roman += '°';
+        
+        // Add extensions to Roman Numeral
+        if (complexity !== 'triad') {
+            if (quality === 'Half-Dim') roman += 'ø7';
+            else if (quality === 'Diminished' && i7 === 9) roman += '°7';
+            else if (quality === 'Dominant') roman += '7';
+            else if (suffix.includes('maj7')) roman += 'maj7';
+            else if (suffix.includes('m7')) roman += '7';
+        }
+
+        // 5. Build Notes Array
+        const noteIndices = [rootIdx, thirdIdx, fifthIdx];
+        if (complexity !== 'triad') noteIndices.push(seventhIdx);
+        if (complexity === '9th' || complexity === '11th') noteIndices.push(ninthIdx);
+        if (complexity === '11th') noteIndices.push(eleventhIdx);
+        
+        const notes = noteIndices.map(i => scaleNotes[i]);
+
+        chords.push({
             root: note,
-            quality: quality,
-            extension: extString,
-            suffix: suffix,
+            quality,
+            extension: complexity !== 'triad' ? extension : '',
+            suffix,
             symbol: `${note}${suffix}`,
-            romanNumeral: num,
-            notes: chordNotes,
+            romanNumeral: roman,
+            notes,
             interval: index,
             duration: 4,
-            complexity: complexity
-        };
-        
-        chords.push(chord);
+            complexity
+        });
     });
     
     return chords;
@@ -232,42 +238,49 @@ export const getTensionChords = (root: Note, scaleType: ScaleType, tension: numb
         
     const rootIdx = chromatic.indexOf(root);
 
-    // Helper to safely add chords
     const addTensionChord = (intervalOffset: number, quality: Chord['quality'], extension: string, roman: string, type: string) => {
         const noteIdx = (rootIdx + intervalOffset) % 12;
         const note = chromatic[noteIdx];
         const chord = buildChord(note, quality, extension);
         chord.romanNumeral = roman;
-        chord.tensionType = type; // Critical for UI coloring
+        chord.tensionType = type; 
         
         if (quality === 'Augmented' && extension === '7') chord.symbol = `${note}+7`;
         if (type === 'sub') chord.symbol = `${note}7`;
         
+        // Specific Chromatic Labels
+        if (roman === 'N') chord.symbol = `${note}`; // Neapolitan is just Major triad
+        if (roman === 'Ger+6') chord.symbol = `${note}7`; // Enharmonic to Dom7
+
         chords.push(chord);
     };
 
-    // 1. MILD TENSION (Modal Interchange) - Threshold 0.25
+    // 1. MILD TENSION (Modal Interchange & Color) - Threshold 0.25
     if (tension > 0.25) {
         addTensionChord(8, 'Major', 'maj7', 'bVI', 'borrowed'); // Lydian/Aeolian
         addTensionChord(10, 'Dominant', '7', 'bVII7', 'borrowed'); // Mixolydian/Backdoor
+        // Neapolitan (bII Major)
+        addTensionChord(1, 'Major', '', 'N', 'chromatic');
     }
     
     // 2. MEDIUM TENSION (Substitutions) - Threshold 0.50
     if (tension > 0.50) {
-        addTensionChord(1, 'Dominant', '7', 'bII7', 'sub'); // Tritone Sub for V7
+        addTensionChord(1, 'Dominant', '7', 'bII7', 'sub'); // Tritone Sub
         addTensionChord(6, 'Dominant', '7', '#IV7', 'sub'); // Lydian Dominant
     }
 
-    // 3. HIGH TENSION (Diminished) - Threshold 0.70
+    // 3. HIGH TENSION (Diminished & Augmented 6th) - Threshold 0.70
     if (tension > 0.70) {
         addTensionChord(11, 'Diminished', 'dim7', 'vii°7', 'dim');
-        addTensionChord(1, 'Diminished', 'dim7', 'bii°7', 'dim'); // Passing dim
+        addTensionChord(1, 'Diminished', 'dim7', 'bii°7', 'dim');
+        // German Augmented 6th (bVI7) - Enahrmonic to Dom7
+        addTensionChord(8, 'Dominant', '7', 'Ger+6', 'aug6');
     }
 
     // 4. EXTREME TENSION (Altered) - Threshold 0.85
     if (tension > 0.85) {
         addTensionChord(7, 'Augmented', '7', 'V+7', 'alt');
-        addTensionChord(3, 'Dominant', '7', 'bIII7', 'alt'); // Chromatic Mediant
+        addTensionChord(3, 'Dominant', '7', 'bIII7', 'alt'); 
     }
 
     return chords;
@@ -282,7 +295,6 @@ export const estimateChordSentiment = (chord: Chord, key: Note, scale: ScaleType
     else if (chord.quality === 'Diminished') { v -= 0.6; a += 0.3; }
     else if (chord.quality === 'Dominant') { v += 0.2; a += 0.4; }
     
-    // Adjust for complexity
     if (chord.complexity === '7th') { v *= 1.1; a *= 1.1; }
     if (chord.complexity === '9th') { v += 0.1; a -= 0.1; } 
     
@@ -348,7 +360,6 @@ export const getHarmonicSuggestions = (contextChord: Chord | null): number[] => 
 export const findClosestScale = (v: number, a: number, t: number, currentScale: ScaleType): ScaleType => {
     let minDist = Infinity;
     let closest = currentScale;
-    
     Object.entries(SCALE_DEFS).forEach(([st, def]) => {
         const sDef = def as ScaleDef;
          const d = Math.sqrt(
@@ -356,7 +367,6 @@ export const findClosestScale = (v: number, a: number, t: number, currentScale: 
             Math.pow(a - sDef.scaleCoordinates.a, 2) + 
             Math.pow(t - sDef.scaleCoordinates.t, 2)
         );
-        // Hysteresis: prevent jitter by giving preference to current scale
         const weightedDist = st === currentScale ? d * 0.75 : d;
         if (weightedDist < minDist) { minDist = weightedDist; closest = st as ScaleType; }
     });

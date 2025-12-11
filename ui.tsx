@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { LucideIcon, ChevronRight, Home } from 'lucide-react';
 
@@ -115,11 +114,8 @@ export const Breadcrumbs = ({ items }: { items: { label: string, active?: boolea
 };
 
 // --- ERROR BOUNDARY ---
-export class GlobalErrorBoundary extends React.Component<{children: React.ReactNode}, {hasError: boolean}> {
-    constructor(props: {children: React.ReactNode}) {
-        super(props);
-        this.state = { hasError: false };
-    }
+export class GlobalErrorBoundary extends React.Component<{children?: React.ReactNode}, {hasError: boolean}> {
+    state = { hasError: false };
 
     static getDerivedStateFromError() {
         return { hasError: true };

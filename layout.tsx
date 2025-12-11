@@ -1,14 +1,18 @@
 
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { cn, IconButton } from './ui';
-import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
-import { useStore, ScaleType, CIRCLE_KEYS, InstrumentType, ChordComplexity } from './lib';
+import { Panel, PanelGroup, PanelResizeHandle, ImperativePanelHandle } from 'react-resizable-panels';
+import { useStore, ScaleType, CIRCLE_KEYS, InstrumentType, ChordComplexity, buildChord, CHROMATIC_SHARPS } from './lib';
 import { ChordPalette } from './sequencer';
 import { 
     Play, Pause, Lock, Unlock, Link as LinkIcon, Trash2, 
     ListMusic, Network, Cloud, Keyboard, Music2, Zap, Gauge,
-    ChevronUp, MoreHorizontal
+    ChevronUp, ChevronDown, MoreHorizontal, Moon, Sun, Sparkles, Wand2, X, Loader2, Dices,
+    FolderOpen, Save, Clock, Minus, Plus, PenTool
 } from 'lucide-react';
+import { GoogleGenAI, Type } from "@google/genai";
+import { GuitarChordDiagram } from './guitar';
 
 // --- SHARED LAYOUT LOGIC ---
 
@@ -55,6 +59,74 @@ function useDynamicLayout(ref: React.RefObject<HTMLElement>) {
     return metrics;
 }
 
+// --- SHARED PANEL CARD ---
+
+interface PanelCardProps {
+    children?: React.ReactNode;
+    radius: number;
+    padding: number;
+    gap?: number;
+    isCollapsed?: boolean;
+    overlay?: React.ReactNode;
+    overlayPosition?: 'top' | 'bottom';
+    className?: string;
+}
+
+/**
+ * A reusable card container that implements the "Island" visual style.
+ * Handles the outer padding (for the floating effect), border radius, shadow,
+ * and hardware acceleration properties.
+ */
+const PanelCard = ({ 
+    children, 
+    radius, 
+    padding, 
+    gap = 0, 
+    isCollapsed = false, 
+    overlay, 
+    overlayPosition = 'bottom',
+    className 
+}: PanelCardProps) => {
+    
+    const cardStyle: React.CSSProperties = {
+        borderRadius: `${radius}px`,
+        boxShadow: '0 0 0 1px var(--border), 0 4px 20px -5px rgba(0,0,0,0.3)',
+        transform: 'translate3d(0,0,0)',
+        isolation: 'isolate',
+        transition: 'border-radius 0.2s',
+    };
+
+    // Calculate padding based on position to ensure gaps are handled correctly between panels
+    const paddingTop = overlayPosition === 'top' ? (isCollapsed ? padding : gap) : padding;
+    const paddingBottom = overlayPosition === 'bottom' ? (isCollapsed ? padding : gap) : padding;
+
+    return (
+        <div className="absolute inset-0 transition-all duration-300" 
+             style={{ 
+                 paddingLeft: padding,
+                 paddingRight: padding,
+                 paddingTop, 
+                 paddingBottom
+             }}>
+            <div className={cn("h-full w-full bg-[var(--bg-panel)] overflow-hidden relative group max-w-screen-2xl mx-auto", className)} style={cardStyle}>
+                <div className={cn("h-full w-full transition-opacity duration-300", isCollapsed ? "opacity-0 pointer-events-none" : "opacity-100")}>
+                    {children}
+                </div>
+                {overlay && (
+                     <div className={cn(
+                         "absolute left-1/2 -translate-x-1/2 pointer-events-none z-20 w-auto max-w-[90%] flex justify-center",
+                         overlayPosition === 'bottom' ? "bottom-6 animate-in slide-in-from-bottom-2" : "top-6 animate-in slide-in-from-top-2"
+                     )}>
+                        <div className="bg-[var(--bg-glass)] backdrop-blur-xl border border-[var(--border-soft)] p-2 rounded-full shadow-2xl fade-in duration-500">
+                            {overlay}
+                        </div>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
 // --- STYLED HANDLE ---
 
 interface HandleProps {
@@ -62,10 +134,11 @@ interface HandleProps {
     vertical?: boolean;
     isDragging?: boolean;
     collapsed?: boolean;
+    direction?: 'up' | 'down'; // Direction the arrow points when NOT collapsed
     onToggle?: () => void;
 }
 
-const Handle = ({ className, vertical = false, isDragging, collapsed, onToggle }: HandleProps) => {
+const Handle = ({ className, vertical = false, isDragging, collapsed, direction = 'up', onToggle }: HandleProps) => {
     return (
         <PanelResizeHandle className={cn("group flex items-center justify-center z-50 outline-none touch-none transition-all focus:outline-none", vertical ? "w-5 h-full cursor-col-resize -mx-2.5" : "h-6 w-full cursor-row-resize -my-3", className)}>
             <div 
@@ -93,7 +166,9 @@ const Handle = ({ className, vertical = false, isDragging, collapsed, onToggle }
                         "absolute inset-0 flex items-center justify-center transition-opacity duration-200", 
                         (collapsed || isDragging || className?.includes('hover')) ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                     )}>
-                        {collapsed ? <MoreHorizontal size={14} strokeWidth={3} /> : <ChevronUp size={12} strokeWidth={3} />}
+                        {collapsed ? <MoreHorizontal size={14} strokeWidth={3} /> : (
+                            direction === 'up' ? <ChevronUp size={12} strokeWidth={3} /> : <ChevronDown size={12} strokeWidth={3} />
+                        )}
                     </div>
                 )}
                 
@@ -118,7 +193,7 @@ export const ResizableTopPanel = ({
     maxHeight = 400, 
     defaultHeight = 180 
 }: { 
-    children: React.ReactNode, 
+    children?: React.ReactNode, 
     minHeight?: number, 
     maxHeight?: number, 
     defaultHeight?: number 
@@ -137,8 +212,6 @@ export const ResizableTopPanel = ({
     const { radius, padding, gap } = useDynamicLayout(wrapperRef);
 
     // Calculate minimized dimensions
-    // When collapsed, we want it to be basically just padding + handle area.
-    // Let's say handle area is ~12px visual height, plus padding top/bottom.
     const collapsedHeight = padding * 2 + 16; 
 
     // Drag Logic
@@ -147,10 +220,8 @@ export const ResizableTopPanel = ({
             if (!isDragging) return;
             e.preventDefault();
             
-            // Calculate delta
             const delta = e.clientY - startY.current;
             const absoluteMax = Math.min(maxHeight, window.innerHeight * 0.7);
-            
             const newHeight = Math.max(minHeight, Math.min(absoluteMax, startHeight.current + delta));
             
             setHeight(newHeight);
@@ -166,7 +237,6 @@ export const ResizableTopPanel = ({
                 document.body.style.cursor = '';
                 document.body.style.userSelect = '';
                 
-                // Snap logic: if dragged too small, just clamp to minHeight
                 if (height < minHeight) {
                     setHeight(minHeight);
                     setIsCollapsed(false); 
@@ -202,26 +272,14 @@ export const ResizableTopPanel = ({
 
     const toggleCollapse = useCallback(() => {
         if (isCollapsed) {
-            // Expand
             setHeight(Math.max(lastHeight, minHeight));
             setIsCollapsed(false);
         } else {
-            // Collapse
             setLastHeight(height);
             setHeight(collapsedHeight);
             setIsCollapsed(true);
         }
     }, [isCollapsed, height, lastHeight, minHeight, collapsedHeight]);
-
-    // Shared Card Style
-    const containerStyle: React.CSSProperties = {
-        borderRadius: `${radius}px`,
-        boxShadow: '0 0 0 1px var(--border), 0 4px 20px -5px rgba(0,0,0,0.3)',
-        // Hardware acceleration to fix anti-aliasing clipping
-        transform: 'translate3d(0,0,0)',
-        isolation: 'isolate', 
-        transition: isDragging ? 'none' : 'height 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-radius 0.2s',
-    };
 
     return (
         <div 
@@ -229,21 +287,17 @@ export const ResizableTopPanel = ({
             style={{ height: height }} 
             className="relative z-30 shrink-0 w-full transition-[height] duration-400 cubic-bezier(0.16, 1, 0.3, 1) will-change-[height]"
         >
-            <div 
-                className="absolute inset-0 transition-all duration-300" 
-                style={{ 
-                    padding: `${padding}px`, 
-                    paddingBottom: isCollapsed ? `${padding}px` : `${gap}px` 
-                }}
+            <PanelCard 
+                radius={radius} 
+                padding={padding} 
+                gap={gap} 
+                isCollapsed={isCollapsed}
+                overlayPosition="bottom"
             >
-                <div className="h-full w-full bg-[var(--bg-panel)] overflow-hidden relative group max-w-screen-2xl mx-auto" style={containerStyle}>
-                    <div className={cn("h-full w-full transition-opacity duration-300 delay-75", isCollapsed ? "opacity-0 pointer-events-none" : "opacity-100")}>
-                        {children}
-                    </div>
-                </div>
-            </div>
+                {children}
+            </PanelCard>
 
-            {/* Manual Resize Handle with Toggle - Centered within the padding/content area logic */}
+            {/* Manual Resize Handle with Toggle */}
             <div 
                 className="absolute bottom-0 left-0 right-0 h-5 cursor-row-resize flex items-center justify-center z-50 -mb-2.5 group"
                 onMouseDown={handleMouseDown}
@@ -275,53 +329,254 @@ interface SplitViewProps {
 
 export const SplitView = ({ top, bottom, topOverlay, bottomOverlay }: SplitViewProps) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const bottomPanelRef = useRef<ImperativePanelHandle>(null);
+    const [bottomCollapsed, setBottomCollapsed] = useState(false);
     const { radius, padding, gap } = useDynamicLayout(containerRef);
 
-    const cardStyle: React.CSSProperties = {
-        borderRadius: `${radius}px`,
-        boxShadow: '0 0 0 1px var(--border), 0 10px 40px -10px rgba(0,0,0,0.5)',
-        // Hardware acceleration ensures border-radius clips children properly
-        transform: 'translate3d(0,0,0)', 
-        isolation: 'isolate',
-        transition: 'border-radius 0.2s',
+    const toggleBottom = () => {
+        const panel = bottomPanelRef.current;
+        if (panel) {
+            bottomCollapsed ? panel.expand() : panel.collapse();
+        }
     };
 
     return (
         <div ref={containerRef} className="h-full w-full bg-[var(--bg-main)] overflow-hidden relative">
-            
             <PanelGroup direction="vertical" className="relative z-10">
                 <Panel defaultSize={55} minSize={20} className="relative transition-all duration-300">
-                    <div className="absolute inset-0 transition-all duration-300" style={{ padding: `${padding}px`, paddingBottom: `${gap}px` }}>
-                        <div className="h-full w-full bg-[var(--bg-panel)] border-none overflow-hidden relative group max-w-screen-2xl mx-auto" style={cardStyle}>
-                            {top}
-                            {topOverlay && (
-                                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 pointer-events-none z-20 w-auto max-w-[90%] flex justify-center">
-                                    <div className="bg-[var(--bg-glass)] backdrop-blur-xl border border-[var(--border-soft)] p-2 rounded-full shadow-2xl animate-in slide-in-from-bottom-2 fade-in duration-500">
-                                        {topOverlay}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    <PanelCard 
+                        radius={radius} 
+                        padding={padding} 
+                        gap={gap} 
+                        isCollapsed={bottomCollapsed} 
+                        overlay={topOverlay} 
+                        overlayPosition="bottom"
+                    >
+                        {top}
+                    </PanelCard>
                 </Panel>
                 
-                <Handle />
+                <Handle 
+                    onToggle={toggleBottom} 
+                    collapsed={bottomCollapsed} 
+                    direction="down" 
+                />
 
-                <Panel defaultSize={45} minSize={20} className="relative transition-all duration-300">
-                    <div className="absolute inset-0 transition-all duration-300" style={{ padding: `${padding}px`, paddingTop: `${gap}px` }}>
-                        <div className="h-full w-full bg-[var(--bg-panel)] border-none overflow-hidden relative group max-w-screen-2xl mx-auto" style={cardStyle}>
-                            {bottom}
-                            {bottomOverlay && (
-                                <div className="absolute top-6 left-1/2 -translate-x-1/2 pointer-events-none z-20 w-auto max-w-[90%] flex justify-center">
-                                    <div className="bg-[var(--bg-glass)] backdrop-blur-xl border border-[var(--border-soft)] p-2 rounded-full shadow-2xl animate-in slide-in-from-top-2 fade-in duration-500">
-                                        {bottomOverlay}
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                <Panel 
+                    ref={bottomPanelRef}
+                    collapsible 
+                    collapsedSize={0}
+                    minSize={15} 
+                    defaultSize={45} 
+                    onCollapse={() => setBottomCollapsed(true)}
+                    onExpand={() => setBottomCollapsed(false)}
+                    className="relative transition-all duration-300"
+                >
+                    <PanelCard 
+                        radius={radius} 
+                        padding={padding} 
+                        gap={gap} 
+                        isCollapsed={bottomCollapsed} 
+                        overlay={bottomOverlay}
+                        overlayPosition="top"
+                    >
+                        {bottom}
+                    </PanelCard>
                 </Panel>
             </PanelGroup>
+        </div>
+    );
+};
+
+// --- AI COMPOSER MODAL ---
+
+const AIComposer = ({ onClose, onGenerate }: { onClose: () => void, onGenerate: (prompt: string) => Promise<void> }) => {
+    const [prompt, setPrompt] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    const handleSurpriseMe = () => {
+        const prompts = [
+            "A neo-soul progression in Eb minor with extended chords",
+            "A melancholic jazz ballad in C Dorian",
+            "An uplifting pop anthem in D Major using suspended chords",
+            "A dark cinematic sequence in F# Minor with tension",
+            "A lo-fi hip hop loop with jazzy passing chords",
+            "A dreamy Lydian soundscape for meditation",
+            "A driving rock chorus in A Mixolydian with power chords"
+        ];
+        const random = prompts[Math.floor(Math.random() * prompts.length)];
+        setPrompt(random);
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!prompt.trim()) return;
+        
+        setLoading(true);
+        setError(null);
+        try {
+            await onGenerate(prompt);
+            onClose();
+        } catch (err: any) {
+            setError("Failed to generate. Please try again.");
+            console.error(err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--bg-main)]/80 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+            <div className="w-full max-w-md bg-[var(--bg-panel)] border border-[var(--border)] rounded-2xl shadow-2xl overflow-hidden relative scale-100 animate-in zoom-in-95 duration-200">
+                
+                {/* Header */}
+                <div className="p-4 border-b border-[var(--border)] flex items-center justify-between bg-[var(--bg-surface)]">
+                    <div className="flex items-center gap-2 text-[var(--text-main)]">
+                        <Sparkles className="text-[var(--accent)]" size={16} />
+                        <h3 className="text-sm font-bold tracking-wide uppercase">AI Composer</h3>
+                    </div>
+                    <button onClick={onClose} className="p-1 hover:bg-[var(--bg-element)] rounded-md transition-colors"><X size={14} /></button>
+                </div>
+
+                {/* Body */}
+                <div className="p-6">
+                    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                        <div>
+                            <div className="flex justify-between items-center mb-2">
+                                <label className="text-[10px] uppercase font-bold text-[var(--text-muted)]">Describe your idea</label>
+                                <button 
+                                    type="button" 
+                                    onClick={handleSurpriseMe}
+                                    className="flex items-center gap-1 text-[10px] text-[var(--accent)] hover:underline font-medium"
+                                >
+                                    <Dices size={10} /> Surprise Me
+                                </button>
+                            </div>
+                            <textarea 
+                                autoFocus
+                                value={prompt}
+                                onChange={(e) => setPrompt(e.target.value)}
+                                placeholder="E.g., A melancholic jazz progression in Eb minor ending with a picardy third..."
+                                className="w-full h-24 bg-[var(--bg-element)] border border-[var(--border)] rounded-lg p-3 text-sm text-[var(--text-main)] placeholder:text-[var(--text-dim)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] resize-none transition-all"
+                            />
+                        </div>
+
+                        {error && <div className="text-xs text-red-400 bg-red-500/10 p-2 rounded border border-red-500/20">{error}</div>}
+
+                        <div className="flex justify-end gap-2 pt-2">
+                             <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] transition-colors">
+                                Cancel
+                            </button>
+                            <button 
+                                type="submit" 
+                                disabled={loading || !prompt.trim()}
+                                className="px-4 py-2 rounded-lg text-xs font-bold bg-[var(--accent)] text-black hover:brightness-110 transition-all shadow-lg shadow-[var(--accent)]/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                            >
+                                {loading ? <Loader2 size={12} className="animate-spin"/> : <Wand2 size={12}/>}
+                                {loading ? 'Composing...' : 'Generate Music'}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                
+                {/* Decorative BG */}
+                <div className="absolute top-0 right-0 -mt-10 -mr-10 w-32 h-32 bg-[var(--accent)] rounded-full blur-[80px] opacity-10 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-32 h-32 bg-blue-500 rounded-full blur-[80px] opacity-10 pointer-events-none" />
+            </div>
+        </div>
+    );
+};
+
+// --- PROJECT LIBRARY MODAL ---
+
+const ProjectLibrary = ({ onClose }: { onClose: () => void }) => {
+    const { savedProjects, saveProject, loadProject, deleteProject } = useStore();
+    const [name, setName] = useState('');
+
+    const handleSave = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!name.trim()) return;
+        saveProject(name.trim());
+        setName('');
+    };
+
+    return (
+        <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--bg-main)]/80 backdrop-blur-sm animate-in fade-in duration-200 p-4">
+            <div className="w-full max-w-lg bg-[var(--bg-panel)] border border-[var(--border)] rounded-2xl shadow-2xl overflow-hidden relative scale-100 animate-in zoom-in-95 duration-200 flex flex-col max-h-[500px]">
+                
+                {/* Header */}
+                <div className="p-4 border-b border-[var(--border)] flex items-center justify-between bg-[var(--bg-surface)] shrink-0">
+                    <div className="flex items-center gap-2 text-[var(--text-main)]">
+                        <FolderOpen className="text-[var(--accent)]" size={16} />
+                        <h3 className="text-sm font-bold tracking-wide uppercase">Project Library</h3>
+                    </div>
+                    <button onClick={onClose} className="p-1 hover:bg-[var(--bg-element)] rounded-md transition-colors"><X size={14} /></button>
+                </div>
+
+                {/* Body */}
+                <div className="p-4 flex-1 overflow-hidden flex flex-col gap-4">
+                    
+                    {/* Save New */}
+                    <form onSubmit={handleSave} className="flex gap-2 shrink-0">
+                        <input 
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="Project Name..."
+                            className="flex-1 bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-all"
+                        />
+                        <button 
+                            type="submit" 
+                            disabled={!name.trim()}
+                            className="px-4 py-2 bg-[var(--accent)] text-black font-bold text-xs uppercase tracking-wider rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all shadow-lg shadow-[var(--accent)]/10"
+                        >
+                            <Save size={14} /> Save
+                        </button>
+                    </form>
+                    
+                    <div className="h-px bg-[var(--border)] w-full shrink-0" />
+
+                    {/* List */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col gap-2 min-h-0">
+                        {savedProjects.length === 0 ? (
+                            <div className="text-center py-8 text-[var(--text-dim)] italic text-xs">
+                                No saved projects yet.
+                            </div>
+                        ) : (
+                            savedProjects.map((p) => (
+                                <div key={p.id} className="flex items-center justify-between p-3 bg-[var(--bg-surface)] border border-[var(--border)] rounded-lg hover:border-[var(--accent)] transition-colors group">
+                                    <div className="min-w-0">
+                                        <div className="text-sm font-bold text-[var(--text-main)] truncate">{p.name}</div>
+                                        <div className="text-[10px] text-[var(--text-dim)] flex items-center gap-1">
+                                            <Clock size={10} />
+                                            {new Date(p.timestamp).toLocaleDateString()} {new Date(p.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                            <span className="mx-1">•</span>
+                                            <span className="uppercase">{p.state.key} {p.state.scale}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button 
+                                            onClick={() => { loadProject(p.id); onClose(); }}
+                                            className="px-3 py-1.5 bg-[var(--bg-element)] hover:bg-[var(--accent)] hover:text-black border border-[var(--border)] rounded text-[10px] font-bold uppercase transition-colors"
+                                        >
+                                            Load
+                                        </button>
+                                        <button 
+                                            onClick={() => deleteProject(p.id)}
+                                            className="p-1.5 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded transition-colors"
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+
+                {/* Decorative BG */}
+                <div className="absolute top-0 right-0 -mt-10 -mr-10 w-32 h-32 bg-[var(--accent)] rounded-full blur-[80px] opacity-10 pointer-events-none" />
+            </div>
         </div>
     );
 };
@@ -339,8 +594,15 @@ export const ControlPanel = () => {
         instrument, setInstrument, 
         view, setView,
         bpm, setBpm,
-        toggleTheme
+        toggleTheme, theme,
+        selectedChordIndex, progression,
+        setSelectedChordIndex
     } = useStore();
+
+    const [showAI, setShowAI] = useState(false);
+    const [showLibrary, setShowLibrary] = useState(false);
+
+    const selectedChord = selectedChordIndex !== null && progression[selectedChordIndex] ? progression[selectedChordIndex] : null;
 
     const instruments: { id: InstrumentType, icon: any, label: string }[] = [
         { id: 'rhodes', icon: Keyboard, label: 'Keys' },
@@ -349,182 +611,334 @@ export const ControlPanel = () => {
         { id: 'synth', icon: Zap, label: 'Synth' }
     ];
 
+    const handleAIGeneration = async (userPrompt: string) => {
+        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        
+        // Define Strict Output Schema for structured chords
+        const responseSchema = {
+            type: Type.ARRAY,
+            items: {
+                type: Type.OBJECT,
+                properties: {
+                    root: { type: Type.STRING, description: "Root note (e.g., C, F#, Bb)" },
+                    quality: { type: Type.STRING, description: "Major, Minor, Diminished, Augmented, Half-Dim, Dominant, Sus2, Sus4" },
+                    extension: { type: Type.STRING, description: "Extension string (e.g., 7, 9, 11, maj7, m7) or empty" },
+                    duration: { type: Type.NUMBER, description: "Duration in beats (default 4)" }
+                },
+                required: ["root", "quality", "duration"]
+            }
+        };
+
+        const result = await ai.models.generateContent({
+            model: 'gemini-2.5-flash',
+            contents: userPrompt,
+            config: {
+                systemInstruction: "You are a professional music composer. Generate a chord progression array based on the user's description. Map chords to simple root/quality/extension structure. For guitar-style requests, favor standard open chord keys (E, A, D, G, C) and mixolydian/blues influences where appropriate.",
+                responseMimeType: "application/json",
+                responseSchema: responseSchema
+            }
+        });
+
+        const json = JSON.parse(result.text || "[]");
+        
+        // Transform JSON to App Chords using internal builder
+        const chords = json.map((c: any) => {
+            const chord = buildChord(c.root, c.quality, c.extension || '', c.duration || 4);
+            return chord;
+        });
+
+        // Clear and Add
+        if (chords.length > 0) {
+            handleProgression('clear');
+            handleProgression('add', { chords, index: 0 });
+        }
+    };
+
+    const handleChordUpdate = (updates: Partial<any>) => {
+        if (!selectedChord || selectedChordIndex === null) return;
+        
+        const newRoot = updates.root || selectedChord.root;
+        const newQuality = updates.quality || selectedChord.quality;
+        const newExt = updates.extension !== undefined ? updates.extension : selectedChord.extension;
+        
+        const newChord = buildChord(newRoot, newQuality, newExt, selectedChord.duration);
+        // Preserve lyric if present
+        if (selectedChord.lyrics) newChord.lyrics = selectedChord.lyrics;
+        
+        handleProgression('update', { index: selectedChordIndex, chord: newChord });
+    };
+
     return (
-        <div className="w-full h-full flex flex-col select-none font-sans text-[var(--text-main)]">
+        <div className="w-full h-full flex flex-col select-none font-sans text-[var(--text-main)] bg-[var(--bg-panel)] overflow-hidden relative">
             
-            {/* PRIMARY TOOLBAR - 3 COLUMN GRID FOR PERFECT CENTERING */}
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-3 min-h-[56px] relative z-20 bg-[var(--bg-panel)] shrink-0">
+            {showAI && <AIComposer onClose={() => setShowAI(false)} onGenerate={handleAIGeneration} />}
+            {showLibrary && <ProjectLibrary onClose={() => setShowLibrary(false)} />}
+
+            {/* Top Bar with Theme Toggle (Absolute) */}
+             <div className="absolute top-3 left-3 z-30">
+                <button 
+                    onClick={toggleTheme} 
+                    className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--bg-element)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
+                >
+                    {theme === 'dark' ? <Moon size={14}/> : <Sun size={14}/>}
+                </button>
+             </div>
+
+            {/* CENTER CONTROL ISLANDS */}
+            <div className="shrink-0 flex flex-col items-center justify-center gap-2.5 py-4 px-4 z-20">
                 
-                 {/* LEFT: BRANDING & GLOBAL */}
-                 <div className="flex items-center gap-2 justify-center md:justify-start">
-                    <button 
-                        onClick={toggleTheme} 
-                        className="flex items-center gap-2 opacity-80 hover:opacity-100 transition-all outline-none group bg-[var(--bg-element)] p-1.5 pr-3 rounded-full border border-transparent hover:border-[var(--border)]"
-                        title="Toggle Theme"
-                    >
-                        <div className={cn("w-2.5 h-2.5 rounded-full transition-all duration-500", isPlaying ? "bg-[var(--accent)] shadow-[0_0_10px_var(--accent)] scale-110" : "bg-[var(--text-dim)] group-hover:bg-[var(--text-main)]")} />
-                        <span className="text-[10px] font-black tracking-widest uppercase hidden lg:block">Harmonic</span>
-                    </button>
-                    
-                    <div className="w-px h-6 bg-[var(--border)] opacity-50 hidden md:block" />
+                {selectedChord ? (
+                    // --- SELECTED CHORD INSPECTOR ---
+                    <div className="animate-in fade-in slide-in-from-top-4 duration-300 w-full max-w-lg flex items-start gap-3">
+                         {/* Guitar Diagram */}
+                         <GuitarChordDiagram chord={selectedChord} className="hidden sm:block shrink-0" />
+                         
+                         <div className="flex-1 flex items-center justify-between bg-[var(--bg-element)] rounded-xl p-3 border border-[var(--border)] shadow-sm gap-4 h-[100px]">
+                             
+                             {/* Chord Edit Controls */}
+                             <div className="flex flex-col gap-1.5 min-w-[140px]">
+                                <div className="flex items-center gap-1">
+                                    {/* Root */}
+                                    <div className="relative bg-[var(--bg-surface)] rounded-lg border border-[var(--border)] h-8 w-12 flex items-center justify-center hover:border-[var(--accent)] transition-colors">
+                                         <select 
+                                            value={selectedChord.root}
+                                            onChange={(e) => handleChordUpdate({ root: e.target.value })}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        >
+                                            {CHROMATIC_SHARPS.map(n => <option key={n} value={n}>{n}</option>)}
+                                        </select>
+                                        <span className="text-sm font-black text-[var(--text-main)]">{selectedChord.root}</span>
+                                    </div>
 
-                    {/* Complexity Selector (Moved here for better balance on desktop) */}
-                     <div className="hidden lg:flex items-center bg-[var(--bg-element)] rounded-lg border border-[var(--border)] p-0.5 h-8 shadow-sm gap-0.5">
-                        {(['triad', '7th', '9th', '11th'] as ChordComplexity[]).map((c) => (
+                                    {/* Quality */}
+                                    <div className="relative bg-[var(--bg-surface)] rounded-lg border border-[var(--border)] h-8 flex-1 flex items-center px-2 hover:border-[var(--accent)] transition-colors">
+                                        <select 
+                                            value={selectedChord.quality}
+                                            onChange={(e) => handleChordUpdate({ quality: e.target.value as any })}
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                        >
+                                            {['Major', 'Minor', 'Dominant', 'Diminished', 'Augmented', 'Sus2', 'Sus4'].map(q => <option key={q} value={q}>{q}</option>)}
+                                        </select>
+                                         <span className="text-[10px] font-bold uppercase text-[var(--text-main)] truncate">{selectedChord.quality}</span>
+                                         <ChevronDown size={10} className="ml-auto text-[var(--text-dim)]"/>
+                                    </div>
+                                </div>
+                                
+                                {/* Extension */}
+                                <div className="relative bg-[var(--bg-surface)] rounded-lg border border-[var(--border)] h-6 flex items-center px-2 hover:border-[var(--accent)] transition-colors w-full">
+                                     <select 
+                                        value={selectedChord.extension || ''}
+                                        onChange={(e) => handleChordUpdate({ extension: e.target.value })}
+                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                    >
+                                        <option value="">Triad (None)</option>
+                                        <option value="7">7th</option>
+                                        <option value="9">9th</option>
+                                        <option value="11">11th</option>
+                                    </select>
+                                    <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase flex items-center gap-1 w-full">
+                                        <span className="flex-1 truncate">{selectedChord.extension ? `${selectedChord.extension} Extension` : 'Basic Triad'}</span>
+                                         <ChevronDown size={10} className="text-[var(--text-dim)]"/>
+                                    </span>
+                                </div>
+                             </div>
+
+                             {/* Duration Controls */}
+                             <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-1 bg-[var(--bg-surface)] rounded-lg p-1 border border-[var(--border)]">
+                                     <button onClick={() => handleProgression('resize', { index: selectedChordIndex, duration: Math.max(0.25, selectedChord.duration - 0.25) })} className="p-1 hover:bg-[var(--bg-element)] rounded text-[var(--text-muted)] hover:text-[var(--text-main)]"><Minus size={14}/></button>
+                                     <div className="w-12 text-center flex flex-col items-center">
+                                         <span className="text-xs font-bold text-[var(--text-main)]">{selectedChord.duration}</span>
+                                         <span className="text-[8px] text-[var(--text-dim)] uppercase font-bold">Beats</span>
+                                     </div>
+                                     <button onClick={() => handleProgression('resize', { index: selectedChordIndex, duration: selectedChord.duration + 0.25 })} className="p-1 hover:bg-[var(--bg-element)] rounded text-[var(--text-muted)] hover:text-[var(--text-main)]"><Plus size={14}/></button>
+                                 </div>
+                                 <button onClick={() => { setSelectedChordIndex(null); }} className="text-[9px] font-bold text-[var(--text-dim)] hover:text-[var(--text-main)] uppercase tracking-wider text-center">Done</button>
+                             </div>
+
+                             {/* Actions */}
+                             <div className="flex items-center gap-1 pl-2 border-l border-[var(--border)] h-full">
+                                 <button onClick={() => handleProgression('remove', selectedChordIndex)} className="p-2 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 size={16}/></button>
+                             </div>
+                         </div>
+                    </div>
+                ) : (
+                    <>
+                    {/* ROW 1: Musical Context */}
+                    <div className="flex items-center gap-2">
+                        {/* Key & Scale Group */}
+                        <div className="flex items-center bg-[var(--bg-element)] rounded-lg p-1 border border-[var(--border)] shadow-sm h-9">
+                            {/* Key */}
+                            <div className="px-2 border-r border-[var(--border)] h-full flex items-center hover:bg-[var(--bg-surface)] rounded-l transition-colors">
+                                <select 
+                                    value={currentKey} 
+                                    onChange={(e: any) => setKey(e.target.value)} 
+                                    className="bg-transparent font-bold text-xs outline-none cursor-pointer text-[var(--text-main)] hover:text-[var(--accent)] appearance-none text-center min-w-[32px] h-full"
+                                >
+                                    {CIRCLE_KEYS.map((k: string) => <option key={k} value={k}>{k}</option>)}
+                                </select>
+                            </div>
+                            
+                            {/* Scale */}
+                            <div className="relative h-full flex items-center justify-center hover:bg-[var(--bg-surface)] transition-colors px-1">
+                                <select 
+                                    value={scale} 
+                                    onChange={(e: any) => setScale(e.target.value)} 
+                                    disabled={isScaleLocked} 
+                                    className="bg-transparent text-[11px] font-bold text-[var(--text-muted)] outline-none cursor-pointer w-[120px] hover:text-[var(--text-main)] appearance-none py-1 uppercase tracking-wide text-center truncate"
+                                >
+                                    {Object.values(ScaleType).map((s: any) => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                            </div>
+
+                            {/* Lock */}
                             <button 
-                                key={c} 
-                                onClick={() => setComplexity(c)} 
-                                className={cn(
-                                    "px-3 h-full rounded-md text-[9px] font-bold uppercase transition-all border border-transparent", 
-                                    complexity === c 
-                                        ? "bg-[var(--bg-surface)] text-[var(--accent)] shadow-sm border-[var(--border)]" 
-                                        : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]"
-                                )}
+                                onClick={toggleScaleLock}
+                                className={cn("w-8 h-full flex items-center justify-center transition-all hover:bg-[var(--bg-surface)] border-l border-[var(--border)] rounded-r", isScaleLocked ? "text-[var(--accent)]" : "text-[var(--text-dim)]")}
+                                title={isScaleLocked ? "Scale Locked" : "Scale Unlocked"}
                             >
-                                {c.replace('triad', 'Triad').replace('th', '')}
+                                {isScaleLocked ? <Lock size={12} strokeWidth={2.5} /> : <Unlock size={12} />}
                             </button>
-                        ))}
-                    </div>
-                </div>
+                        </div>
 
-                {/* CENTER: MUSICAL CONTEXT */}
-                <div className="flex items-center justify-center gap-2">
-                    <div className="flex items-center bg-[var(--bg-element)] rounded-lg border border-[var(--border)] shadow-sm p-0.5 h-8 transition-all hover:border-[var(--border-hover)]">
-                        <div className="px-1 border-r border-[var(--border)] h-full flex items-center hover:bg-[var(--bg-surface)] rounded-l transition-colors">
+                        {/* BPM Group */}
+                        <div className="flex items-center gap-2 bg-[var(--bg-element)] rounded-lg p-1 border border-[var(--border)] shadow-sm h-9 px-3">
+                            <Gauge size={14} className="text-[var(--text-dim)]" />
+                            <input 
+                                type="number" 
+                                value={bpm} 
+                                onChange={(e) => setBpm(Math.max(40, Math.min(240, parseInt(e.target.value)||120)))}
+                                className="bg-transparent text-xs font-mono font-bold text-center outline-none text-[var(--text-main)] w-12 appearance-none"
+                            />
+                        </div>
+                    </div>
+
+                    {/* ROW 2: Transport & Actions */}
+                    <div className="flex items-center gap-2">
+                        {/* Complexity */}
+                        <div className="flex items-center bg-[var(--bg-element)] rounded-lg p-1 border border-[var(--border)] shadow-sm h-8">
                             <select 
-                                value={currentKey} 
-                                onChange={(e: any) => setKey(e.target.value)} 
-                                className="bg-transparent font-bold text-xs outline-none cursor-pointer text-[var(--text-main)] hover:text-[var(--accent)] appearance-none text-center min-w-[32px] h-full"
-                                title="Root Key"
+                                value={complexity} 
+                                onChange={(e: any) => setComplexity(e.target.value)}
+                                className="bg-transparent text-[10px] font-bold uppercase outline-none px-2 h-full text-[var(--text-dim)] hover:text-[var(--text-main)] appearance-none cursor-pointer"
                             >
-                                {CIRCLE_KEYS.map((k: string) => <option key={k} value={k}>{k}</option>)}
+                                {(['triad', '7th', '9th', '11th'] as ChordComplexity[]).map(c => <option key={c} value={c}>{c}</option>)}
                             </select>
                         </div>
-                        <div className="px-2 h-full flex items-center justify-center min-w-[90px] hover:bg-[var(--bg-surface)] transition-colors relative group/scale">
-                            <select 
-                                value={scale} 
-                                onChange={(e: any) => setScale(e.target.value)} 
-                                disabled={isScaleLocked} 
-                                className="bg-transparent text-[10px] font-bold text-[var(--text-muted)] outline-none cursor-pointer w-full hover:text-[var(--text-main)] appearance-none py-1 uppercase tracking-wide"
-                                title="Scale Type"
-                            >
-                                {Object.values(ScaleType).map((s: any) => <option key={s} value={s}>{s}</option>)}
-                            </select>
-                        </div>
-                        <button 
-                            onClick={toggleScaleLock}
-                            className={cn("px-2.5 h-full flex items-center justify-center transition-all hover:bg-[var(--bg-surface)] border-l border-[var(--border)] rounded-r", isScaleLocked ? "text-[var(--accent)] bg-[var(--accent)]/5" : "text-[var(--text-dim)]")}
-                            title={isScaleLocked ? "Scale Locked" : "Scale Unlocked"}
-                        >
-                            {isScaleLocked ? <Lock size={10} strokeWidth={2.5} /> : <Unlock size={10} />}
-                        </button>
-                    </div>
 
-                    {/* Tempo */}
-                    <div className="flex items-center gap-2 bg-[var(--bg-element)] rounded-lg border border-[var(--border)] px-2.5 h-8 shadow-sm group hover:border-[var(--accent)]/50 hover:shadow-[0_0_10px_var(--accent)_inset] transition-all cursor-text">
-                        <Gauge size={12} className="text-[var(--text-dim)] group-hover:text-[var(--accent)] transition-colors" />
-                        <input 
-                            type="number" 
-                            value={bpm} 
-                            onChange={(e) => setBpm(Math.max(40, Math.min(240, parseInt(e.target.value)||120)))}
-                            className="bg-transparent text-[10px] font-mono font-bold text-center outline-none text-[var(--text-main)] w-[3ch] appearance-none"
-                            title="BPM"
-                        />
-                    </div>
-                </div>
-
-                {/* RIGHT: TRANSPORT & TOOLS */}
-                <div className="flex items-center gap-2 justify-center md:justify-end">
-                    
-                    {/* Complexity Selector (Mobile Only) */}
-                     <div className="flex lg:hidden items-center bg-[var(--bg-element)] rounded-lg border border-[var(--border)] p-0.5 h-8 shadow-sm gap-0.5">
-                        <select 
-                            value={complexity} 
-                            onChange={(e: any) => setComplexity(e.target.value)}
-                            className="bg-transparent text-[9px] font-bold uppercase outline-none px-2 h-full text-[var(--text-dim)] appearance-none"
-                        >
-                            {(['triad', '7th', '9th', '11th'] as ChordComplexity[]).map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                    </div>
-
-                    <div className="flex items-center gap-1 bg-[var(--bg-element)] rounded-lg border border-[var(--border)] p-0.5 h-8 shadow-sm">
+                        {/* Play */}
                         <button 
                             onClick={togglePlay}
                             className={cn(
-                                "flex items-center gap-2 px-3 h-full rounded-md text-[10px] font-bold transition-all border border-transparent active:scale-95",
+                                "flex items-center justify-center w-12 h-8 rounded-lg transition-all active:scale-95 shadow-lg",
                                 isPlaying 
-                                    ? "bg-[var(--accent)] text-black shadow-[0_2px_10px_var(--accent)] hover:brightness-110" 
-                                    : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]"
+                                    ? "bg-[var(--accent)] text-black shadow-[var(--accent)]/20 hover:brightness-110" 
+                                    : "bg-[var(--bg-element)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]"
                             )}
                         >
-                            {isPlaying ? <Pause size={10} fill="currentColor"/> : <Play size={10} fill="currentColor"/>}
-                            <span className="hidden sm:inline tracking-wider">{isPlaying ? "STOP" : "PLAY"}</span>
+                            {isPlaying ? <Pause size={14} fill="currentColor"/> : <Play size={14} fill="currentColor"/>}
                         </button>
-                        
-                        <div className="w-px h-4 bg-[var(--border)] mx-1" />
-                        
-                        <IconButton icon={LinkIcon} size="md" onClick={() => handleProgression('quantize')} title="Quantize" className="rounded-md h-full w-8 hover:bg-[var(--bg-surface)] text-[var(--text-dim)] hover:text-[var(--text-main)]" />
-                        <IconButton icon={Trash2} size="md" variant="danger" onClick={() => handleProgression('clear')} title="Clear Sequence" className="rounded-md h-full w-8 hover:bg-red-500/10" />
+
+                        {/* Divider */}
+                        <div className="w-px h-6 bg-[var(--border)] mx-1" />
+
+                        {/* Tools */}
+                        <div className="flex items-center bg-[var(--bg-element)] rounded-lg p-0.5 border border-[var(--border)] shadow-sm h-8 gap-0.5">
+                            <IconButton icon={LinkIcon} size="sm" onClick={() => handleProgression('quantize')} title="Quantize" className="h-7 w-7 rounded-md" />
+                            <IconButton icon={Trash2} size="sm" variant="danger" onClick={() => handleProgression('clear')} title="Clear" className="h-7 w-7 rounded-md" />
+                            
+                            {/* Library Button */}
+                            <div className="w-px h-4 bg-[var(--border)] mx-0.5" />
+                            <button 
+                                onClick={() => setShowLibrary(true)}
+                                className="h-7 px-2 rounded-md flex items-center gap-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-main)] transition-all text-[10px] font-bold uppercase tracking-wider"
+                                title="Library"
+                            >
+                                <FolderOpen size={12} />
+                            </button>
+
+                            {/* AI Button */}
+                            <div className="w-px h-4 bg-[var(--border)] mx-0.5" />
+                            <button 
+                                onClick={() => setShowAI(true)}
+                                className="h-7 px-2 rounded-md flex items-center gap-1.5 bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 border border-violet-500/20 text-violet-500 hover:from-violet-500/20 hover:to-fuchsia-500/20 transition-all text-[10px] font-bold uppercase tracking-wider hover:scale-105 active:scale-95"
+                                title="AI Composer"
+                            >
+                                <Sparkles size={10} />
+                                <span>AI</span>
+                            </button>
+                        </div>
                     </div>
-                </div>
+                    </>
+                )}
             </div>
 
-            {/* SECONDARY ROW: PALETTE & VIEW CONTROLS */}
-            <div className="flex-1 min-h-0 flex bg-[var(--bg-main)]/30 border-t border-[var(--border)]">
-                {/* Responsive Palette: Grows into available space */}
-                <div className="flex-1 min-w-0 bg-[var(--bg-soft)]/20 relative">
-                     <div className="absolute inset-0">
-                        <ChordPalette className="p-3" />
-                     </div>
+            {/* BOTTOM: Palette & Sidebar */}
+            <div className="flex-1 min-h-0 flex border-t border-[var(--border)] relative bg-[var(--bg-surface)]/30">
+                {/* Palette */}
+                <div className="flex-1 relative">
+                    <ChordPalette className="p-3" />
                 </div>
 
-                {/* Right Sidebar Tools */}
-                <div className="shrink-0 flex flex-col gap-3 px-3 py-3 border-l border-[var(--border)] bg-[var(--bg-panel)]/50 backdrop-blur-sm overflow-y-auto w-[68px] items-center">
-                     {/* View Toggles */}
-                    <div className="flex flex-col gap-2 w-full">
+                {/* Right Sidebar: Views & Instruments */}
+                <div className="w-[50px] shrink-0 border-l border-[var(--border)] bg-[var(--bg-panel)] flex flex-col items-center py-3 gap-3 z-10 overflow-y-auto custom-scrollbar">
+                    {/* View Toggles */}
+                    <div className="flex flex-col gap-2">
                         <button 
                             onClick={() => setView('sequencer')} 
                             title="Sequencer View"
                             className={cn(
-                                "w-full aspect-square rounded-xl flex items-center justify-center transition-all duration-300", 
+                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200", 
                                 view === 'sequencer' 
-                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-md border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
+                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
                                     : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
                             )}
                         >
-                            <ListMusic size={20} strokeWidth={1.5} />
+                            <ListMusic size={18} strokeWidth={1.5} />
                         </button>
                         <button 
                             onClick={() => setView('harmony')} 
                             title="Harmonic Map View"
                             className={cn(
-                                "w-full aspect-square rounded-xl flex items-center justify-center transition-all duration-300", 
+                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200", 
                                 view === 'harmony' 
-                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-md border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
+                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
                                     : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
                             )}
                         >
-                            <Network size={20} strokeWidth={1.5} />
+                            <Network size={18} strokeWidth={1.5} />
+                        </button>
+                        <button 
+                            onClick={() => setView('songwriting')} 
+                            title="Songwriting View"
+                            className={cn(
+                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200", 
+                                view === 'songwriting' 
+                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
+                                    : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
+                            )}
+                        >
+                            <PenTool size={18} strokeWidth={1.5} />
                         </button>
                     </div>
 
-                    <div className="h-px w-8 bg-[var(--border)]" />
+                    <div className="w-6 h-px bg-[var(--border)]" />
 
-                     {/* Instrument Selector */}
-                    <div className="flex flex-col gap-2 w-full">
+                    {/* Instruments */}
+                    <div className="flex flex-col gap-2">
                         {instruments.map(inst => (
                             <button 
                                 key={inst.id} 
                                 onClick={() => setInstrument(inst.id)}
                                 className={cn(
-                                    "w-full aspect-square rounded-xl flex items-center justify-center transition-all duration-200 border border-transparent", 
+                                    "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 border border-transparent", 
                                     instrument === inst.id 
                                         ? "text-[var(--accent)] bg-[var(--accent)]/10 border-[var(--accent)]/20 shadow-sm" 
                                         : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]"
                                 )}
                                 title={inst.label}
                             >
-                                <inst.icon size={18} strokeWidth={1.5} />
+                                <inst.icon size={16} strokeWidth={1.5} />
                             </button>
                         ))}
                     </div>

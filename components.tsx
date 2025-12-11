@@ -1,4 +1,5 @@
 
+
 /**
  * Component Barrel File
  * 
@@ -9,5 +10,6 @@
 export * from './ui';
 export * from './layout';
 export * from './sequencer';
-export * from './tonnetz';
 export * from './mood';
+export * from './guitar';
+export * from './songwriting';

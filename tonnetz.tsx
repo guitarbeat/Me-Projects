@@ -1,11 +1,37 @@
 
-import React, { useState, useMemo, useCallback } from 'react';
-import { Plus, Minus, Maximize2, Network, Layers } from 'lucide-react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { Plus, Minus, Maximize2, Network, Layers, Zap } from 'lucide-react';
 import { buildChord, getCompassLabel, estimateChordSentiment, generateSecondaryDominants, getHarmonicSuggestions, getScaleNotes, ChordComplexity, Note, ScaleType, Chord, useStore, useDerivedData } from './lib';
 import { cn, Badge } from './ui';
+import { SCALE_DEFS } from './constants';
 
 // --- HELPERS ---
 const GRID_SIZE = 6, SPACING = 80, X_VEC = { x: SPACING, y: 0 }, Y_VEC = { x: SPACING * 0.5, y: SPACING * 0.866 };
+
+const getFunctionName = (semitones: number, isDiatonic: boolean, scaleType: ScaleType, roman: string) => {
+    // 1. Handle Special Chromatic Functions
+    if (roman === 'N') return 'Neapolitan';
+    if (roman === 'Ger+6' || roman === 'Fr+6' || roman === 'It+6') return 'Augmented 6th';
+    if (roman.includes('V/')) return 'Secondary Dominant';
+
+    // 2. Handle Diatonic & Common Intervals
+    // We map chromatic interval (0-11) to functional name
+    switch (semitones) {
+        case 0: return 'Tonic';
+        case 1: return isDiatonic ? 'Supertonic' : 'Neapolitan'; // Phrygian b2 vs Chromatic b2
+        case 2: return 'Supertonic';
+        case 3: return 'Mediant'; // Minor 3rd
+        case 4: return 'Mediant'; // Major 3rd
+        case 5: return 'Subdominant';
+        case 6: return isDiatonic ? 'Subdominant' : 'Tritone'; // Lydian #4 vs Tritone
+        case 7: return 'Dominant';
+        case 8: return 'Submediant'; // Minor 6th
+        case 9: return 'Submediant'; // Major 6th
+        case 10: return 'Subtonic'; // Minor 7th (Mixolydian/Aeolian)
+        case 11: return 'Leading Tone'; // Major 7th
+        default: return 'Chromatic';
+    }
+};
 
 // --- LOGIC ---
 const getSentimentMatch = (chordInfo: any, currentKey: Note, scaleType: ScaleType, targetMood: { v: number, a: number } | null) => {
@@ -15,6 +41,64 @@ const getSentimentMatch = (chordInfo: any, currentKey: Note, scaleType: ScaleTyp
     return Math.max(0.1, 1 - (dist * 0.7)); 
 };
 
+// Calculate where a chord "wants" to go (Harmonic Gravity) based on Traditional Functions
+const getResolutionPaths = (source: any, allTriads: any[], currentKey: Note) => {
+    const paths: { targetId: string, strength: number, type: 'dominant' | 'subdominant' | 'chromatic' }[] = [];
+    if (!source) return paths;
+
+    const func = source.functionLabel;
+    
+    // Helper to find specific functional targets
+    // We relax the type check for Dominant to allow Minor v resolution in modal contexts
+    const findFunction = (f: string, preferMajor: boolean = true) => 
+        allTriads.find(t => t.functionLabel === f && (!preferMajor || t.type === 'Major' || t.type === 'Dominant'));
+
+    const tonic = allTriads.find(t => t.chordInfo.interval === 0);
+
+    // 1. Dominant Function (V, vii°, Aug6) -> Resolves to Tonic (I) or Dominant (V)
+    if (func === 'Dominant' || func === 'Leading Tone') {
+        if (tonic) paths.push({ targetId: tonic.id, strength: 1.0, type: 'dominant' });
+        
+        // Deceptive (V -> vi)
+        const submediant = findFunction('Submediant', false); // Prefer minor vi in major
+        if (submediant) paths.push({ targetId: submediant.id, strength: 0.5, type: 'chromatic' });
+    }
+
+    // 2. Predominant / Subdominant (IV, ii, N, Aug6) -> Resolves to Dominant (V)
+    if (func === 'Subdominant' || func === 'Supertonic' || func === 'Neapolitan' || func === 'Augmented 6th') {
+        const dominant = findFunction('Dominant', true);
+        if (dominant) {
+             const strength = (func === 'Neapolitan' || func === 'Augmented 6th') ? 1.0 : 0.8;
+             paths.push({ targetId: dominant.id, strength, type: 'subdominant' });
+        }
+        
+        // Plagal (IV -> I)
+        if (func === 'Subdominant' && tonic) {
+            paths.push({ targetId: tonic.id, strength: 0.4, type: 'subdominant' });
+        }
+    }
+
+    // 3. Subtonic (bVII) - Modal Gravity
+    if (func === 'Subtonic') {
+        // Modal Cadence (bVII -> I)
+        if (tonic) paths.push({ targetId: tonic.id, strength: 0.6, type: 'subdominant' });
+        // bVII -> III (Relative Major)
+        const mediant = findFunction('Mediant', true);
+        if (mediant) paths.push({ targetId: mediant.id, strength: 0.7, type: 'chromatic' });
+    }
+
+    // 4. Secondary Dominants
+    if (source.secondary && source.chordInfo.romanNumeral.includes('/')) {
+        const targetRoman = source.chordInfo.romanNumeral.split('/')[1]?.replace('7','');
+        if (targetRoman) {
+            const target = allTriads.find(t => t.chordInfo.romanNumeral.toLowerCase().startsWith(targetRoman.toLowerCase()));
+            if (target) paths.push({ targetId: target.id, strength: 0.9, type: 'dominant' });
+        }
+    }
+
+    return paths;
+};
+
 const getFillColor = (t: any, mood: any, state: any, matchScore: number) => {
     const { isActive, isHover, isLinked, isTension } = state;
     const { valence: v, arousal: a } = mood;
@@ -22,14 +106,17 @@ const getFillColor = (t: any, mood: any, state: any, matchScore: number) => {
     if (isActive) return 'var(--accent)';
     
     let r, g, b;
-    let opacity = 0.45 + (a * 0.25); 
+    let opacity = 0.4 + (a * 0.2); 
 
     if (isTension) {
-        // High-tension chords get a specialized purple/magenta hue
-        r = 180; g = 60; b = 180;
-        opacity = 0.6;
+        // Special colors for special chromatic chords
+        if (t.functionLabel === 'Neapolitan') { r=255; g=165; b=0; opacity=0.6; } // Orange
+        else if (t.functionLabel === 'Augmented 6th') { r=255; g=0; b=255; opacity=0.6; } // Magenta
+        else { r = 180; g = 60; b = 180; opacity = 0.5; }
+    } else if (t.functionLabel === 'Tonic') {
+        r = 255; g = 255; b = 255; opacity = 0.3; 
     } else if (t.isChromatic) { 
-        r=80; g=80; b=80; 
+        r=80; g=80; b=80; opacity = 0.2;
     } else if (t.secondary) { 
         r=236; g=72+(v*30); b=153+(v*50); 
     } else if (t.type === 'Major') { 
@@ -38,163 +125,164 @@ const getFillColor = (t: any, mood: any, state: any, matchScore: number) => {
         r=Math.max(20, 70-(v*40)); g=Math.max(30, 80+(v*80)); b=220+(v*20); 
     }
 
-    if (matchScore < 0.9 && !isTension) { opacity *= (matchScore * matchScore); r=(r+128)/2; g=(g+128)/2; b=(b+128)/2; } 
-    else if (matchScore > 0.95 && !isActive) { opacity = Math.min(0.9, opacity * 1.5); }
+    if (matchScore < 0.9 && !isTension && t.functionLabel !== 'Tonic') { 
+        opacity *= 0.6;
+        r = (r + 100) / 2; g = (g + 100) / 2; b = (b + 100) / 2;
+    } 
 
-    if (isLinked) { opacity = isHover ? 0.3 : 0.1; return `rgba(150, 150, 150, ${opacity})`; }
-
+    if (isLinked) return 'transparent';
     return `rgba(${r}, ${g}, ${b}, ${opacity})`;
 };
 
-// --- SUB-COMPONENTS ---
-const TonnetzNode = React.memo(({ x, y, note, isKey, isDiatonic, active, mood }: any) => (
-    <g transform={`translate(${x}, ${y})`} className="transition-all duration-300">
-        {active && <circle r={20 + mood.tension * 20} className="fill-[var(--accent)] opacity-20 animate-pulse" />}
-        
-        {/* Key Center Indicator Ring */}
-        {isKey && <circle r={12} className="fill-transparent stroke-[var(--accent)] stroke-[1] opacity-30" strokeDasharray="2 2" />}
+// --- VISUALIZATION COMPONENTS ---
 
-        <circle 
-            r={isKey ? 8 : active ? 6 : 3} 
-            className={cn(
-                "transition-all duration-300", 
-                active ? "fill-[var(--accent)] stroke-[var(--bg-main)] stroke-2" : 
-                isKey ? "fill-[var(--text-main)] stroke-[var(--border)]" : 
-                isDiatonic ? "fill-[var(--text-muted)]" : "fill-[var(--bg-element)]"
-            )} 
-        />
-        <text 
-            dy={isKey ? 20 : 16} 
-            textAnchor="middle" 
-            className={cn(
-                "text-[9px] font-bold pointer-events-none select-none transition-all", 
-                active ? "fill-[var(--text-main)] text-[12px]" : 
-                isKey ? "fill-[var(--text-main)] text-[10px]" : 
-                "fill-[var(--text-dim)] opacity-80"
-            )}
+// 1. FLUX STREAM: Visualizes the pull from one chord to another
+const FluxStream = React.memo(({ from, to, strength, type }: any) => {
+    const color = type === 'dominant' ? 'var(--accent)' : type === 'subdominant' ? '#3b82f6' : '#a855f7';
+    const dashArray = type === 'dominant' ? '4 4' : '2 6';
+    const duration = type === 'dominant' ? '0.5s' : '1.5s';
+    
+    const midX = (from.x + to.x) / 2;
+    const midY = (from.y + to.y) / 2 - (20 * strength); 
+    const path = `M ${from.x} ${from.y} Q ${midX} ${midY} ${to.x} ${to.y}`;
+
+    return (
+        <g className="pointer-events-none">
+            <path d={path} fill="none" stroke={color} strokeWidth={strength * 6} strokeOpacity={0.15} strokeLinecap="round" />
+            <path d={path} fill="none" stroke={color} strokeWidth={strength * 2} strokeOpacity={0.6} strokeLinecap="round" strokeDasharray={dashArray}>
+                <animate attributeName="stroke-dashoffset" from="20" to="0" dur={duration} repeatCount="indefinite" />
+            </path>
+            <circle cx={to.x} cy={to.y} r={3} fill={color} opacity={0.5}>
+                <animate attributeName="r" values="3;8;3" dur="1s" repeatCount="indefinite" />
+                <animate attributeName="opacity" values="0.5;0;0.5" dur="1s" repeatCount="indefinite" />
+            </circle>
+        </g>
+    );
+});
+
+// 2. TENSION FIELD: Renders noise/chaos around dissonant chords
+const TensionField = ({ center, intensity, type }: any) => {
+    return (
+        <g transform={`translate(${center.x}, ${center.y})`} className="pointer-events-none">
+            <circle r={35} fill="url(#tension-gradient)" opacity={intensity * 0.4} className="animate-pulse" />
+            <circle r={30} fill="none" stroke={type === 'Neapolitan' ? '#f97316' : type === 'Augmented 6th' ? '#d946ef' : 'var(--accent)'} strokeWidth={1} strokeDasharray="2 4" opacity={0.3}>
+                 <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur={`${5 - intensity * 4}s`} repeatCount="indefinite" />
+            </circle>
+        </g>
+    );
+};
+
+const TonnetzNode = React.memo(({ x, y, note, isKey, isDiatonic, active, mood, onSelectKey }: any) => {
+    const [isHolding, setIsHolding] = useState(false);
+    const timeoutRef = useRef<any>(null);
+    const startPos = useRef({ x: 0, y: 0 });
+
+    const handleDown = useCallback((e: React.PointerEvent) => {
+        if (e.button !== 0 && e.pointerType === 'mouse') return;
+        startPos.current = { x: e.clientX, y: e.clientY };
+        setIsHolding(true);
+        timeoutRef.current = setTimeout(() => {
+            onSelectKey(note);
+            if (navigator.vibrate) navigator.vibrate([30]);
+            setIsHolding(false);
+        }, 700);
+    }, [note, onSelectKey]);
+
+    const cancelHold = useCallback(() => {
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        setIsHolding(false);
+    }, []);
+
+    const handleMove = useCallback((e: React.PointerEvent) => {
+        if (isHolding) {
+             const dist = Math.hypot(e.clientX - startPos.current.x, e.clientY - startPos.current.y);
+             if (dist > 10) cancelHold();
+        }
+    }, [isHolding, cancelHold]);
+
+    return (
+        <g 
+            transform={`translate(${x}, ${y})`} 
+            className="cursor-pointer group"
+            onPointerDown={handleDown} 
+            onPointerMove={handleMove} 
+            onPointerUp={cancelHold} 
+            onPointerLeave={cancelHold}
+            onPointerCancel={cancelHold}
         >
-            {note}
-        </text>
-    </g>
-));
+            <circle 
+                r={22} fill="none" stroke="var(--accent)" strokeWidth={3} strokeDasharray={138} strokeDashoffset={isHolding ? 0 : 138}
+                className="pointer-events-none"
+                style={{ opacity: isHolding ? 1 : 0, transition: isHolding ? 'stroke-dashoffset 700ms linear, opacity 100ms' : 'stroke-dashoffset 0ms, opacity 200ms', transform: 'rotate(-90deg)', transformOrigin: 'center' }} 
+            />
+            {isKey && (
+                <>
+                    <circle r={14} className="fill-transparent stroke-[var(--text-main)] stroke-[1] opacity-20 pointer-events-none animate-[spin_10s_linear_infinite]" strokeDasharray="2 4" />
+                    <circle r={40} className="fill-[radial-gradient(circle,var(--text-main)_0%,transparent_100%)] opacity-10 pointer-events-none" />
+                </>
+            )}
+            <circle r={isKey ? 8 : active ? 6 : 4} className={cn("transition-all duration-300 pointer-events-none", active ? "fill-[var(--accent)] stroke-[var(--bg-main)] stroke-2" : isKey ? "fill-[var(--text-main)] stroke-[var(--border)]" : isDiatonic ? "fill-[var(--text-muted)]" : "fill-[var(--bg-element)]")} />
+            <text dy={isKey ? 20 : 16} textAnchor="middle" className={cn("text-[9px] font-bold pointer-events-none select-none transition-all", active ? "fill-[var(--text-main)] text-[12px]" : isKey ? "fill-[var(--text-main)] text-[10px]" : "fill-[var(--text-dim)] opacity-80")}>{note}</text>
+        </g>
+    );
+});
 
-const TonnetzLink = React.memo(({ link, isActive, isHover, mood, onClick }: any) => (
-    <g onClick={(e) => { e.stopPropagation(); onClick(link); }} className={cn("cursor-pointer interact-base group/link", isActive && "z-10")}>
-         <line x1={link.from.x} y1={link.from.y} x2={link.to.x} y2={link.to.y} stroke="transparent" strokeWidth={24} />
-         <line 
-            x1={link.from.x} y1={link.from.y} x2={link.to.x} y2={link.to.y} 
-            stroke={isActive ? 'var(--accent)' : 'var(--text-muted)'} 
-            strokeWidth={isActive ? 3 : isHover ? 2 : 1} 
-            opacity={isActive ? 0.8 : isHover ? 0.4 : 0.1} 
-            strokeDasharray={isActive && mood.tension > 0.5 ? '3 3' : 'none'} 
-            strokeLinecap="round" 
-            className="transition-all duration-300 pointer-events-none"
-         />
-         {(isActive || isHover) && <circle cx={(link.from.x + link.to.x)/2} cy={(link.from.y + link.to.y)/2} r={isActive ? 3 : 2} className={cn("transition-all", isActive ? "fill-[var(--accent)]" : "fill-[var(--text-muted)]")} />}
-    </g>
-));
-
-const TonnetzTriangle = React.memo(({ t, mood, state, matchScore, onClick, onEnter, onLeave }: any) => {
-    const { isActive, isHover, isLinked, isSuggested, isTension } = state;
+const TonnetzTriangle = React.memo(({ t, mood, state, matchScore, onClick, onEnter, onLeave, resolutionSource }: any) => {
+    const { isActive, isHover, isLinked, isTension } = state;
     const fill = getFillColor(t, mood, state, matchScore);
+    const isTarget = resolutionSource && resolutionSource.targetId === t.id;
+    const isTonic = t.functionLabel === 'Tonic';
     
-    // Chord Properties
-    const q = t.chordInfo.quality;
-    const isTonic = t.chordInfo.interval === 0;
-    const isDominant = q === 'Dominant';
-    const isDissonant = q === 'Diminished' || q === 'Augmented' || q === 'Half-Dim';
-    const showNoise = isDissonant && (isActive || mood.tension > 0.4);
-
-    // Scale Logic
     const baseScale = matchScore > 0.9 && !isActive && !isHover ? 0.9 : 1; 
-    const finalScale = isActive ? 1.15 : isHover ? 1.05 : baseScale;
+    const finalScale = isActive ? 1.15 : isHover ? 1.05 : isTarget ? 1.1 : baseScale;
     
-    // Stroke Logic
     let stroke = 'transparent';
     let strokeW = 0.5;
     let dash = 'none';
 
-    if (isActive) { 
-        stroke = 'var(--bg-main)'; strokeW = 3; 
-    } else if (isHover) { 
-        stroke = 'var(--bg-main)'; strokeW = 2; 
-    } else if (isTension) {
-        stroke = '#d946ef'; strokeW = 2; dash = '1 1';
-    } else if (isTonic) {
-        stroke = 'var(--text-main)'; strokeW = 1.5;
-    } else if (matchScore > 0.95) { 
-        stroke = 'var(--border-soft)'; strokeW = 1; 
-    } else if (isLinked) { 
-        stroke = 'var(--text-muted)'; strokeW = 1.5; dash = '2 2'; 
-    } else if (isSuggested) { 
-        stroke = 'var(--accent)'; strokeW = 1.5; dash = '2 2'; 
-    }
-
-    // Functional Stroke Styles
-    if (!isActive && !isHover) {
-        if (isDominant) dash = '4 2';
-        if (isDissonant) dash = '1 2';
-    }
+    if (isActive) { stroke = 'var(--bg-main)'; strokeW = 3; } 
+    else if (isTarget) { stroke = 'var(--accent)'; strokeW = 2; dash = '2 2'; } 
+    else if (isHover) { stroke = 'var(--text-main)'; strokeW = 1.5; } 
+    else if (isTonic && !t.isChromatic) { stroke = 'var(--text-dim)'; strokeW = 0.5; } 
+    else if (isTension) { stroke = t.functionLabel === 'Neapolitan' ? '#f97316' : '#d946ef'; strokeW = 2; dash = '1 1'; } 
     
     return (
         <g 
             className={cn("cursor-pointer interact-base transition-transform duration-300", isActive && "z-10")} 
-            style={{ 
-                transformOrigin: `${t.center.x}px ${t.center.y}px`, 
-                transform: `scale(${finalScale})` 
-            }}
-            onMouseEnter={() => onEnter(t)} 
-            onMouseLeave={onLeave} 
-            onClick={(e) => { e.stopPropagation(); onClick(t); }}
+            style={{ transformOrigin: `${t.center.x}px ${t.center.y}px`, transform: `scale(${finalScale})` }}
+            onMouseEnter={() => onEnter(t)} onMouseLeave={onLeave} onClick={(e) => { e.stopPropagation(); onClick(t); }}
         >
-            {/* Active/Tonic Glow */}
-            {(isActive || (isTonic && matchScore > 0.8)) && (
-                <polygon 
-                    points={t.points.map((p:any)=>`${p.x},${p.y}`).join(' ')} 
-                    fill="transparent"
-                    stroke={isActive ? 'var(--accent)' : 'var(--text-main)'}
-                    strokeWidth={isActive ? 12 : 6}
-                    strokeLinejoin="round"
-                    className="opacity-40 blur-md transition-all pointer-events-none"
-                    style={{ filter: isActive ? 'drop-shadow(0 0 10px var(--accent))' : 'none' }}
-                />
+            {isTarget && (
+                <circle cx={t.center.x} cy={t.center.y} r={25} fill="none" stroke="var(--accent)" strokeWidth={1} opacity={0.4}>
+                     <animate attributeName="r" values="25;35;25" dur="2s" repeatCount="indefinite" />
+                     <animate attributeName="opacity" values="0.4;0;0.4" dur="2s" repeatCount="indefinite" />
+                </circle>
             )}
+
+            {isTonic && !t.isChromatic && (
+                 <circle cx={t.center.x} cy={t.center.y} r={20} fill="url(#tonic-glow)" opacity={0.3} className="pointer-events-none" />
+            )}
+
+            {isTension && isActive && <TensionField center={t.center} intensity={0.8} type={t.functionLabel} />}
 
             <polygon 
                 points={t.points.map((p:any)=>`${p.x},${p.y}`).join(' ')} 
-                fill={fill} 
-                stroke={stroke} 
-                strokeWidth={strokeW} 
-                strokeDasharray={dash} 
-                strokeLinejoin="round" 
-                className="transition-colors duration-200"
-                filter={showNoise ? "url(#noise)" : undefined}
+                fill={fill} stroke={stroke} strokeWidth={strokeW} strokeDasharray={dash} strokeLinejoin="round" 
+                className="transition-all duration-200"
+                filter={(isActive && t.isTension) ? "url(#noise)" : undefined}
             />
             
-            {/* Tonic Indicator Dot */}
-            {isTonic && !t.secondary && (
-                <circle cx={t.center.x} cy={t.center.y - 8} r={1.5} fill="var(--text-main)" className="opacity-80" />
-            )}
-
             <text 
                 x={t.center.x} y={t.center.y} dy={3} textAnchor="middle" 
-                fontSize={isActive ? 12 : 10} 
-                fontWeight={isActive ? "900" : "bold"} 
+                fontSize={isActive ? 12 : 10} fontWeight={isActive ? "900" : "bold"} 
                 className={cn("pointer-events-none select-none transition-all duration-300", (isActive||isHover||isLinked||matchScore>0.9)?"fill-white opacity-100":t.diatonic?"fill-white/80 opacity-60":"fill-white/40 opacity-20")}
-                style={{ fill: (isActive || isHover) ? 'white' : 'rgba(255,255,255,0.8)', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+                style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
             >
                 {t.label}
             </text>
 
-            {/* Roman Numeral Overlay on Active/Hover */}
-            {(isActive || isHover || isTension) && (
-                <text 
-                    x={t.center.x} y={t.center.y} dy={14} 
-                    textAnchor="middle" 
-                    fontSize={7} 
-                    className="fill-white font-mono tracking-wider pointer-events-none select-none animate-in fade-in slide-in-from-bottom-1"
-                    style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
-                >
+            {(isActive || isHover) && (
+                <text x={t.center.x} y={t.center.y} dy={14} textAnchor="middle" fontSize={7} className="fill-white font-mono tracking-wider pointer-events-none select-none animate-in fade-in slide-in-from-bottom-1" style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}>
                     {t.chordInfo.romanNumeral}
                 </text>
             )}
@@ -207,8 +295,8 @@ const generateGridData = (key: Note, scale: ScaleType, chords: any[], secondary:
     const chrom = (['F','Bb','Eb','Ab','Db','Gb','Cb'].includes(key)||key.includes('b')) ? ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'] : ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
     const scaleNotes = getScaleNotes(key, scale);
     const keyIdx = chrom.indexOf(key);
-
     const points = [], tris: any[] = [];
+    
     for (let x = -GRID_SIZE; x <= GRID_SIZE; x++) {
         for (let y = -GRID_SIZE; y <= GRID_SIZE; y++) {
             if (Math.abs(x + y) > GRID_SIZE + 2) continue;
@@ -221,9 +309,12 @@ const generateGridData = (key: Note, scale: ScaleType, chords: any[], secondary:
                 const diatonic = chords.find(c => c.root === root && c.quality === type);
                 const sec = secondary.find(c => c.root === root && c.quality === type);
                 const tens = tensionChords.find(c => c.root === root && c.quality === type);
-                
                 const info = diatonic || sec || tens || { root, quality: type, symbol: type==='Major'?root:`${root}m`, romanNumeral: '?', notes: [], interval: -1, duration: 0 };
                 
+                // Determine Chromatic Interval from Key Center (0-11)
+                const semitones = (chrom.indexOf(root) - keyIdx + 12) % 12;
+                const funcLabel = getFunctionName(semitones, !!diatonic, scale, info.romanNumeral);
+
                 const pts = type === 'Major' 
                     ? [{ x: p.sx, y: p.sy }, { x: p.sx + X_VEC.x, y: p.sy + X_VEC.y }, { x: p.sx + Y_VEC.x, y: p.sy + Y_VEC.y }]
                     : [{ x: p.sx, y: p.sy }, { x: p.sx + X_VEC.x, y: p.sy + X_VEC.y }, { x: p.sx + X_VEC.x - Y_VEC.x, y: p.sy + X_VEC.y - Y_VEC.y }];
@@ -231,75 +322,55 @@ const generateGridData = (key: Note, scale: ScaleType, chords: any[], secondary:
                 tris.push({
                     id: `${type}-${x}-${y}`, type, root, label: type==='Major'?root:root.toLowerCase(), points: pts,
                     center: { x: (pts[0].x+pts[1].x+pts[2].x)/3, y: (pts[0].y+pts[1].y+pts[2].y)/3 },
-                    diatonic: !!diatonic, secondary: !!sec, isTension: !!tens, isSuggested: info.interval!==-1 && suggestions.includes(info.interval), isChromatic: !diatonic && !sec && !tens, chordInfo: info
+                    diatonic: !!diatonic, secondary: !!sec, isTension: !!tens, isSuggested: info.interval!==-1 && suggestions.includes(info.interval), isChromatic: !diatonic && !sec && !tens, 
+                    chordInfo: info,
+                    functionLabel: funcLabel
                 });
             });
         }
     }
-
-    const links: any[] = [], extMap: Record<string, string[]> = {};
-    if (complexity !== 'triad') {
-        const depth = complexity === '11th' ? 3 : complexity === '9th' ? 2 : 1;
-        tris.forEach(t => {
-            if ((!t.diatonic && !t.secondary && !t.isTension)) return;
-            const def = chords.find(c => c.root === t.root && c.quality === t.type) || t.chordInfo;
-            if (!def?.notes?.length) return;
-            let curr = t, chain = [];
-            for (let i = 0; i < depth; i++) {
-                const nextRoot = def.notes[1 + i];
-                const next = nextRoot && tris.find(c => c.root === nextRoot && Math.hypot(c.center.x - curr.center.x, c.center.y - curr.center.y) < SPACING * 1.8);
-                if (next) {
-                    chain.push(next.id);
-                    links.push({ id: `${curr.id}->${next.id}`, from: curr.center, to: next.center, rootId: t.id, level: i });
-                    curr = next;
-                } else break;
-            }
-            if (chain.length) extMap[t.id] = chain;
-        });
-    }
-    return { points, tris, extMap, links };
+    return { points, tris };
 };
 
 // --- MAIN COMPONENT ---
 export const HarmonicSpace = () => {
-
-    const { 
-        key: currentKey, 
-        scale: scaleType, 
-        mood, 
-        complexity, 
-        targetMood, 
-        handleProgression, 
-        playOne, 
-        setHoveredChord,
-        progression 
-    } = useStore();
-
+    const { key: currentKey, scale: scaleType, mood, complexity, targetMood, handleProgression, playOne, setHoveredChord, progression, setKey } = useStore();
     const { chords, tensionChords } = useDerivedData();
 
-    // Derived logic inside component
     const contextChord = useMemo(() => progression.slice().reverse().find(c => !c.isRest) || null, [progression]);
     const secondaryDominants = useMemo(() => generateSecondaryDominants(currentKey, scaleType), [currentKey, scaleType]);
     const suggestedIndices = useMemo(() => getHarmonicSuggestions(contextChord), [contextChord]);
     
-    // Local Interaction State
     const [view, setView] = useState({ x: 0, y: 0, k: 1 });
     const [drag, setDrag] = useState<{active:boolean, last:{x:number,y:number}|null}>({active:false, last:null});
     const [hover, setHover] = useState<any|null>(null);
 
-    const { points, tris, extMap, links } = useMemo(() => 
-        generateGridData(currentKey, scaleType, chords, secondaryDominants, tensionChords, complexity, suggestedIndices), 
-    [currentKey, scaleType, chords, secondaryDominants, tensionChords, complexity, suggestedIndices]);
+    const { points, tris } = useMemo(() => generateGridData(currentKey, scaleType, chords, secondaryDominants, tensionChords, complexity, suggestedIndices), [currentKey, scaleType, chords, secondaryDominants, tensionChords, complexity, suggestedIndices]);
 
     const activeIds = useMemo(() => {
-        const set = new Set<string>();
-        if (!contextChord) return { set, root: null };
+        if (!contextChord) return { set: new Set<string>(), root: null };
         const main = tris.find(t => t.root === contextChord.root && t.type === contextChord.quality);
-        if (main) { set.add(main.id); extMap[main.id]?.forEach(id => set.add(id)); }
-        return { set, root: main?.id };
-    }, [contextChord, tris, extMap]);
+        return { set: new Set<string>(main ? [main.id] : []), root: main?.id };
+    }, [contextChord, tris]);
 
     const activeNotes = useMemo(() => new Set(contextChord?.notes || []), [contextChord]);
+
+    const activeFlux = useMemo(() => {
+        const source = hover || (activeIds.root ? tris.find(t => t.id === activeIds.root) : null);
+        if (!source) return [];
+        const paths = getResolutionPaths(source, tris, currentKey);
+        const streams: any[] = [];
+        paths.forEach(p => {
+            const candidates = tris.filter(t => t.id === p.targetId || (t.root === tris.find(x=>x.id===p.targetId)?.root && t.type === tris.find(x=>x.id===p.targetId)?.type));
+            candidates.forEach(target => {
+                const dist = Math.hypot(target.center.x - source.center.x, target.center.y - source.center.y);
+                if (dist < SPACING * 4) {
+                    streams.push({ from: source.center, to: target.center, strength: p.strength, type: p.type, targetId: target.id });
+                }
+            });
+        });
+        return streams;
+    }, [hover, activeIds, tris, currentKey]);
 
     const handleDrag = (e: React.PointerEvent) => {
         if(e.type === 'pointerdown') { setDrag({active:true, last:{x:e.clientX, y:e.clientY}}); try { (e.target as Element).setPointerCapture(e.pointerId); } catch(err){} }
@@ -309,23 +380,10 @@ export const HarmonicSpace = () => {
 
     const handleChordAction = useCallback((t: any) => {
         let chordToPlay = t.chordInfo;
-        if (!chordToPlay.notes || chordToPlay.notes.length === 0) {
-            let ext = complexity === 'triad' ? '' : complexity === '11th' ? '11' : complexity === '9th' ? '9' : '7';
-            chordToPlay = buildChord(t.root, t.type, ext);
-        }
+        if (!chordToPlay.notes || chordToPlay.notes.length === 0) chordToPlay = buildChord(t.root, t.type, complexity === 'triad' ? '' : '7');
         playOne(chordToPlay);
         handleProgression('add', chordToPlay);
     }, [complexity, playOne, handleProgression]);
-
-    const handleEnter = (t: any) => {
-        setHover(t);
-        const info = t.chordInfo;
-        if (info) {
-             const sentiment = estimateChordSentiment(info, currentKey, scaleType);
-             setHoveredChord({ ...info, sentiment }); 
-        }
-    };
-    const handleLeave = () => { setHover(null); setHoveredChord(null); };
 
     return (
         <div className="w-full h-full relative overflow-hidden bg-[var(--bg-main)] touch-none select-none flex items-center justify-center cursor-move"
@@ -336,52 +394,23 @@ export const HarmonicSpace = () => {
             
             <svg className="w-full h-full relative z-10" viewBox="-400 -300 800 600" preserveAspectRatio="xMidYMid slice">
                 <defs>
-                    <filter id="noise" x="0%" y="0%" width="100%" height="100%">
-                        <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" result="noise" />
-                        <feComposite operator="in" in="noise" in2="SourceGraphic" result="composite" />
-                        <feBlend mode="overlay" in="composite" in2="SourceGraphic" />
-                    </filter>
+                    <filter id="noise"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" result="noise" /><feComposite operator="in" in="noise" in2="SourceGraphic" result="composite" /><feBlend mode="overlay" in="composite" in2="SourceGraphic" /></filter>
+                    <radialGradient id="tension-gradient"><stop offset="0%" stopColor="var(--accent)" stopOpacity="0.6" /><stop offset="100%" stopColor="transparent" /></radialGradient>
+                    <radialGradient id="tonic-glow"><stop offset="0%" stopColor="white" stopOpacity="0.8" /><stop offset="100%" stopColor="transparent" /></radialGradient>
                 </defs>
                 <g transform={`translate(${view.x}, ${view.y}) scale(${view.k})`} className="transition-transform duration-75">
-                    <g opacity={0.15}>{points.map((p,i)=><React.Fragment key={i}><line x1={p.sx} y1={p.sy} x2={p.sx+X_VEC.x} y2={p.sy} stroke={p.isDiatonic?"var(--text-main)":"var(--border)"} strokeWidth={p.isDiatonic?1.5:1} /><line x1={p.sx} y1={p.sy} x2={p.sx+Y_VEC.x} y2={p.sy+Y_VEC.y} stroke={p.isDiatonic?"var(--text-main)":"var(--border)"} strokeWidth={p.isDiatonic?1.5:1} /><line x1={p.sx} y1={p.sy} x2={p.sx+X_VEC.x-Y_VEC.x} y2={p.sy+X_VEC.y-Y_VEC.y} stroke={p.isDiatonic?"var(--text-main)":"var(--border)"} strokeWidth={p.isDiatonic?1.5:1} /></React.Fragment>)}</g>
-                    <g>{links.map(l => {
-                        const active = activeIds.root === l.rootId;
-                        const isHover = hover && (hover.id === l.rootId || extMap[hover.id]?.includes(l.targetId));
-                        return <TonnetzLink key={l.id} link={l} isActive={active} isHover={isHover} mood={mood} onClick={() => { const rootTriad = tris.find(t => t.id === l.rootId); if (rootTriad) handleChordAction(rootTriad); }} />;
-                    })}</g>
+                    <g opacity={0.15}>{points.map((p,i)=><React.Fragment key={i}><line x1={p.sx} y1={p.sy} x2={p.sx+X_VEC.x} y2={p.sy} stroke="var(--border)" strokeWidth={1} /><line x1={p.sx} y1={p.sy} x2={p.sx+Y_VEC.x} y2={p.sy+Y_VEC.y} stroke="var(--border)" strokeWidth={1} /><line x1={p.sx} y1={p.sy} x2={p.sx+X_VEC.x-Y_VEC.x} y2={p.sy+X_VEC.y-Y_VEC.y} stroke="var(--border)" strokeWidth={1} /></React.Fragment>)}</g>
+                    <g>{activeFlux.map((s, i) => <FluxStream key={i} {...s} />)}</g>
                     <g>{tris.map(t => {
                         const score = getSentimentMatch(t.chordInfo, currentKey, scaleType, targetMood);
-                        return <TonnetzTriangle key={t.id} t={t} mood={mood} matchScore={score} state={{isActive:activeIds.set.has(t.id), isHover:hover?.id===t.id, isLinked: hover && (extMap[hover.id]?.includes(t.id) || extMap[t.id]?.includes(hover.id)), isSuggested:t.isSuggested, isTension: t.isTension}} onClick={handleChordAction} onEnter={handleEnter} onLeave={handleLeave} />;
+                        return <TonnetzTriangle key={t.id} t={t} mood={mood} matchScore={score} 
+                                    state={{isActive:activeIds.set.has(t.id), isHover:hover?.id===t.id, isTension: t.isTension}} 
+                                    resolutionSource={activeFlux.find(s => s.targetId === t.id)}
+                                    onClick={handleChordAction} onEnter={(c:any)=>{setHover(c); setHoveredChord({...c.chordInfo, sentiment: estimateChordSentiment(c.chordInfo, currentKey, scaleType)});}} onLeave={()=>{setHover(null); setHoveredChord(null);}} />;
                     })}</g>
-                    <g>{points.map((p, i) => <TonnetzNode key={i} x={p.sx} y={p.sy} note={p.note} isKey={p.note === currentKey} isDiatonic={p.isDiatonic} active={activeNotes.has(p.note)} mood={mood} />)}</g>
+                    <g>{points.map((p, i) => <TonnetzNode key={i} x={p.sx} y={p.sy} note={p.note} isKey={p.note === currentKey} isDiatonic={p.isDiatonic} active={activeNotes.has(p.note)} mood={mood} onSelectKey={setKey} />)}</g>
                 </g>
             </svg>
-            
-            {/* HUD & CONTROLS */}
-            <div className="absolute top-4 left-4 pointer-events-none flex flex-col gap-2 z-20">
-                 <div className="flex items-center gap-2 opacity-50"><Network size={14} className="text-[var(--text-main)]"/><span className="text-[10px] font-mono text-[var(--text-main)]">TONNETZ // {complexity}</span></div>
-                 {hover && (() => {
-                     const sent = estimateChordSentiment(hover.chordInfo, currentKey, scaleType);
-                     return (
-                        <div className="bg-[var(--bg-glass)] backdrop-blur border border-[var(--border-soft)] p-3 rounded-lg shadow-xl animate-in fade-in w-56">
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-bold text-[var(--text-main)]">{hover.chordInfo.symbol}</span>
-                                <Badge variant={hover.diatonic ? "default" : "accent"}>{hover.diatonic ? "Diatonic" : hover.isTension ? "Tension" : "Chromatic"}</Badge>
-                            </div>
-                            <div className="text-[10px] text-[var(--text-muted)] mt-1 mb-2">{hover.chordInfo.romanNumeral || 'Non-Functional'}</div>
-                            <div className="flex items-center gap-3 pt-2 border-t border-[var(--border-soft)]">
-                                <div className="relative w-8 h-8 rounded-full border border-[var(--border-soft)] bg-[var(--bg-soft)]">
-                                    <div className="absolute top-1/2 left-0 right-0 h-px bg-[var(--border-soft)]"/><div className="absolute left-1/2 top-0 bottom-0 w-px bg-[var(--border-soft)]"/>
-                                    <div className="absolute w-2 h-2 bg-[var(--accent)] rounded-full -ml-1 -mt-1 shadow-[0_0_5px_var(--accent)]" style={{ left: `${(sent.valence + 1) * 50}%`, top: `${(1 - sent.arousal) * 50}%` }}/>
-                                </div>
-                                <div className="flex flex-col"><span className="text-[9px] font-bold text-[var(--text-main)]">{getCompassLabel(sent.valence, sent.arousal)}</span></div>
-                            </div>
-                            {complexity !== 'triad' && extMap[hover.id] && (<div className="mt-2 pt-1 border-t border-[var(--border-soft)] flex items-center gap-1"><Layers size={8} className="text-[var(--text-dim)]"/><span className="text-[9px] text-[var(--text-dim)]">Extended Structure</span></div>)}
-                        </div>
-                     );
-                 })()}
-            </div>
-            
             <div className="absolute bottom-6 right-6 flex flex-col gap-2 z-20">
                  {[ {i:Plus, a:()=>setView(v=>({...v,k:Math.min(4,v.k*1.2)}))}, {i:Minus, a:()=>setView(v=>({...v,k:Math.max(0.5,v.k*0.8)}))}, {i:Maximize2, a:()=>setView({x:0,y:0,k:1})} ].map((b,i)=><button key={i} onClick={b.a} className="w-8 h-8 rounded-full bg-[var(--bg-element)] border border-[var(--border)] flex items-center justify-center text-[var(--text-main)] hover:scale-110 transition-transform"><b.i size={16}/></button>)}
              </div>

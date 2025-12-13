@@ -2,7 +2,7 @@
 
 import React, { Suspense } from 'react';
 import { useStore, useUrlSync } from './lib';
-import { ProgressionStrip, cn, ControlPanel, SplitView, ResizableTopPanel, MoodSelector, SongwritingBoard } from './components';
+import { ProgressionStrip, cn, ControlPanel, PanelStack, ResizableTopPanel, MoodSelector, SongwritingBoard } from './components';
 import { Loader2 } from 'lucide-react';
 
 // Lazy load heavy visualization components
@@ -49,25 +49,102 @@ export default function App() {
     // Enable deep linking/URL synchronization
     useUrlSync();
 
+    // ============================================
+    // PANEL CONFIGURATION - EASILY CHANGE NUMBER OF PANELS!
+    // ============================================
+    // 
+    // To change the number of panels, simply add or remove objects from this array.
+    // 
+    // Current setup: 3 panels
+    // 
+    // Examples:
+    // - 2 panels: Remove one of the objects below
+    // - 4 panels: Add another object with id, content, defaultSize, etc.
+    // - 5+ panels: Keep adding objects!
+    // 
+    // Each panel needs:
+    //   - id: unique string identifier
+    //   - content: React component to render
+    //   - defaultSize: percentage (0-100) of available space
+    //   - minSize: minimum percentage (optional)
+    //   - maxSize: maximum percentage (optional)
+    //   - collapsible: true/false (optional, allows collapsing)
+    //   - collapsedSize: size when collapsed (optional, default 0)
+    // ============================================
+    
+    const panelConfig = [
+        {
+            id: 'control',
+            content: <ControlPanel />,
+            defaultSize: 25,  // 25% of available height
+            minSize: 15,
+            maxSize: 40,
+            collapsible: true,  // Can be collapsed by clicking the top handle
+            collapsedSize: 0,
+        },
+        {
+            id: 'workspace',
+            content: <Workspace view={view} />,
+            defaultSize: 55,  // 55% of available height
+            minSize: 30,
+        },
+        {
+            id: 'mood',
+            content: <MoodSelector />,
+            defaultSize: 20,  // 20% of available height
+            minSize: 15,
+            collapsible: true,  // Can be collapsed by clicking the handle
+            collapsedSize: 0,
+        },
+        // Add more panels here! Example:
+        // {
+        //     id: 'fourth-panel',
+        //     content: <YourComponent />,
+        //     defaultSize: 15,
+        //     minSize: 10,
+        //     collapsible: true,
+        // },
+    ];
+
+    // Alternative: Use ResizableTopPanel for the top panel (different resize behavior)
+    // Uncomment this and comment out the panelConfig above to use the old style
+    /*
+    return (
+        <div className="flex flex-col h-screen w-full bg-[var(--bg-main)] text-[var(--text-main)] overflow-hidden font-sans relative selection:bg-[var(--accent)] selection:text-black transition-colors duration-300">
+            <BackgroundLayers />
+            <ResizableTopPanel minHeight={100} maxHeight={300} defaultHeight={200}>
+                <ControlPanel />
+            </ResizableTopPanel>
+            <div className="flex-1 relative min-h-0 z-10">
+                <PanelStack
+                    panels={[
+                        {
+                            id: 'workspace',
+                            content: <Workspace view={view} />,
+                            defaultSize: 60,
+                            minSize: 40,
+                        },
+                        {
+                            id: 'mood',
+                            content: <MoodSelector />,
+                            defaultSize: 40,
+                            minSize: 20,
+                            collapsible: true,
+                        },
+                    ]}
+                />
+            </div>
+        </div>
+    );
+    */
+
     return (
         <div className="flex flex-col h-screen w-full bg-[var(--bg-main)] text-[var(--text-main)] overflow-hidden font-sans relative selection:bg-[var(--accent)] selection:text-black transition-colors duration-300">
             <BackgroundLayers />
 
-            {/* Top Control Panel */}
-            <ResizableTopPanel 
-                minHeight={100} 
-                maxHeight={300} 
-                defaultHeight={200}
-            >
-                <ControlPanel />
-            </ResizableTopPanel>
-
-            {/* Main Workspace */}
+            {/* All panels in one flexible stack */}
             <div className="flex-1 relative min-h-0 z-10">
-                <SplitView
-                    top={<Workspace view={view} />}
-                    bottom={<MoodSelector />}
-                />
+                <PanelStack panels={panelConfig} />
             </div>
         </div>
     );

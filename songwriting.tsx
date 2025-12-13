@@ -1,10 +1,18 @@
 import React, { useEffect, useRef } from 'react';
 import { useStore } from './store';
 import { Chord } from './types';
-import { cn, Button } from './ui';
-import { Play, Mic2, Type, Music } from 'lucide-react';
+import { cn } from './ui';
+import { Mic2, Type, Music } from 'lucide-react';
 
-const LyricsBlock = ({ chord, index, isActive, isSelected, onClick, onChangeLyrics }: any) => {
+interface LyricsBlockProps {
+    chord: Chord;
+    index: number;
+    isActive: boolean;
+    isSelected: boolean;
+    onClick: () => void;
+    onChangeLyrics: (lyrics: string) => void;
+}
+const LyricsBlock = ({ chord, index, isActive, isSelected, onClick, onChangeLyrics }: LyricsBlockProps) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     // Auto-resize textarea

@@ -44,13 +44,13 @@ export const Button = ({ variant='secondary', size='md', className, children, ic
     );
 };
 
-export const IconButton = (props: any) => <Button size="icon" variant="ghost" {...props} />;
+export const IconButton = (props: React.ComponentProps<typeof Button>) => <Button size="icon" variant="ghost" {...props} />;
 
-export const Badge = ({children, variant='default', className}: any) => (
+export const Badge = ({children, variant='default', className}: { children?: React.ReactNode; variant?: 'default' | 'accent' | 'outline'; className?: string }) => (
   <span className={cn("px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border select-none", variant==='accent'?"bg-[var(--accent)] text-black border-transparent":variant==='outline'?"border-[var(--border)] text-[var(--text-muted)]":"bg-[var(--bg-element)] text-[var(--text-muted)] border-[var(--border)]", className)}>{children}</span>
 );
 
-export const Stat = ({ label, value, icon: Icon, color }: any) => (
+export const Stat = ({ label, value, icon: Icon, color }: { label: string; value: string; icon?: React.ComponentType<{ size?: number; className?: string }>; color?: string }) => (
     <div className="flex items-center gap-1.5 px-2 py-1 bg-[var(--bg-soft)] rounded border border-[var(--border-soft)] select-none min-w-0 shrink transition-colors hover:bg-[var(--bg-soft-hover)]">
         {Icon && <Icon size={10} className={cn(color, "shrink-0")} />}
         <div className="flex flex-col leading-none min-w-0">
@@ -60,7 +60,7 @@ export const Stat = ({ label, value, icon: Icon, color }: any) => (
     </div>
 );
 
-export const DataPoint = ({ label, value, icon: Icon, color, className }: any) => (
+export const DataPoint = ({ label, value, icon: Icon, color, className }: { label: string; value: string; icon?: React.ComponentType<{ size?: number; className?: string }>; color?: string; className?: string }) => (
     <div className={cn("flex flex-col bg-[var(--bg-soft)] rounded p-2 border border-[var(--border-soft)] min-w-0", className)}>
         <span className="text-[7px] font-bold text-[var(--text-dim)] uppercase mb-0.5 truncate">{label}</span>
         <div className="flex items-center gap-1.5 min-w-0">
@@ -75,7 +75,7 @@ export const ToolbarGroup = ({ children, className }: { children?: React.ReactNo
 );
 
 // --- DRAG HANDLE PRIMITIVE ---
-export const DragHandle = ({ vertical = false, active, className, ...props }: any) => (
+export const DragHandle = ({ vertical = false, active, className, ...props }: { vertical?: boolean; active?: boolean; className?: string } & React.HTMLAttributes<HTMLDivElement>) => (
     <div className={cn("flex items-center justify-center transition-all group interact-base cursor-grab active:cursor-grabbing", vertical ? "w-4 h-full cursor-col-resize" : "h-4 w-full cursor-row-resize", className)} {...props}>
         <div className={cn("rounded-full bg-[var(--border)] transition-all group-hover:bg-[var(--accent)] opacity-50 group-hover:opacity-100", vertical ? "w-1 h-8" : "h-1 w-12", active && "bg-[var(--accent)] opacity-100 scale-110")} />
     </div>
@@ -121,7 +121,7 @@ export class GlobalErrorBoundary extends React.Component<{children?: React.React
         return { hasError: true };
     }
 
-    componentDidCatch(error: any, errorInfo: any) {
+    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
         console.error("Uncaught error:", error, errorInfo);
     }
 

@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { cn, IconButton } from './ui';
 import { Panel, PanelGroup, PanelResizeHandle, ImperativePanelHandle } from 'react-resizable-panels';
-import { useStore, ScaleType, CIRCLE_KEYS, InstrumentType, ChordComplexity, buildChord, CHROMATIC_SHARPS } from './lib';
+import { useStore, ScaleType, CIRCLE_KEYS, InstrumentType, ChordComplexity, Chord, buildChord, CHROMATIC_SHARPS } from './lib';
 import { ChordPalette } from './sequencer';
 import { 
     Play, Pause, Lock, Unlock, Link as LinkIcon, Trash2, 
@@ -108,7 +108,7 @@ const PanelCard = ({
                  paddingTop, 
                  paddingBottom
              }}>
-            <div className={cn("h-full w-full bg-[var(--bg-panel)] overflow-hidden relative group max-w-screen-2xl mx-auto", className)} style={cardStyle}>
+            <div className={cn("h-full w-full bg-[var(--bg-panel)] overflow-hidden relative group max-w-screen-2xl mx-auto transition-colors duration-300", className)} style={cardStyle}>
                 <div className={cn("h-full w-full transition-opacity duration-300", isCollapsed ? "opacity-0 pointer-events-none" : "opacity-100")}>
                     {children}
                 </div>
@@ -127,94 +127,105 @@ const PanelCard = ({
     );
 };
 
-// --- STYLED HANDLE ---
+// --- SHARED HANDLE BUTTON ---
+
+interface HandleButtonProps {
+    vertical?: boolean;
+    isDragging?: boolean;
+    collapsed?: boolean;
+    direction?: 'up' | 'down';
+    onToggle?: () => void;
+    className?: string;
+}
+
+const HandleButton = ({ vertical = false, isDragging, collapsed, direction = 'up', onToggle, className }: HandleButtonProps) => {
+    return (
+        <div 
+            onPointerDown={(e) => e.stopPropagation()} 
+            onClick={(e) => { 
+                if (onToggle) {
+                    e.stopPropagation();
+                    e.preventDefault(); 
+                    onToggle();
+                }
+            }}
+            className={cn(
+                "rounded-full bg-[var(--bg-element)] backdrop-blur-md border border-[var(--border)] transition-all duration-300 shadow-sm flex items-center justify-center relative overflow-hidden",
+                "group-hover:bg-[var(--bg-surface)] group-hover:border-[var(--accent)] group-hover:scale-105 cursor-pointer",
+                "active:scale-95",
+                vertical 
+                    ? "w-1.5 h-12 group-hover:h-16" 
+                    : "h-1.5 w-16 group-hover:w-24 group-hover:h-5",
+                (isDragging || collapsed) && !vertical && "w-24 h-5 bg-[var(--accent)] border-[var(--accent)] text-[var(--bg-main)]",
+                className
+            )}
+        >
+            {/* Visual Indicator for Toggle */}
+            {!vertical && onToggle && (
+                <div className={cn(
+                    "absolute inset-0 flex items-center justify-center transition-opacity duration-200", 
+                    (collapsed || isDragging) ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                )}>
+                    {collapsed ? <MoreHorizontal size={14} strokeWidth={3} /> : (
+                        direction === 'up' ? <ChevronUp size={12} strokeWidth={3} /> : <ChevronDown size={12} strokeWidth={3} />
+                    )}
+                </div>
+            )}
+            
+            {/* Drag Indicator (Dots) - visible when not hovering/active */}
+            {!collapsed && !isDragging && (
+                 <div className={cn("flex gap-0.5 opacity-0 group-hover:opacity-0 transition-opacity duration-200", !vertical && "flex-row", vertical && "flex-col")}>
+                     <div className="w-0.5 h-0.5 rounded-full bg-[var(--text-muted)]" />
+                     <div className="w-0.5 h-0.5 rounded-full bg-[var(--text-muted)]" />
+                     <div className="w-0.5 h-0.5 rounded-full bg-[var(--text-muted)]" />
+                 </div>
+            )}
+        </div>
+    );
+};
+
+// --- STYLED HANDLE (for react-resizable-panels) ---
 
 interface HandleProps {
     className?: string;
     vertical?: boolean;
     isDragging?: boolean;
     collapsed?: boolean;
-    direction?: 'up' | 'down'; // Direction the arrow points when NOT collapsed
+    direction?: 'up' | 'down';
     onToggle?: () => void;
 }
 
 const Handle = ({ className, vertical = false, isDragging, collapsed, direction = 'up', onToggle }: HandleProps) => {
     return (
         <PanelResizeHandle className={cn("group flex items-center justify-center z-50 outline-none touch-none transition-all focus:outline-none", vertical ? "w-5 h-full cursor-col-resize -mx-2.5" : "h-6 w-full cursor-row-resize -my-3", className)}>
-            <div 
-                onPointerDown={(e) => e.stopPropagation()} 
-                onClick={(e) => { 
-                    if (onToggle) {
-                        e.stopPropagation();
-                        e.preventDefault(); 
-                        onToggle();
-                    }
-                }}
-                className={cn(
-                    "rounded-full bg-[var(--bg-element)] backdrop-blur-md border border-[var(--border)] transition-all duration-300 shadow-sm flex items-center justify-center relative overflow-hidden",
-                    "group-hover:bg-[var(--bg-surface)] group-hover:border-[var(--accent)] group-hover:scale-105 cursor-pointer",
-                    "active:scale-95",
-                    vertical 
-                        ? "w-1.5 h-12 group-hover:h-16" 
-                        : "h-1.5 w-16 group-hover:w-24 group-hover:h-5",
-                    (isDragging || collapsed) && !vertical && "w-24 h-5 bg-[var(--accent)] border-[var(--accent)] text-[var(--bg-main)]"
-                )}
-            >
-                {/* Visual Indicator for Toggle */}
-                {!vertical && onToggle && (
-                    <div className={cn(
-                        "absolute inset-0 flex items-center justify-center transition-opacity duration-200", 
-                        (collapsed || isDragging || className?.includes('hover')) ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                    )}>
-                        {collapsed ? <MoreHorizontal size={14} strokeWidth={3} /> : (
-                            direction === 'up' ? <ChevronUp size={12} strokeWidth={3} /> : <ChevronDown size={12} strokeWidth={3} />
-                        )}
-                    </div>
-                )}
-                
-                {/* Drag Indicator (Dots) - visible when not hovering/active */}
-                {!collapsed && !isDragging && !className?.includes('hover') && (
-                     <div className={cn("flex gap-0.5 opacity-0 group-hover:opacity-0 transition-opacity duration-200", !vertical && "flex-row", vertical && "flex-col")}>
-                         <div className="w-0.5 h-0.5 rounded-full bg-[var(--text-muted)]" />
-                         <div className="w-0.5 h-0.5 rounded-full bg-[var(--text-muted)]" />
-                         <div className="w-0.5 h-0.5 rounded-full bg-[var(--text-muted)]" />
-                     </div>
-                )}
-            </div>
+            <HandleButton 
+                vertical={vertical}
+                isDragging={isDragging}
+                collapsed={collapsed}
+                direction={direction}
+                onToggle={onToggle}
+            />
         </PanelResizeHandle>
     );
 };
 
-// --- RESIZABLE TOP PANEL ---
+// --- RESIZE DRAG HOOK ---
 
-export const ResizableTopPanel = ({ 
-    children, 
-    minHeight = 110, 
-    maxHeight = 400, 
-    defaultHeight = 180 
-}: { 
-    children?: React.ReactNode, 
-    minHeight?: number, 
-    maxHeight?: number, 
-    defaultHeight?: number 
-}) => {
-    const wrapperRef = useRef<HTMLDivElement>(null);
-    const [height, setHeight] = useState(defaultHeight);
-    const [lastHeight, setLastHeight] = useState(defaultHeight);
+function useResizeDrag(
+    height: number,
+    setHeight: (h: number) => void,
+    minHeight: number,
+    maxHeight: number,
+    isCollapsed: boolean,
+    setIsCollapsed: (c: boolean) => void,
+    collapsedHeight: number,
+    lastHeight: number,
+    setLastHeight: (h: number) => void
+) {
     const [isDragging, setIsDragging] = useState(false);
-    const [isCollapsed, setIsCollapsed] = useState(false);
-    
-    // Drag State Refs
     const startY = useRef(0);
     const startHeight = useRef(0);
-    
-    // Layout Metrics
-    const { radius, padding, gap } = useDynamicLayout(wrapperRef);
 
-    // Calculate minimized dimensions
-    const collapsedHeight = padding * 2 + 16; 
-
-    // Drag Logic
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
             if (!isDragging) return;
@@ -270,6 +281,39 @@ export const ResizableTopPanel = ({
         }
     };
 
+    return { isDragging, handleMouseDown };
+}
+
+// --- RESIZABLE TOP PANEL ---
+
+export const ResizableTopPanel = ({ 
+    children, 
+    minHeight = 110, 
+    maxHeight = 400, 
+    defaultHeight = 180 
+}: { 
+    children?: React.ReactNode, 
+    minHeight?: number, 
+    maxHeight?: number, 
+    defaultHeight?: number 
+}) => {
+    const wrapperRef = useRef<HTMLDivElement>(null);
+    const [height, setHeight] = useState(defaultHeight);
+    const [lastHeight, setLastHeight] = useState(defaultHeight);
+    const [isCollapsed, setIsCollapsed] = useState(false);
+    
+    // Layout Metrics
+    const { radius, padding, gap } = useDynamicLayout(wrapperRef);
+
+    // Calculate minimized dimensions
+    const collapsedHeight = padding * 2 + 16; 
+
+    // Drag Logic
+    const { isDragging, handleMouseDown } = useResizeDrag(
+        height, setHeight, minHeight, maxHeight, 
+        isCollapsed, setIsCollapsed, collapsedHeight, lastHeight, setLastHeight
+    );
+
     const toggleCollapse = useCallback(() => {
         if (isCollapsed) {
             setHeight(Math.max(lastHeight, minHeight));
@@ -302,17 +346,12 @@ export const ResizableTopPanel = ({
                 className="absolute bottom-0 left-0 right-0 h-5 cursor-row-resize flex items-center justify-center z-50 -mb-2.5 group"
                 onMouseDown={handleMouseDown}
             >
-                 <div 
-                    onClick={(e) => { e.stopPropagation(); toggleCollapse(); }}
-                    className={cn(
-                        "h-1.5 w-16 rounded-full bg-[var(--bg-element)] border border-[var(--border)] shadow-sm flex items-center justify-center transition-all duration-300",
-                        "hover:bg-[var(--accent)] hover:border-[var(--accent)] hover:w-24 hover:h-5 hover:text-[var(--bg-main)]",
-                        isDragging ? "w-24 h-5 bg-[var(--accent)] border-[var(--accent)] text-[var(--bg-main)]" : "text-transparent",
-                        isCollapsed && "bg-[var(--accent)] border-[var(--accent)] w-16 h-1.5 text-[var(--bg-main)] hover:scale-110"
-                    )}
-                >
-                     {isCollapsed ? null : <ChevronUp size={12} strokeWidth={3}/>}
-                </div>
+                <HandleButton 
+                    isDragging={isDragging}
+                    collapsed={isCollapsed}
+                    direction="up"
+                    onToggle={toggleCollapse}
+                />
             </div>
         </div>
     );
@@ -336,7 +375,11 @@ export const SplitView = ({ top, bottom, topOverlay, bottomOverlay }: SplitViewP
     const toggleBottom = () => {
         const panel = bottomPanelRef.current;
         if (panel) {
-            bottomCollapsed ? panel.expand() : panel.collapse();
+            if (bottomCollapsed) {
+                panel.expand();
+            } else {
+                panel.collapse();
+            }
         }
     };
 
@@ -418,7 +461,7 @@ const AIComposer = ({ onClose, onGenerate }: { onClose: () => void, onGenerate: 
         try {
             await onGenerate(prompt);
             onClose();
-        } catch (err: any) {
+        } catch (err: unknown) {
             setError("Failed to generate. Please try again.");
             console.error(err);
         } finally {
@@ -604,7 +647,7 @@ export const ControlPanel = () => {
 
     const selectedChord = selectedChordIndex !== null && progression[selectedChordIndex] ? progression[selectedChordIndex] : null;
 
-    const instruments: { id: InstrumentType, icon: any, label: string }[] = [
+    const instruments: { id: InstrumentType, icon: React.ComponentType<{ size?: number; className?: string }>, label: string }[] = [
         { id: 'rhodes', icon: Keyboard, label: 'Keys' },
         { id: 'pad', icon: Cloud, label: 'Pad' },
         { id: 'pluck', icon: Music2, label: 'Pluck' },
@@ -642,7 +685,7 @@ export const ControlPanel = () => {
         const json = JSON.parse(result.text || "[]");
         
         // Transform JSON to App Chords using internal builder
-        const chords = json.map((c: any) => {
+        const chords = json.map((c: { root: string; quality: string; extension?: string; duration?: number }) => {
             const chord = buildChord(c.root, c.quality, c.extension || '', c.duration || 4);
             return chord;
         });
@@ -654,7 +697,7 @@ export const ControlPanel = () => {
         }
     };
 
-    const handleChordUpdate = (updates: Partial<any>) => {
+    const handleChordUpdate = (updates: Partial<Chord>) => {
         if (!selectedChord || selectedChordIndex === null) return;
         
         const newRoot = updates.root || selectedChord.root;
@@ -714,7 +757,7 @@ export const ControlPanel = () => {
                                     <div className="relative bg-[var(--bg-surface)] rounded-lg border border-[var(--border)] h-8 flex-1 flex items-center px-2 hover:border-[var(--accent)] transition-colors">
                                         <select 
                                             value={selectedChord.quality}
-                                            onChange={(e) => handleChordUpdate({ quality: e.target.value as any })}
+                                            onChange={(e) => handleChordUpdate({ quality: e.target.value as Chord['quality'] })}
                                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                                         >
                                             {['Major', 'Minor', 'Dominant', 'Diminished', 'Augmented', 'Sus2', 'Sus4'].map(q => <option key={q} value={q}>{q}</option>)}
@@ -772,7 +815,7 @@ export const ControlPanel = () => {
                             <div className="px-2 border-r border-[var(--border)] h-full flex items-center hover:bg-[var(--bg-surface)] rounded-l transition-colors">
                                 <select 
                                     value={currentKey} 
-                                    onChange={(e: any) => setKey(e.target.value)} 
+                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setKey(e.target.value)} 
                                     className="bg-transparent font-bold text-xs outline-none cursor-pointer text-[var(--text-main)] hover:text-[var(--accent)] appearance-none text-center min-w-[32px] h-full"
                                 >
                                     {CIRCLE_KEYS.map((k: string) => <option key={k} value={k}>{k}</option>)}
@@ -783,11 +826,11 @@ export const ControlPanel = () => {
                             <div className="relative h-full flex items-center justify-center hover:bg-[var(--bg-surface)] transition-colors px-1">
                                 <select 
                                     value={scale} 
-                                    onChange={(e: any) => setScale(e.target.value)} 
+                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setScale(e.target.value)} 
                                     disabled={isScaleLocked} 
                                     className="bg-transparent text-[11px] font-bold text-[var(--text-muted)] outline-none cursor-pointer w-[120px] hover:text-[var(--text-main)] appearance-none py-1 uppercase tracking-wide text-center truncate"
                                 >
-                                    {Object.values(ScaleType).map((s: any) => <option key={s} value={s}>{s}</option>)}
+                                    {Object.values(ScaleType).map((s) => <option key={s} value={s}>{s}</option>)}
                                 </select>
                             </div>
 
@@ -819,7 +862,7 @@ export const ControlPanel = () => {
                         <div className="flex items-center bg-[var(--bg-element)] rounded-lg p-1 border border-[var(--border)] shadow-sm h-8">
                             <select 
                                 value={complexity} 
-                                onChange={(e: any) => setComplexity(e.target.value)}
+                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setComplexity(e.target.value as ChordComplexity)}
                                 className="bg-transparent text-[10px] font-bold uppercase outline-none px-2 h-full text-[var(--text-dim)] hover:text-[var(--text-main)] appearance-none cursor-pointer"
                             >
                                 {(['triad', '7th', '9th', '11th'] as ChordComplexity[]).map(c => <option key={c} value={c}>{c}</option>)}
@@ -877,7 +920,7 @@ export const ControlPanel = () => {
             <div className="flex-1 min-h-0 flex border-t border-[var(--border)] relative bg-[var(--bg-surface)]/30">
                 {/* Palette */}
                 <div className="flex-1 relative">
-                    <ChordPalette className="p-3" />
+                    <ChordPalette className="px-3" />
                 </div>
 
                 {/* Right Sidebar: Views & Instruments */}

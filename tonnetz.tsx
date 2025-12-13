@@ -1,9 +1,8 @@
 
-import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
-import { Plus, Minus, Maximize2, Network, Layers, Zap } from 'lucide-react';
-import { buildChord, getCompassLabel, estimateChordSentiment, generateSecondaryDominants, getHarmonicSuggestions, getScaleNotes, ChordComplexity, Note, ScaleType, Chord, useStore, useDerivedData } from './lib';
-import { cn, Badge } from './ui';
-import { SCALE_DEFS } from './constants';
+import React, { useState, useMemo, useCallback, useRef } from 'react';
+import { Plus, Minus, Maximize2 } from 'lucide-react';
+import { buildChord, generateSecondaryDominants, getHarmonicSuggestions, getScaleNotes, estimateChordSentiment, ChordComplexity, Note, ScaleType, Chord, useStore, useDerivedData } from './lib';
+import { cn } from './ui';
 
 // --- HELPERS ---
 const GRID_SIZE = 6, SPACING = 80, X_VEC = { x: SPACING, y: 0 }, Y_VEC = { x: SPACING * 0.5, y: SPACING * 0.866 };
@@ -34,7 +33,7 @@ const getFunctionName = (semitones: number, isDiatonic: boolean, scaleType: Scal
 };
 
 // --- LOGIC ---
-const getSentimentMatch = (chordInfo: any, currentKey: Note, scaleType: ScaleType, targetMood: { v: number, a: number } | null) => {
+const getSentimentMatch = (chordInfo: { quality: string }, currentKey: Note, scaleType: ScaleType, targetMood: { v: number, a: number } | null) => {
     if (!targetMood) return 1;
     const sentiment = estimateChordSentiment(chordInfo, currentKey, scaleType);
     const dist = Math.hypot(sentiment.valence - targetMood.v, sentiment.arousal - targetMood.a);
@@ -42,7 +41,7 @@ const getSentimentMatch = (chordInfo: any, currentKey: Note, scaleType: ScaleTyp
 };
 
 // Calculate where a chord "wants" to go (Harmonic Gravity) based on Traditional Functions
-const getResolutionPaths = (source: any, allTriads: any[], currentKey: Note) => {
+const getResolutionPaths = (source: { functionLabel?: string; id: string } | null, allTriads: Array<{ id: string; functionLabel?: string }>, _currentKey: Note) => {
     const paths: { targetId: string, strength: number, type: 'dominant' | 'subdominant' | 'chromatic' }[] = [];
     if (!source) return paths;
 
@@ -99,8 +98,8 @@ const getResolutionPaths = (source: any, allTriads: any[], currentKey: Note) => 
     return paths;
 };
 
-const getFillColor = (t: any, mood: any, state: any, matchScore: number) => {
-    const { isActive, isHover, isLinked, isTension } = state;
+const getFillColor = (t: { functionLabel?: string }, mood: { valence: number; arousal: number }, state: { isActive: boolean; isHover: boolean; isLinked: boolean; isTension: boolean }, matchScore: number) => {
+    const { isActive, isLinked, isTension } = state;
     const { valence: v, arousal: a } = mood;
 
     if (isActive) return 'var(--accent)';
@@ -136,8 +135,13 @@ const getFillColor = (t: any, mood: any, state: any, matchScore: number) => {
 
 // --- VISUALIZATION COMPONENTS ---
 
-// 1. FLUX STREAM: Visualizes the pull from one chord to another
-const FluxStream = React.memo(({ from, to, strength, type }: any) => {
+interface FluxStreamProps {
+    from: { x: number; y: number };
+    to: { x: number; y: number };
+    strength: number;
+    type: 'dominant' | 'subdominant' | 'chromatic';
+}
+const FluxStream = React.memo(({ from, to, strength, type }: FluxStreamProps) => {
     const color = type === 'dominant' ? 'var(--accent)' : type === 'subdominant' ? '#3b82f6' : '#a855f7';
     const dashArray = type === 'dominant' ? '4 4' : '2 6';
     const duration = type === 'dominant' ? '0.5s' : '1.5s';
@@ -159,9 +163,14 @@ const FluxStream = React.memo(({ from, to, strength, type }: any) => {
         </g>
     );
 });
+FluxStream.displayName = 'FluxStream';
 
-// 2. TENSION FIELD: Renders noise/chaos around dissonant chords
-const TensionField = ({ center, intensity, type }: any) => {
+interface TensionFieldProps {
+    center: { x: number; y: number };
+    intensity: number;
+    type: string;
+}
+const TensionField = ({ center, intensity, type }: TensionFieldProps) => {
     return (
         <g transform={`translate(${center.x}, ${center.y})`} className="pointer-events-none">
             <circle r={35} fill="url(#tension-gradient)" opacity={intensity * 0.4} className="animate-pulse" />
@@ -171,10 +180,11 @@ const TensionField = ({ center, intensity, type }: any) => {
         </g>
     );
 };
+TensionField.displayName = 'TensionField';
 
-const TonnetzNode = React.memo(({ x, y, note, isKey, isDiatonic, active, mood, onSelectKey }: any) => {
+const TonnetzNode = React.memo(({ x, y, note, isKey, isDiatonic, active, mood: _mood, onSelectKey }: { x: number; y: number; note: string; isKey: boolean; isDiatonic: boolean; active: boolean; mood: unknown; onSelectKey: () => void }) => {
     const [isHolding, setIsHolding] = useState(false);
-    const timeoutRef = useRef<any>(null);
+    const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const startPos = useRef({ x: 0, y: 0 });
 
     const handleDown = useCallback((e: React.PointerEvent) => {
@@ -226,8 +236,19 @@ const TonnetzNode = React.memo(({ x, y, note, isKey, isDiatonic, active, mood, o
         </g>
     );
 });
+TonnetzNode.displayName = 'TonnetzNode';
 
-const TonnetzTriangle = React.memo(({ t, mood, state, matchScore, onClick, onEnter, onLeave, resolutionSource }: any) => {
+interface TonnetzTriangleProps {
+    t: { id: string; functionLabel?: string };
+    mood: { valence: number; arousal: number };
+    state: { isActive: boolean; isHover: boolean; isLinked: boolean; isTension: boolean };
+    matchScore: number;
+    onClick: () => void;
+    onEnter: () => void;
+    onLeave: () => void;
+    resolutionSource?: { targetId: string } | null;
+}
+const TonnetzTriangle = React.memo(({ t, mood, state, matchScore, onClick, onEnter, onLeave, resolutionSource }: TonnetzTriangleProps) => {
     const { isActive, isHover, isLinked, isTension } = state;
     const fill = getFillColor(t, mood, state, matchScore);
     const isTarget = resolutionSource && resolutionSource.targetId === t.id;
@@ -266,7 +287,7 @@ const TonnetzTriangle = React.memo(({ t, mood, state, matchScore, onClick, onEnt
             {isTension && isActive && <TensionField center={t.center} intensity={0.8} type={t.functionLabel} />}
 
             <polygon 
-                points={t.points.map((p:any)=>`${p.x},${p.y}`).join(' ')} 
+                points={t.points.map((p: { x: number; y: number })=>`${p.x},${p.y}`).join(' ')} 
                 fill={fill} stroke={stroke} strokeWidth={strokeW} strokeDasharray={dash} strokeLinejoin="round" 
                 className="transition-all duration-200"
                 filter={(isActive && t.isTension) ? "url(#noise)" : undefined}
@@ -289,13 +310,30 @@ const TonnetzTriangle = React.memo(({ t, mood, state, matchScore, onClick, onEnt
         </g>
     );
 });
+TonnetzTriangle.displayName = 'TonnetzTriangle';
 
 // --- GRID GENERATION ---
-const generateGridData = (key: Note, scale: ScaleType, chords: any[], secondary: any[], tensionChords: any[], complexity: ChordComplexity, suggestions: number[]) => {
+const generateGridData = (key: Note, scale: ScaleType, chords: Chord[], secondary: Chord[], tensionChords: Chord[], complexity: ChordComplexity, suggestions: number[]) => {
     const chrom = (['F','Bb','Eb','Ab','Db','Gb','Cb'].includes(key)||key.includes('b')) ? ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'] : ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
     const scaleNotes = getScaleNotes(key, scale);
     const keyIdx = chrom.indexOf(key);
-    const points = [], tris: any[] = [];
+    const points: Array<{ x: number; y: number }> = [];
+    interface TriData {
+        id: string;
+        type: string;
+        root: string;
+        label: string;
+        points: Array<{ x: number; y: number }>;
+        center: { x: number; y: number };
+        diatonic: boolean;
+        secondary: boolean;
+        isTension: boolean;
+        isSuggested: boolean;
+        isChromatic: boolean;
+        chordInfo: Chord;
+        functionLabel?: string;
+    }
+    const tris: TriData[] = [];
     
     for (let x = -GRID_SIZE; x <= GRID_SIZE; x++) {
         for (let y = -GRID_SIZE; y <= GRID_SIZE; y++) {
@@ -343,7 +381,7 @@ export const HarmonicSpace = () => {
     
     const [view, setView] = useState({ x: 0, y: 0, k: 1 });
     const [drag, setDrag] = useState<{active:boolean, last:{x:number,y:number}|null}>({active:false, last:null});
-    const [hover, setHover] = useState<any|null>(null);
+    const [hover, setHover] = useState<{ id: string } | null>(null);
 
     const { points, tris } = useMemo(() => generateGridData(currentKey, scaleType, chords, secondaryDominants, tensionChords, complexity, suggestedIndices), [currentKey, scaleType, chords, secondaryDominants, tensionChords, complexity, suggestedIndices]);
 
@@ -359,7 +397,7 @@ export const HarmonicSpace = () => {
         const source = hover || (activeIds.root ? tris.find(t => t.id === activeIds.root) : null);
         if (!source) return [];
         const paths = getResolutionPaths(source, tris, currentKey);
-        const streams: any[] = [];
+        const streams: Array<{ from: { x: number; y: number }; to: { x: number; y: number }; strength: number; type: 'dominant' | 'subdominant' | 'chromatic'; targetId: string }> = [];
         paths.forEach(p => {
             const candidates = tris.filter(t => t.id === p.targetId || (t.root === tris.find(x=>x.id===p.targetId)?.root && t.type === tris.find(x=>x.id===p.targetId)?.type));
             candidates.forEach(target => {
@@ -373,12 +411,12 @@ export const HarmonicSpace = () => {
     }, [hover, activeIds, tris, currentKey]);
 
     const handleDrag = (e: React.PointerEvent) => {
-        if(e.type === 'pointerdown') { setDrag({active:true, last:{x:e.clientX, y:e.clientY}}); try { (e.target as Element).setPointerCapture(e.pointerId); } catch(err){} }
+        if(e.type === 'pointerdown') { setDrag({active:true, last:{x:e.clientX, y:e.clientY}}); try { (e.target as Element).setPointerCapture(e.pointerId); } catch { /* Ignore capture errors */ } }
         else if(e.type === 'pointermove' && drag.active && drag.last) { setView(v => ({...v, x: v.x + e.clientX - drag.last!.x, y: v.y + e.clientY - drag.last!.y})); setDrag(prev => ({...prev, last:{x:e.clientX, y:e.clientY}})); }
-        else if(e.type === 'pointerup') { setDrag({active:false, last:null}); try { (e.target as Element).releasePointerCapture(e.pointerId); } catch(err){} }
+        else if(e.type === 'pointerup') { setDrag({active:false, last:null}); try { (e.target as Element).releasePointerCapture(e.pointerId); } catch { /* Ignore release errors */ } }
     };
 
-    const handleChordAction = useCallback((t: any) => {
+    const handleChordAction = useCallback((t: { chordInfo: Chord; root: string; type: string }) => {
         let chordToPlay = t.chordInfo;
         if (!chordToPlay.notes || chordToPlay.notes.length === 0) chordToPlay = buildChord(t.root, t.type, complexity === 'triad' ? '' : '7');
         playOne(chordToPlay);
@@ -406,7 +444,7 @@ export const HarmonicSpace = () => {
                         return <TonnetzTriangle key={t.id} t={t} mood={mood} matchScore={score} 
                                     state={{isActive:activeIds.set.has(t.id), isHover:hover?.id===t.id, isTension: t.isTension}} 
                                     resolutionSource={activeFlux.find(s => s.targetId === t.id)}
-                                    onClick={handleChordAction} onEnter={(c:any)=>{setHover(c); setHoveredChord({...c.chordInfo, sentiment: estimateChordSentiment(c.chordInfo, currentKey, scaleType)});}} onLeave={()=>{setHover(null); setHoveredChord(null);}} />;
+                                    onClick={() => handleChordAction(t)} onEnter={()=>{setHover({ id: t.id }); setHoveredChord({...t.chordInfo, sentiment: estimateChordSentiment(t.chordInfo, currentKey, scaleType)});}} onLeave={()=>{setHover(null); setHoveredChord(null);}} />;
                     })}</g>
                     <g>{points.map((p, i) => <TonnetzNode key={i} x={p.sx} y={p.sy} note={p.note} isKey={p.note === currentKey} isDiatonic={p.isDiatonic} active={activeNotes.has(p.note)} mood={mood} onSelectKey={setKey} />)}</g>
                 </g>

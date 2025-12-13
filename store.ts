@@ -65,7 +65,7 @@ interface AppState {
     
     // Logic Actions
     setMood: (v: number, a: number, t?: number) => void;
-    handleProgression: (action: 'add' | 'remove' | 'clear' | 'reorder' | 'resize' | 'quantize' | 'update', payload?: any) => void;
+    handleProgression: (action: 'add' | 'remove' | 'clear' | 'reorder' | 'resize' | 'quantize' | 'update', payload?: unknown) => void;
     togglePlay: () => void;
     playOne: (c: Chord) => void;
     
@@ -188,7 +188,7 @@ export const useStore = create<AppState>((set, get) => ({
             let newSelected = state.selectedChordIndex;
 
             switch (action) {
-                case 'add':
+                case 'add': {
                     let newChords: Chord[] = [];
                     let insertIndex = -1;
                     if (payload && typeof payload === 'object' && ('chord' in payload || 'chords' in payload) && 'index' in payload) {
@@ -211,6 +211,7 @@ export const useStore = create<AppState>((set, get) => ({
                         newProgression.push(...processed);
                     }
                     break;
+                }
                 case 'remove':
                     if (typeof payload === 'number') {
                         newProgression = newProgression.filter((_, i) => i !== payload);
@@ -240,7 +241,7 @@ export const useStore = create<AppState>((set, get) => ({
                         newProgression[payload.index] = { ...newProgression[payload.index], duration: payload.duration };
                     }
                     break;
-                case 'quantize':
+                case 'quantize': {
                     const grid = 0.25;
                     let t = 0;
                     newProgression = newProgression.map(c => {
@@ -253,6 +254,7 @@ export const useStore = create<AppState>((set, get) => ({
                         return { ...c, duration: dur };
                     });
                     break;
+                }
                 case 'update':
                     if (payload && typeof payload.index === 'number' && payload.chord) {
                          newProgression[payload.index] = payload.chord;

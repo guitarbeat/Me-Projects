@@ -48,7 +48,6 @@ function getFretData(chord: Chord): { frets: number[], startFret: number } {
     }
 
     // 2. Try Generic Barre Shape logic
-    let shapeName = '';
     let rootOffset = NOTE_OFFSETS[chord.root] || 0;
     
     // Prefer E-shape barre for roots F, F#, G, G#, A (low), and A shape for Bb, B, C, C#, D, D#, E

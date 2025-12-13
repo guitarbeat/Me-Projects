@@ -19,12 +19,14 @@ export const useUrlSync = () => {
         const params = new URLSearchParams(window.location.search);
         
         // Batch updates would be ideal, but individual setters work for now
-        if (params.has('key')) store.setKey(params.get('key') as any);
-        if (params.has('scale')) store.setScale(params.get('scale') as any);
-        if (params.has('bpm')) store.setBpm(parseInt(params.get('bpm')!));
-        if (params.has('inst')) store.setInstrument(params.get('inst') as any);
-        if (params.has('view')) store.setView(params.get('view')!);
-    }, []);
+        // Get setters directly from store to avoid dependency issues
+        const state = useStore.getState();
+        if (params.has('key')) state.setKey(params.get('key') as string);
+        if (params.has('scale')) state.setScale(params.get('scale') as string);
+        if (params.has('bpm')) state.setBpm(parseInt(params.get('bpm')!));
+        if (params.has('inst')) state.setInstrument(params.get('inst') as string);
+        if (params.has('view')) state.setView(params.get('view')!);
+    }, []); // Only run once on mount
 
     // Sync state to URL
     useEffect(() => {
@@ -100,7 +102,7 @@ export const useProgression = (timeSig: { num: number, den: number }) => {
     return { progression, handleProgression, addRest };
 };
 
-export const usePlayback = (audioEngine: any, progression: any, bpm: number, mood: any) => {
+export const usePlayback = (_audioEngine: unknown, _progression: unknown, bpm: number, _mood: unknown) => {
     const isPlaying = useStore(state => state.isPlaying);
     const playIndex = useStore(state => state.playIndex);
     const togglePlay = useStore(state => state.togglePlay);
@@ -115,7 +117,7 @@ export const usePlayback = (audioEngine: any, progression: any, bpm: number, moo
     return { isPlaying, playIndex, togglePlay, playOne };
 };
 
-export const useMood = (audioEngine: any) => {
+export const useMood = (_audioEngine: unknown) => {
     const mood = useStore(state => state.mood);
     const setMood = useStore(state => state.setMood);
     

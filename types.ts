@@ -24,6 +24,7 @@ export const ScaleType = {
   Locrianbb7: 'Locrian bb7'
 } as const;
 
+// eslint-disable-next-line no-redeclare
 export type ScaleType = typeof ScaleType[keyof typeof ScaleType];
 
 export type InstrumentType = 'rhodes' | 'pad' | 'pluck' | 'synth';

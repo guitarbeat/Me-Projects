@@ -56,7 +56,6 @@ export const MoodSelector = () => {
         mood, setMood, 
         scale: currentScale, 
         isScaleLocked, 
-        bpm, 
         instrument,
         setTargetMood, 
         hoveredChord 
@@ -68,9 +67,10 @@ export const MoodSelector = () => {
     const [beamX, setBeamX] = useState<number>(0);
     const [isScrolling, setIsScrolling] = useState(false);
     const [cursorPos, setCursorPos] = useState<{x:number, y:number} | null>(null);
+    const [containerSize, setContainerSize] = useState({ width: 1, height: 1 });
     
     // Internal State Tracking
-    const scrollTimeout = useRef<any>(null);
+    const scrollTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
     const requestRef = useRef<number | undefined>(undefined);
     const SENSITIVITY = 1.5;
 
@@ -78,6 +78,34 @@ export const MoodSelector = () => {
     const attrs = useMemo(() => getMusicalAttributes(mood.valence, mood.arousal, mood.tension, instrument), [mood, instrument]);
     const calculatedBpm = getTempoFromArousal(mood.arousal);
     const accentColor = SCALE_DEFS[currentScale]?.palette.accent || '#facc15';
+    
+    // Update container size when ref changes
+    useEffect(() => {
+        if (!ref.current) return;
+        const updateSize = () => {
+            if (ref.current) {
+                setContainerSize({ width: ref.current.offsetWidth, height: ref.current.offsetHeight });
+            }
+        };
+        updateSize();
+        const resizeObserver = new ResizeObserver(updateSize);
+        resizeObserver.observe(ref.current);
+        return () => resizeObserver.disconnect();
+    }, []);
+    
+    // Compute hover states for zones (using state instead of ref)
+    const zoneHoverStates = useMemo(() => {
+        if (!cursorPos) return new Map<number, boolean>();
+        const cx = (cursorPos.x / containerSize.width) * 100;
+        const cy = (cursorPos.y / containerSize.height) * 100;
+        const states = new Map<number, boolean>();
+        EMOTIONAL_ZONES.forEach((gem, i) => {
+            const x = (gem.v + 1) / 2 * 100;
+            const y = (-gem.a + 1) / 2 * 100;
+            states.set(i, Math.hypot(cx - x, cy - y) < 12);
+        });
+        return states;
+    }, [cursorPos, containerSize]);
 
     // --- INTERACTION LOGIC ---
 
@@ -143,7 +171,7 @@ export const MoodSelector = () => {
         if ((e.target as HTMLElement).closest('.chord-node')) return;
         e.preventDefault(); setIsDragging(true);
         updateMoodPad(e.clientX, e.clientY, true);
-        try { (e.target as Element).setPointerCapture(e.pointerId); } catch (e) {}
+        try { (e.target as Element).setPointerCapture(e.pointerId); } catch { /* Ignore pointer capture errors */ }
     };
 
     const handlePointerMove = (e: React.PointerEvent) => {
@@ -161,7 +189,7 @@ export const MoodSelector = () => {
         setIsDragging(false);
         if (requestRef.current !== undefined) cancelAnimationFrame(requestRef.current);
         if (setTargetMood) setTargetMood(null);
-        try { (e.target as Element).releasePointerCapture(e.pointerId); } catch (e) {}
+        try { (e.target as Element).releasePointerCapture(e.pointerId); } catch { /* Ignore pointer release errors */ }
     };
 
     return (
@@ -280,12 +308,7 @@ export const MoodSelector = () => {
                      {EMOTIONAL_ZONES.map((gem, i) => {
                          const x = (gem.v + 1) / 2 * 100;
                          const y = (-gem.a + 1) / 2 * 100;
-                         let isHover = false;
-                         if (cursorPos && containerRef.current) {
-                             const cx = cursorPos.x / containerRef.current.offsetWidth * 100;
-                             const cy = cursorPos.y / containerRef.current.offsetHeight * 100;
-                             isHover = Math.hypot(cx - x, cy - y) < 12;
-                         }
+                         const isHover = zoneHoverStates.get(i) || false;
                          const isVisible = isDragging || isHover;
                          return (
                             <div key={i} className={cn("absolute flex flex-col items-center justify-center text-center -translate-x-1/2 -translate-y-1/2 transition-all duration-300", isHover ? "z-10 scale-110 opacity-100" : isVisible ? "opacity-40 scale-100" : "opacity-0 scale-90")} style={{ left: `${x}%`, top: `${y}%` }}>

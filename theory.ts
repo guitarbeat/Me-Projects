@@ -89,8 +89,6 @@ export const generateChordsForScale = (root: Note, scaleType: ScaleType, complex
     const scaleNotes = getScaleNotes(root, scaleType);
     const chords: Chord[] = [];
     
-    // Definitions for Roman Numeral Analysis
-    const degrees = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
     // Relative to Major Scale
     const intervalToDegree: Record<number, {num: string, prefix: string}> = {
         0: { num: 'I', prefix: '' },
@@ -286,7 +284,7 @@ export const getTensionChords = (root: Note, scaleType: ScaleType, tension: numb
     return chords;
 };
 
-export const estimateChordSentiment = (chord: Chord, key: Note, scale: ScaleType) => {
+export const estimateChordSentiment = (chord: Chord, _key: Note, _scale: ScaleType) => {
     let v = 0;
     let a = 0;
     

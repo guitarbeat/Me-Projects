@@ -2,7 +2,7 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { Plus, X, GripHorizontal, Filter, Search } from 'lucide-react';
 import { cn } from './ui';
-import { estimateChordSentiment, Chord, useStore, useDerivedData } from './lib';
+import { Chord, useStore, useDerivedData } from './lib';
 
 const PIXELS_PER_BEAT = 40;
 
@@ -81,7 +81,7 @@ export const ChordPalette = ({ className }: { className?: string }) => {
     }, [availableChords, filter, searchTerm]);
 
     return (
-        <div className={cn("flex flex-col h-full gap-2 p-2", className)}>
+        <div className={cn("flex flex-col h-full gap-2", className)}>
             {/* Controls */}
             <div className="flex items-center gap-2 shrink-0">
                 <span className="text-[9px] font-black text-[var(--text-dim)] uppercase tracking-wider">Palette</span>
@@ -115,7 +115,7 @@ export const ChordPalette = ({ className }: { className?: string }) => {
 
             {/* Chords - Responsive Grid that wraps based on available height/width */}
             <div className="flex-1 overflow-y-auto custom-scrollbar content-start flex flex-wrap gap-2 min-h-0">
-                {filteredChords.map((c: any, i: number) => (
+                {filteredChords.map((c: Chord, i: number) => (
                     <DraggableChord 
                         key={c.symbol + i} 
                         chord={c} 
@@ -133,11 +133,25 @@ export const ChordPalette = ({ className }: { className?: string }) => {
     );
 };
 
+interface TimelineNodeProps {
+    chord: Chord;
+    index: number;
+    isActive: boolean;
+    isSelected: boolean;
+    onRemove: () => void;
+    onResize: (duration: number) => void;
+    onDragStart: (e: React.DragEvent) => void;
+    onDragEnter: (e: React.DragEvent) => void;
+    onDrop: (e: React.DragEvent) => void;
+    onSelect: () => void;
+    isDropTarget: boolean;
+    isDragging: boolean;
+}
 const TimelineNode = ({ 
     chord, index, isActive, isSelected, 
     onRemove, onResize, onDragStart, onDragEnter, onDrop, onSelect, 
     isDropTarget, isDragging 
-}: any) => {
+}: TimelineNodeProps) => {
     const [resizeState, setResizeState] = useState<{px: number, dur: number} | null>(null);
     const classes = useMemo(() => getChordColorClass(chord.romanNumeral), [chord.romanNumeral]);
 
@@ -263,7 +277,7 @@ export const ProgressionStrip = ({ showPalette = false }: { showPalette?: boolea
                 setSelectedChordIndex(from < index ? index - 1 : index);
             }
         } else { 
-            try { const d = JSON.parse(e.dataTransfer.getData('application/json')); if (d.root) onDropChord(d, index); } catch {} 
+            try { const d = JSON.parse(e.dataTransfer.getData('application/json')); if (d.root) onDropChord(d, index); } catch { /* Ignore parse errors */ } 
         }
     };
 
@@ -274,7 +288,7 @@ export const ProgressionStrip = ({ showPalette = false }: { showPalette?: boolea
       >
         {showPalette && (
             <div className="shrink-0 h-40 border-b border-[var(--border)] bg-[var(--bg-soft)] overflow-hidden">
-                <ChordPalette />
+                <ChordPalette className="p-2" />
             </div>
         )}
 
@@ -284,7 +298,7 @@ export const ProgressionStrip = ({ showPalette = false }: { showPalette?: boolea
             {/* Scrollable Container with Wrapping Grid */}
             <div className="w-full h-full overflow-y-auto custom-scrollbar relative z-10 p-4 sm:p-6" ref={scrollRef}>
                 <div className="flex flex-wrap items-start gap-2 w-full relative pb-12">
-                    {progression.map((c: any, i: number) => (
+                    {progression.map((c: Chord, i: number) => (
                         <React.Fragment key={i}>
                             <TimelineNode 
                                 chord={c} 
@@ -296,7 +310,7 @@ export const ProgressionStrip = ({ showPalette = false }: { showPalette?: boolea
                                 onResize={(idx: number, dur: number) => handleProgression('resize', { index: idx, duration: dur })}
                                 onDragStart={() => setDragState(s => ({...s, dragging:i}))} 
                                 onDragEnter={() => setDragState(s => ({...s, target:i}))}
-                                onDrop={(e: any) => handleDrop(e, i)} 
+                                onDrop={(e: React.DragEvent) => handleDrop(e, i)} 
                                 isDropTarget={dragState.target===i} 
                                 isDragging={dragState.dragging===i} 
                             />
@@ -309,7 +323,7 @@ export const ProgressionStrip = ({ showPalette = false }: { showPalette?: boolea
                         </React.Fragment>
                     ))}
                     
-                    <div onClick={(e) => { e.stopPropagation(); const t = availableChords.find((c:any)=>c.romanNumeral.match(/^[iI]$/)); if(t) onDropChord(t, progression.length); }}
+                    <div onClick={(e) => { e.stopPropagation(); const t = availableChords.find((c: Chord)=>c.romanNumeral?.match(/^[iI]$/)); if(t) onDropChord(t, progression.length); }}
                         onDragOver={(e) => { e.preventDefault(); setDragState(s => ({...s, target: progression.length})); }}
                         onDragLeave={() => setDragState(s => ({...s, target: null}))}
                         onDrop={(e) => handleDrop(e, progression.length)}

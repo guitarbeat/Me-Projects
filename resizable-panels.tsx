@@ -189,7 +189,8 @@ export const PanelCard = ({
     
     const cardStyle: React.CSSProperties = {
         borderRadius: `${radius}px`,
-        boxShadow: '0 0 0 1px var(--border), 0 4px 20px -5px rgba(0,0,0,0.3)',
+        boxShadow: '0 0 0 1px #1a1a1a, 0 4px 20px -5px rgba(0,0,0,0.3)',
+        backgroundColor: '#000000', // Fixed pure black - not affected by theme
         transform: 'translate3d(0,0,0)',
         isolation: 'isolate',
         transition: 'border-radius 0.2s',
@@ -204,7 +205,7 @@ export const PanelCard = ({
     // Option C: Reduced margins (tighter spacing) - verticalMargin = gap / 4
     // Original: Full spacing - verticalMargin = gap / 2
     // const verticalMargin = isCollapsed ? 0 : 0; // Option B: No margins (panels touch)
-    const verticalMargin = isCollapsed ? 0 : gap / 4; // Option C: Reduced margins
+    const verticalMargin = isCollapsed ? 0 : 0; // Option C: Reduced margins
 
     return (
         <div className="absolute inset-0 transition-all duration-300" 
@@ -216,7 +217,7 @@ export const PanelCard = ({
                  marginTop: verticalMargin,
                  marginBottom: verticalMargin
              }}>
-            <div className={cnFn("h-full w-full bg-[var(--bg-panel)] overflow-hidden relative group max-w-screen-2xl mx-auto transition-colors duration-300", className)} style={cardStyle}>
+            <div className={cnFn("h-full w-full bg-[#000000] overflow-hidden relative group max-w-screen-2xl mx-auto", className)} style={cardStyle}>
                 <div className={cnFn("h-full w-full transition-opacity duration-300", isCollapsed ? "opacity-0 pointer-events-none" : "opacity-100")}>
                     {children}
                 </div>
@@ -225,7 +226,7 @@ export const PanelCard = ({
                          "absolute left-1/2 -translate-x-1/2 pointer-events-none z-20 w-auto max-w-[90%] flex justify-center",
                          overlayPosition === 'bottom' ? "bottom-6 animate-in slide-in-from-bottom-2" : "top-6 animate-in slide-in-from-top-2"
                      )}>
-                        <div className="bg-[var(--bg-glass)] backdrop-blur-xl border border-[var(--border-soft)] p-2 rounded-full shadow-2xl fade-in duration-500">
+                        <div className="bg-[rgba(0,0,0,0.9)] backdrop-blur-xl border border-[rgba(255,255,255,0.15)] p-2 rounded-full shadow-2xl fade-in duration-500">
                             {overlay}
                         </div>
                     </div>
@@ -264,17 +265,17 @@ export const HandleButton = ({
             }}
             className={cnFn(
                 "rounded-sm transition-all duration-300 flex items-center justify-center relative overflow-hidden cursor-pointer",
-                "group-hover:bg-[var(--bg-surface)] group-hover:border-[var(--accent)] group-hover:scale-105",
+                "group-hover:bg-[#1a1a1a] group-hover:border-[#dc2626] group-hover:scale-105",
                 "active:scale-95",
                 vertical 
                     ? "w-1.5 h-12 group-hover:h-16" 
                     : "h-0.5 w-16 group-hover:w-24 group-hover:h-5",
                 // Active/collapsed state styling
-                isActive && !vertical && "w-24 h-5 bg-[var(--accent)] border border-[var(--accent)] text-[var(--bg-main)] shadow-lg shadow-[var(--accent)]/30",
-                isActive && vertical && "w-6 h-28 bg-[var(--accent)] border border-[var(--accent)] text-[var(--bg-main)] shadow-lg shadow-[var(--accent)]/30",
-                // Default state - subtle bar
-                !isActive && !vertical && "bg-[var(--bg-element)]/90 border border-[var(--border)]/60 backdrop-blur-md shadow-sm",
-                !isActive && vertical && "bg-[var(--bg-element)]/90 border border-[var(--border)]/60 backdrop-blur-md shadow-sm",
+                isActive && !vertical && "w-24 h-5 bg-[#dc2626] border border-[#dc2626] text-white shadow-lg shadow-[#dc2626]/30",
+                isActive && vertical && "w-6 h-28 bg-[#dc2626] border border-[#dc2626] text-white shadow-lg shadow-[#dc2626]/30",
+                // Default state - subtle bar (black with subtle border)
+                !isActive && !vertical && "bg-[#000000] border border-[#1a1a1a] backdrop-blur-md shadow-sm",
+                !isActive && vertical && "bg-[#000000] border border-[#1a1a1a] backdrop-blur-md shadow-sm",
                 className
             )}
         >
@@ -286,9 +287,9 @@ export const HandleButton = ({
                     vertical && "opacity-100 group-hover:opacity-0"
                 )}>
                     {!vertical ? (
-                        <div className="h-0.5 w-12 bg-[var(--text-muted)]/40 rounded-full" />
+                        <div className="h-0.5 w-12 bg-[rgba(255,255,255,0.3)] rounded-full" />
                     ) : (
-                        <div className="w-0.5 h-12 bg-[var(--text-muted)]/40 rounded-full" />
+                        <div className="w-0.5 h-12 bg-[rgba(255,255,255,0.3)] rounded-full" />
                     )}
                 </div>
             )}
@@ -314,19 +315,19 @@ export const HandleButton = ({
                             // Top panel handle
                             if (collapsed) {
                                 // Top panel is collapsed → show down arrow to expand downward
-                                return <ChevronDown size={14} strokeWidth={2.5} />;
+                                return <ChevronDown size={14} strokeWidth={2.5} className="text-white" />;
                             } else {
                                 // Top panel is not collapsed → show up arrow to collapse upward
-                                return <ChevronUp size={14} strokeWidth={2.5} />;
+                                return <ChevronUp size={14} strokeWidth={2.5} className="text-white" />;
                             }
                         } else {
                             // Handle between panels (direction="down" or undefined defaults to "down")
                             if (collapsed) {
                                 // Panel below is collapsed → show up arrow to expand upward
-                                return <ChevronUp size={14} strokeWidth={2.5} />;
+                                return <ChevronUp size={14} strokeWidth={2.5} className="text-white" />;
                             } else {
                                 // Panel below is not collapsed → show down arrow to collapse downward
-                                return <ChevronDown size={14} strokeWidth={2.5} />;
+                                return <ChevronDown size={14} strokeWidth={2.5} className="text-white" />;
                             }
                         }
                     })()}
@@ -346,10 +347,10 @@ export const HandleButton = ({
                         // Default is right, so collapsed shows left (ChevronLeft when rotated)
                         if (collapsed) {
                             // Collapsed: show left arrow (to expand right)
-                            return <ChevronDown size={14} strokeWidth={2.5} className="rotate-[-90deg]" />;
+                            return <ChevronDown size={14} strokeWidth={2.5} className="rotate-[-90deg] text-white" />;
                         } else {
                             // Not collapsed: show right arrow (to collapse left)
-                            return <ChevronDown size={14} strokeWidth={2.5} className="rotate-90" />;
+                            return <ChevronDown size={14} strokeWidth={2.5} className="rotate-90 text-white" />;
                         }
                     })()}
                 </div>
@@ -566,7 +567,7 @@ export const SplitView = ({ top, bottom, topOverlay, bottomOverlay, cn }: SplitV
     };
 
     return (
-        <div ref={containerRef} className="h-full w-full bg-[var(--bg-main)] overflow-hidden relative">
+        <div ref={containerRef} className="h-full w-full overflow-hidden relative">
             <PanelGroup direction="vertical" className="relative z-10">
                 <Panel defaultSize={55} minSize={20} className="relative transition-all duration-300">
                     <PanelCard 
@@ -688,7 +689,7 @@ export const PanelStack = ({ panels, direction = 'vertical', cn }: PanelStackPro
         const panel = panels[0];
         const isCollapsed = collapsedStates.get(panel.id) || false;
         return (
-            <div ref={containerRef} className="h-full w-full bg-[var(--bg-main)] overflow-hidden relative">
+            <div ref={containerRef} className="h-full w-full overflow-hidden relative">
                 <PanelGroup direction={direction} className="relative z-10">
                     <Panel 
                         ref={(ref) => {
@@ -722,7 +723,7 @@ export const PanelStack = ({ panels, direction = 'vertical', cn }: PanelStackPro
 
     // Multiple panels with handles
     return (
-        <div ref={containerRef} className="h-full w-full bg-[var(--bg-main)] overflow-hidden relative">
+        <div ref={containerRef} className="h-full w-full overflow-hidden relative">
             <PanelGroup direction={direction} className="relative z-10">
                 {panels.map((panel, index) => {
                     const isCollapsed = collapsedStates.get(panel.id) || false;

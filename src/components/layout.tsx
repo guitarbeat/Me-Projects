@@ -9,7 +9,7 @@ import { ChordPalette } from './sequencer';
 import { 
     Play, Pause, Lock, Unlock, Trash2, 
     ListMusic, Network, Cloud, Keyboard, Music2, Zap, Gauge,
-    ChevronDown, Moon, Sun, X,
+    Moon, Sun, X,
     FolderOpen, Save, Clock, Minus, Plus, PenTool, LucideIcon
 } from 'lucide-react';
 import { HarmonicSpace as TonnetzWrapper } from './tonnetz';
@@ -213,8 +213,7 @@ export default function ControlPanel() {
         selectedChordIndex,
         setSelectedChordIndex,
         handleProgression,
-        instrument,
-        setInstrument
+        setView,
     } = useStore();
 
     // Flexible Panel State
@@ -266,13 +265,6 @@ export default function ControlPanel() {
 
     const selectedChord = selectedChordIndex !== null && progression[selectedChordIndex] ? progression[selectedChordIndex] : null;
 
-    const instruments: { id: InstrumentType, icon: LucideIcon, label: string }[] = [
-        { id: 'rhodes', icon: Keyboard, label: 'Keys' },
-        { id: 'pad', icon: Cloud, label: 'Pad' },
-        { id: 'pluck', icon: Music2, label: 'Pluck' },
-        { id: 'synth', icon: Zap, label: 'Synth' }
-    ];
-
     return (
         <div className="h-full flex flex-col bg-[var(--bg-main)] text-[var(--text-main)] overflow-hidden font-sans transition-colors duration-500">
             {showLibrary && <ProjectLibrary onClose={() => setShowLibrary(false)} />}
@@ -282,7 +274,112 @@ export default function ControlPanel() {
 
             {/* MAIN CONTENT AREA ROW */}
             <div className="flex-1 min-h-0 flex overflow-hidden">
-                {/* LEFT: FLEXIBLE PANEL STACK */}
+                {/* LEFT SIDEBAR (GLOBAL CONTROLS) */}
+                <div className="w-12 border-r border-[var(--border)] flex flex-col items-center py-4 gap-4 bg-[var(--bg-surface)] shrink-0 z-40">
+                    
+                    {/* Transport (Play/Pause) on Top */}
+                    <button 
+                        onClick={togglePlay}
+                        className={cn(
+                            "w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-lg hover:scale-105 active:scale-95 border border-[var(--border)]",
+                            isPlaying ? "bg-[var(--accent)] text-black shadow-[var(--accent)]/30" : "bg-[var(--bg-element)] text-[var(--text-muted)] hover:bg-[var(--bg-panel)] hover:text-[var(--text-main)]"
+                        )}
+                        title={isPlaying ? "Pause" : "Play"}
+                    >
+                        {isPlaying ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" className="ml-0.5" />}
+                    </button>
+
+                    <div className="w-6 h-px bg-[var(--border)]" />
+
+                    {/* Show/Hide Toggles */}
+                    <button 
+                        onClick={() => togglePanel('map')}
+                        className={cn("p-2 rounded-lg transition-all", visiblePanels.map ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]")}
+                        title="Harmonic Map"
+                    >
+                        <Network size={18} />
+                    </button>
+                    <button 
+                        onClick={() => togglePanel('sequencer')}
+                        className={cn("p-2 rounded-lg transition-all", visiblePanels.sequencer ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]")}
+                        title="Sequencer"
+                    >
+                        <ListMusic size={18} />
+                    </button>
+                    <button 
+                        onClick={() => togglePanel('palette')}
+                        className={cn("p-2 rounded-lg transition-all", visiblePanels.palette ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]")}
+                        title="Chord Palette"
+                    >
+                        <PenTool size={18} />
+                    </button>
+                    <button 
+                        onClick={() => togglePanel('mood')}
+                        className={cn("p-2 rounded-lg transition-all", visiblePanels.mood ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]")}
+                        title="Mood Selector"
+                    >
+                        <Zap size={18} />
+                    </button>
+
+                     <div className="w-6 h-px bg-[var(--border)]" />
+                     
+                     {/* Songwriting Mode Toggle */}
+                     <button 
+                        onClick={() => setView(view === 'songwriting' ? 'standard' : 'songwriting')}
+                        className={cn(
+                            "p-2 rounded-lg transition-all relative group",
+                            view === 'songwriting' 
+                                ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm" 
+                                : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]"
+                        )}
+                        title={view === 'songwriting' ? "Exit Songwriting Mode" : "Songwriting Mode"}
+                    >
+                        <Keyboard size={18} />
+                    </button>
+
+                    <div className="flex-1" />
+
+                    {/* Bottom Controls */}
+                    
+                    {/* Settings Trigger */}
+                    <button 
+                        onClick={() => setShowSettings(!showSettings)}
+                        className={cn(
+                            "p-2 rounded-lg transition-all relative", 
+                            showSettings ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-inner" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]"
+                        )}
+                        title="Global Settings (Key, Scale, Tempo)"
+                    >
+                        <Music2 size={18} />
+                        {showSettings && (
+                           <SettingsPopover 
+                               onClose={() => setShowSettings(false)}
+                               currentKey={currentKey} setKey={setKey}
+                               scale={scale} setScale={setScale}
+                               bpm={bpm} setBpm={setBpm}
+                               isScaleLocked={isScaleLocked} toggleScaleLock={toggleScaleLock}
+                           />
+                        )}
+                    </button>
+
+                    <button 
+                         onClick={() => setShowLibrary(true)}
+                         className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] rounded-lg transition-colors"
+                         title="Projects"
+                    >
+                        <FolderOpen size={18} />
+                    </button>
+
+                    <button 
+                        onClick={toggleTheme} 
+                        className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] rounded-lg transition-colors"
+                        title="Toggle Theme"
+                    >
+                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                    </button>
+                </div>
+
+                {/* MAIN PANEL CONTENT */}
                 <div className={cn(
                     "flex-1 flex flex-col min-w-0 bg-[var(--bg-surface)]/30 p-2 gap-2 overflow-hidden",
                     // If chord editor is open, we might want to hide everything else?
@@ -407,130 +504,6 @@ export default function ControlPanel() {
                     )}
                 </div>
 
-                {/* RIGHT SIDEBAR: VIEW CONTROLS */}
-                <div className="w-[50px] shrink-0 border-l border-[var(--border)] bg-[var(--bg-surface)] flex flex-col items-center py-3 gap-3 z-10 overflow-y-auto custom-scrollbar">
-                    {/* View Toggles */}
-                    <div className="flex flex-col gap-2">
-                        {/* Map Toggle */}
-                        <button 
-                            onClick={() => togglePanel('map')} 
-                            title="Toggle Harmonic Map"
-                            className={cn(
-                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200", 
-                                visiblePanels.map 
-                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
-                                    : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
-                            )}
-                        >
-                            <Network size={18} strokeWidth={1.5} />
-                        </button>
-                        
-                        {/* Sequencer Toggle */}
-                        <button 
-                            onClick={() => togglePanel('sequencer')} 
-                            title="Toggle Sequencer"
-                            className={cn(
-                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200", 
-                                visiblePanels.sequencer 
-                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
-                                    : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
-                            )}
-                        >
-                            <ListMusic size={18} strokeWidth={1.5} />
-                        </button>
-                            <div className="w-12 border-r border-[var(--border)] flex flex-col items-center py-4 gap-4 bg-[var(--bg-surface)] shrink-0 z-40">
-                    
-                    {/* Transport (Play/Pause) on Top */}
-                    <button 
-                        onClick={togglePlay}
-                        className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-lg hover:scale-105 active:scale-95 border border-[var(--border)]",
-                            isPlaying ? "bg-[var(--accent)] text-black shadow-[var(--accent)]/30" : "bg-[var(--bg-element)] text-[var(--text-muted)] hover:bg-[var(--bg-panel)] hover:text-[var(--text-main)]"
-                        )}
-                        title={isPlaying ? "Pause" : "Play"}
-                    >
-                        {isPlaying ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" className="ml-0.5" />}
-                    </button>
-
-                    <div className="w-6 h-px bg-[var(--border)]" />
-
-                    {/* Show/Hide Toggles */}
-                    <button 
-                        onClick={() => togglePanel('map')}
-                        className={cn("p-2 rounded-lg transition-all", visiblePanels.map ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]")}
-                        title="Harmonic Map"
-                    >
-                        <Network size={18} />
-                    </button>
-                    <button 
-                        onClick={() => togglePanel('sequencer')}
-                        className={cn("p-2 rounded-lg transition-all", visiblePanels.sequencer ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]")}
-                        title="Sequencer"
-                    >
-                        <ListMusic size={18} />
-                    </button>
-                    <button 
-                        onClick={() => togglePanel('palette')}
-                        className={cn("p-2 rounded-lg transition-all", visiblePanels.palette ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]")}
-                        title="Chord Palette"
-                    >
-                        <PenTool size={18} />
-                    </button>
-                    <button 
-                        onClick={() => togglePanel('mood')}
-                        className={cn("p-2 rounded-lg transition-all", visiblePanels.mood ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]")}
-                        title="Mood Selector"
-                    >
-                        <Zap size={18} />
-                    </button>
-
-                    <div className="flex-1" />
-
-                    {/* Bottom Controls */}
-                    
-                    {/* Settings Trigger */}
-                    <button 
-                        onClick={() => setShowSettings(!showSettings)}
-                        className={cn(
-                            "p-2 rounded-lg transition-all relative", 
-                            showSettings ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-inner" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]"
-                        )}
-                        title="Global Settings (Key, Scale, Tempo)"
-                    >
-                        <Music2 size={18} />
-                        {showSettings && (
-                           <SettingsPopover 
-                               onClose={() => setShowSettings(false)}
-                               currentKey={currentKey} setKey={setKey}
-                               scale={scale} setScale={setScale}
-                               bpm={bpm} setBpm={setBpm}
-                               isScaleLocked={isScaleLocked} toggleScaleLock={toggleScaleLock}
-                           />
-                        )}
-                    </button>
-
-                    <button 
-                         onClick={() => setShowLibrary(true)}
-                         className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] rounded-lg transition-colors"
-                         title="Projects"
-                    >
-                        <FolderOpen size={18} />
-                    </button>
-
-                    <button 
-                        onClick={toggleTheme} 
-                        className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] rounded-lg transition-colors"
-                        title="Toggle Theme"
-                    >
-                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-                    </button>
-                </div>tle={inst.label}
-                            >
-                                <inst.icon size={16} strokeWidth={1.5} />
-                            </button>
-                        ))}
-                    </div>
-                </div>
             </div>
         </div>
     );

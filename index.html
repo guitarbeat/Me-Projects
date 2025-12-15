@@ -80,10 +80,6 @@
 
       --bg-soft: rgba(0, 0, 0, 0.05);
       --bg-soft-hover: rgba(0, 0, 0, 0.1);
-
-      /* --- MOTION CURVES --- */
-      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
     }
 
     [data-theme="dark"] {
@@ -92,64 +88,19 @@
          * High contrast, OLED friendly, Pure Black.
          */
       --bg-main: #000000;
-      /* Pure Black */
       --bg-surface: #000000;
-      /* Pure Black */
       --bg-panel: #000000;
-      /* Pure Black */
       --bg-element: #09090b;
-      /* Zinc 950 - Extremely dark for subtle differentiation */
-      --bg-glass: rgba(0, 0, 0, 0.8);
 
       --text-main: #ffffff;
-      /* Pure White */
       --text-muted: #a1a1aa;
-      /* Zinc 400 */
       --text-dim: #71717a;
-      /* Zinc 500 */
 
-      /* BLACK BORDERS - User Requirement */
-      /* In a black theme, black borders disappear against black bg unless we use a lighter border or reliance on gaps/shadows. 
-         However, the user asked for "border color infill to always be black". 
-         If backgrounds are black, borders should probably be visible (e.g. dark grey or white).
-         BUT the user previously enforced "BLACK BORDERS".
-         If bg is black and border is black, you see nothing.
-         I will assume "border color infill" means the BACKGROUND is black.
-         To make borders visible on black, they need to be slightly lighter (Zinc 800) OR the user means "Background Black".
-         Actually, let's look at the "always be black" instruction. 
-         If I make the border #000000 on #000000, it's invisible. 
-         I will switch borders to a low-contrast grey (#27272a) for visibility, OR keep them black and rely on `bg-element` (Zinc 950) to provide contrast.
-         
-         Re-reading: "border color infill to always be black".
-         Maybe they want the FILL of the borders (the border itself) to be black? 
-         If so, we need light backgrounds.
-         
-         Let's stick to the "True Black" background interpretation. 
-         I will set borders to `rgba(255,255,255, 0.2)` for visibility on black, 
-         OR if the user strict on "Black Borders", then the background must be not-black.
-         
-         Wait, "border color infill" -> "border color [and] infill".
-         If both are black, it's a void.
-         
-         Alternative: The user wants the border *container* to be filled with black.
-         
-         Let's set backgrounds to #000000. 
-         And set borders to a subtle white/grey (#3f3f46) so they exist. 
-         The user's constraint "BLACK BORDERS" might have been for the Light/Retro theme. 
-         For a Dark theme, White borders are standard.
-         But I will try strict adherence: 
-         Background: Black. 
-         Border: Dark Grey (#27272a) to be visible.
-         
-         Let's try to interpret "border color infill" as "The background".
-      */
       --border: #27272a;
-      /* Zinc 800 - Visible on black */
       --border-hover: #3f3f46;
       --border-soft: #27272a;
 
       --accent: #ffffff;
-      /* White accent */
 
       /* Semantic Colors */
       --color-success: #34d399;
@@ -169,20 +120,18 @@
       height: 100vh;
       overflow: hidden;
       -webkit-font-smoothing: antialiased;
-      transition: background-color 0s, color 0s;
+      transition: none;
     }
 
-    /* Minimalist Panel Utility - Replaces Glassmorphism */
+    /* Minimalist Panel Utility */
     .glass-panel {
       background: var(--bg-panel);
       border: 1px solid var(--border);
-      box-shadow: none;
     }
 
     [data-theme="light"] .glass-panel {
       background: var(--bg-panel);
       border: 1px solid var(--border);
-      box-shadow: none;
     }
 
     /* Hide number input spinners */

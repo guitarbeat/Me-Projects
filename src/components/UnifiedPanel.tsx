@@ -1,8 +1,8 @@
 import React from 'react';
-import { cn } from './ui';
-import { HarmonicSpace as TonnetzWrapper } from './tonnetz';
-import { ProgressionStrip as SequencerView, ChordPalette } from './sequencer';
-import { MoodSelector } from './mood';
+import { cn } from './UI';
+import { HarmonicSpace as TonnetzWrapper } from './HarmonicMap';
+import { ProgressionStrip as SequencerView, ChordPalette } from './Sequencer';
+import { MoodSelector } from './MoodSelector';
 import { Maximize2, X } from 'lucide-react';
 
 export type PanelId = 'map' | 'sequencer' | 'palette' | 'mood';

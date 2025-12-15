@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Chord } from '../types';
-import { cn } from './ui';
+import { cn } from './UI';
 
 // --- DATA ---
 // A simplified lookup for common open chords and movable shapes

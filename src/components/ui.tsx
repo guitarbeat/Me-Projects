@@ -9,19 +9,19 @@ export const cn = (...classes: (string | undefined | null | false)[]) => classes
 // Unified Surface component for panels, cards, and tooltips
 export const Surface = ({ children, className, variant='panel', active, ...props }: React.HTMLAttributes<HTMLDivElement> & { variant?: 'panel'|'element'|'ghost'|'overlay'|'tooltip', active?: boolean }) => {
     const vars = { 
-      panel: "bg-[var(--bg-panel)] border border-[var(--border)] rounded-xl", 
-      element: "bg-[var(--bg-element)] border border-[var(--border)] rounded-lg shadow-sm", 
+      panel: "bg-[var(--bg-panel)] border border-[var(--border)] rounded-lg", 
+      element: "bg-[var(--bg-element)] border border-[var(--border)] rounded-lg", 
       ghost: "bg-transparent border border-transparent",
-      overlay: "bg-[var(--bg-glass)] backdrop-blur-xl border border-[var(--border-soft)] shadow-2xl rounded-lg",
-      tooltip: "bg-[var(--bg-glass)] backdrop-blur-xl border border-[var(--border-soft)] shadow-2xl rounded-lg z-[100] text-xs text-[var(--text-main)] px-3 py-2 pointer-events-none"
+      overlay: "bg-[var(--bg-panel)] border border-[var(--border)] rounded-lg",
+      tooltip: "bg-[var(--bg-panel)] border border-[var(--border)] rounded-lg z-[100] text-xs text-[var(--text-main)] px-3 py-2 pointer-events-none"
     };
-    return <div className={cn("transition-all duration-300", vars[variant], active && "border-[var(--accent)] bg-[var(--bg-surface)] ring-1 ring-[var(--accent)]", className)} {...props}>{children}</div>;
+    return <div className={cn("transition-none", vars[variant], active && "border-[var(--accent)] bg-[var(--bg-surface)]", className)} {...props}>{children}</div>;
 };
 
 // Unified Button component handles both text buttons and icon-only buttons
 export const Button = ({ variant='secondary', size='md', className, children, icon: Icon, active, title, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary'|'secondary'|'ghost'|'danger', size?: 'sm'|'md'|'icon', icon?: LucideIcon, active?: boolean }) => {
     const v = { 
-        primary: "bg-[var(--accent)] text-black shadow-lg shadow-[var(--accent)]/20 border-transparent hover:brightness-110", 
+        primary: "bg-[var(--accent)] text-black border-transparent hover:brightness-105", 
         secondary: "bg-[var(--bg-element)] text-[var(--text-main)] border-[var(--border)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-main)]", 
         ghost: "bg-transparent text-[var(--text-muted)] border-transparent hover:text-[var(--text-main)] hover:bg-[var(--bg-soft-hover)]", 
         danger: "bg-red-500/10 text-red-400 border-red-500/20 hover:bg-red-500/20" 
@@ -32,9 +32,9 @@ export const Button = ({ variant='secondary', size='md', className, children, ic
         <button 
             title={title}
             className={cn(
-                "flex items-center justify-center gap-1.5 rounded-md font-medium transition-all disabled:opacity-50 outline-none focus:ring-2 focus:ring-[var(--accent)] shrink-0 select-none interact-push", 
+                "flex items-center justify-center gap-1.5 rounded-md font-medium transition-none disabled:opacity-50 outline-none shrink-0 select-none", 
                 v[variant], s[size], 
-                active && "bg-[var(--bg-surface)] text-[var(--text-main)] border-[var(--border)] shadow-inner", 
+                active && "bg-[var(--bg-surface)] text-[var(--text-main)] border-[var(--border)]", 
                 className
             )} 
             {...props}
@@ -76,8 +76,8 @@ export const ToolbarGroup = ({ children, className }: { children?: React.ReactNo
 
 // --- DRAG HANDLE PRIMITIVE ---
 export const DragHandle = ({ vertical = false, active, className, ...props }: { vertical?: boolean; active?: boolean; className?: string } & React.HTMLAttributes<HTMLDivElement>) => (
-    <div className={cn("flex items-center justify-center transition-all group interact-base cursor-grab active:cursor-grabbing", vertical ? "w-4 h-full cursor-col-resize" : "h-4 w-full cursor-row-resize", className)} {...props}>
-        <div className={cn("rounded-full bg-[var(--border)] transition-all group-hover:bg-[var(--accent)] opacity-50 group-hover:opacity-100", vertical ? "w-1 h-8" : "h-1 w-12", active && "bg-[var(--accent)] opacity-100 scale-110")} />
+    <div className={cn("flex items-center justify-center transition-none cursor-grab active:cursor-grabbing", vertical ? "w-4 h-full cursor-col-resize" : "h-4 w-full cursor-row-resize", className)} {...props}>
+        <div className={cn("rounded-full bg-[var(--border)] hover:bg-[var(--accent)] opacity-50 hover:opacity-100", vertical ? "w-1 h-8" : "h-1 w-12", active && "bg-[var(--accent)] opacity-100")} />
     </div>
 );
 

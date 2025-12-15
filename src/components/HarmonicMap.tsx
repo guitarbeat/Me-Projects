@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { Plus, Minus, Maximize2 } from 'lucide-react';
 import { buildChord, generateSecondaryDominants, getHarmonicSuggestions, getScaleNotes, estimateChordSentiment, ChordComplexity, Note, ScaleType, Chord, useStore, useDerivedData } from '../lib';
-import { cn } from './ui';
+import { cn } from './UI';
 
 // --- HELPERS ---
 const GRID_SIZE = 6, SPACING = 80, X_VEC = { x: SPACING, y: 0 }, Y_VEC = { x: SPACING * 0.5, y: SPACING * 0.866 };

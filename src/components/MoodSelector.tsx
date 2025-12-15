@@ -1,7 +1,7 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { Thermometer, Activity, Wind, Music2 } from 'lucide-react';
 import { SCALE_DEFS, EMOTIONAL_ZONES, getTempoFromArousal, ScaleDef } from '../lib';
-import { cn } from './ui';
+import { cn } from './UI';
 import { useStore } from '../store';
 
 // --- HELPERS ---

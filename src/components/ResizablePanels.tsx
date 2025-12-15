@@ -17,7 +17,7 @@ import { Panel, PanelGroup, PanelResizeHandle, ImperativePanelHandle } from 'rea
 import { ChevronUp, ChevronDown } from 'lucide-react';
 
 // Import cn from ui module
-import { cn } from './ui';
+import { cn } from './UI';
 
 // Re-export cn utility type for convenience
 export type CnFunction = (...classes: (string | undefined | null | false)[]) => string;
@@ -145,61 +145,17 @@ export function useDynamicLayout(ref: React.RefObject<HTMLElement>): LayoutMetri
  */
 export const PanelCard = ({ 
     children, 
-    radius, 
-    padding, 
-    gap: _gap = 0, 
-    isCollapsed = false, 
-    overlay, 
-    overlayPosition = 'bottom',
     className,
-    cn
+    cn,
+    isCollapsed
 }: PanelCardProps) => {
     const cnFn = cn || getCn();
     
-    const cardStyle: React.CSSProperties = {
-        borderRadius: `${radius}px`,
-        boxShadow: '0 0 0 1px #1a1a1a, 0 4px 20px -5px rgba(0,0,0,0.3)',
-        backgroundColor: '#000000', // Fixed pure black - not affected by theme
-        transform: 'translate3d(0,0,0)',
-        isolation: 'isolate',
-        transition: 'border-radius 0.2s',
-    };
-
-    // All panels use identical padding for equal visual width and consistent appearance
-    // This ensures all panels look the same regardless of their position in the stack
-    // The gap between panels is controlled by verticalMargin
-    // 
-    // SPACING OPTIONS (change the value below to test):
-    // Option B: Remove margins (panels touch, handle sits between) - verticalMargin = 0
-    // Option C: Reduced margins (tighter spacing) - verticalMargin = gap / 4
-    // Original: Full spacing - verticalMargin = gap / 2
-    // const verticalMargin = isCollapsed ? 0 : 0; // Option B: No margins (panels touch)
-    const verticalMargin = isCollapsed ? 0 : 0; // Option C: Reduced margins
-
+    // Minimal functional wrapper - no styling, purely structure
     return (
-        <div className="absolute inset-0 transition-all duration-300" 
-             style={{ 
-                 paddingLeft: padding,
-                 paddingRight: padding,
-                 paddingTop: padding, 
-                 paddingBottom: padding,
-                 marginTop: verticalMargin,
-                 marginBottom: verticalMargin
-             }}>
-            <div className={cnFn("h-full w-full bg-[#000000] overflow-hidden relative group max-w-screen-2xl mx-auto", className)} style={cardStyle}>
-                <div className={cnFn("h-full w-full transition-opacity duration-300", isCollapsed ? "opacity-0 pointer-events-none" : "opacity-100")}>
-                    {children}
-                </div>
-                {overlay && (
-                     <div className={cnFn(
-                         "absolute left-1/2 -translate-x-1/2 pointer-events-none z-20 w-auto max-w-[90%] flex justify-center",
-                         overlayPosition === 'bottom' ? "bottom-6 animate-in slide-in-from-bottom-2" : "top-6 animate-in slide-in-from-top-2"
-                     )}>
-                        <div className="bg-[rgba(0,0,0,0.9)] backdrop-blur-xl border border-[rgba(255,255,255,0.15)] p-2 rounded-full shadow-2xl fade-in duration-500">
-                            {overlay}
-                        </div>
-                    </div>
-                )}
+        <div className={cnFn("h-full w-full overflow-hidden relative", className)}>
+            <div className={cnFn("h-full w-full", isCollapsed ? "hidden" : "block")}>
+                {children}
             </div>
         </div>
     );

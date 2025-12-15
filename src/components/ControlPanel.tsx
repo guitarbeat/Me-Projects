@@ -1,23 +1,20 @@
 
 
 import React, { useState } from 'react';
-import { cn } from './ui';
+import { cn } from './UI';
 // Re-export panel components
 import { useStore, ScaleType, CIRCLE_KEYS, Chord, buildChord, CHROMATIC_SHARPS } from '../lib';
-import { ChordPalette } from './sequencer';
 import { 
     Play, Pause, Lock, Unlock, Trash2, 
     ListMusic, Network, Keyboard, Music2, Zap, Gauge,
     Moon, Sun, X,
     FolderOpen, Save, Clock, Minus, Plus, PenTool
 } from 'lucide-react';
-import { HarmonicSpace as TonnetzWrapper } from './tonnetz';
-import { ProgressionStrip as SequencerView } from './sequencer';
-import { PanelStack } from './resizable-panels';
-import { MoodSelector } from './mood';
-import { SongwritingBoard } from './songwriting';
+import { UnifiedPanel } from './UnifiedPanel';
+import { PanelStack } from './ResizablePanels';
+import { SongwritingBoard } from './SongwritingBoard';
 
-import { GuitarChordDiagram } from './guitar';
+import { GuitarChordDiagram } from './GuitarChord';
 
 
 
@@ -54,9 +51,9 @@ const SettingsPopover = ({
                         key={k} 
                         onClick={() => setKey(k)}
                         className={cn(
-                            "text-xs font-bold py-1.5 rounded-md border transition-all duration-200",
+                            "text-xs font-bold py-1.5 rounded-md border transition-none",
                             currentKey === k 
-                            ? "bg-[var(--accent)] text-black border-[var(--accent)] shadow-sm scale-105" 
+                            ? "bg-[var(--accent)] text-black border-[var(--accent)]" 
                             : "bg-[var(--bg-element)] border-transparent text-[var(--text-muted)] hover:text-white hover:border-[var(--border)] hover:bg-[var(--bg-surface)]"
                         )}
                     >
@@ -147,7 +144,7 @@ const ProjectLibrary = ({ onClose }: { onClose: () => void }) => {
                         <button 
                             type="submit" 
                             disabled={!name.trim()}
-                            className="px-4 py-2 bg-[var(--accent)] text-black font-bold text-xs uppercase tracking-wider rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-all shadow-lg shadow-[var(--accent)]/10"
+                            className="px-4 py-2 bg-[var(--accent)] text-black font-bold text-xs uppercase tracking-wider rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 transition-none"
                         >
                             <Save size={14} /> Save
                         </button>
@@ -456,7 +453,7 @@ export default function ControlPanel() {
                         /* FLEXIBLE PANELS */
                         <>
                             {/* Empty State */}
-                            {!visiblePanels.map && !visiblePanels.sequencer && !visiblePanels.palette && (
+                            {!visiblePanels.map && !visiblePanels.sequencer && !visiblePanels.palette && !visiblePanels.mood && (
                                 <div className="flex-1 flex flex-col items-center justify-center text-[var(--text-dim)] animate-pulse">
                                     <ListMusic size={48} className="opacity-20 mb-4" />
                                     <p className="font-bold">No Panels Visible</p>
@@ -474,39 +471,45 @@ export default function ControlPanel() {
                                 /* Standard 3-Panel Layout */
                                 <PanelStack 
                                     panels={[
-                                        {
+                                        visiblePanels.map && {
                                             id: 'map',
-                                            title: 'Harmonic Map',
-                                            content: <TonnetzWrapper />,
+                                            content: <UnifiedPanel id="map" onClose={() => togglePanel('map')} />,
                                             defaultSize: 40,
-                                            minSize: 10,
-                                            collapsible: true, 
+                                            collapsible: true, // Allow collapsing
+                                            collapsedSize: 0,
+                                            minSize: 15
                                         },
-                                        {
+                                        visiblePanels.sequencer && {
                                             id: 'sequencer',
-                                            title: 'Sequencer',
-                                            content: <SequencerView />,
+                                            content: <UnifiedPanel id="sequencer" onClose={() => togglePanel('sequencer')} />,
                                             defaultSize: 30,
-                                            minSize: 10,
                                             collapsible: true,
+                                            collapsedSize: 0,
+                                            minSize: 15
                                         },
-                                        {
-                                            id: 'palette',
-                                            title: 'Palette',
-                                            content: <ChordPalette className="px-3" />,
-                                            defaultSize: 25,
-                                            minSize: 10,
+                                        (visiblePanels.palette || visiblePanels.mood) && { // Grouped Tools Panel
+                                            id: 'tools', 
+                                            content: (
+                                                <div className="flex h-full w-full gap-2 overflow-hidden">
+                                                    {visiblePanels.palette && (
+                                                        <div className="flex-1 min-w-0 h-full">
+                                                            <UnifiedPanel id="palette" onClose={() => togglePanel('palette')} />
+                                                        </div>
+                                                    )}
+                                                    {visiblePanels.mood && (
+                                                        <div className="flex-1 min-w-0 h-full">
+                                                             <UnifiedPanel id="mood" onClose={() => togglePanel('mood')} />
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ),
+                                            defaultSize: 30,
                                             collapsible: true,
-                                        },
-                                        {
-                                            id: 'mood',
-                                            title: 'Mood',
-                                            content: <MoodSelector />,
-                                            defaultSize: 15,
-                                            minSize: 10,
-                                            collapsible: true, 
+                                            collapsedSize: 0,
+                                            minSize: 15
                                         }
-                                    ].filter(p => visiblePanels[p.id as keyof typeof visiblePanels])}
+                                    ].filter(Boolean)}
+                                    direction="vertical"
                                 />
                             )}
                         </>

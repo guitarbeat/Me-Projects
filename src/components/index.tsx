@@ -7,11 +7,11 @@
  * while enforcing separation of concerns and eliminating code duplication.
  */
 
-export * from './ui';
-export * from './layout';
-export { default as ControlPanel } from './layout';
-export * from './resizable-panels';
-export * from './sequencer';
-export * from './mood';
-export * from './guitar';
-export * from './songwriting';
+export * from './UI';
+export * from './ControlPanel';
+export { default as ControlPanel } from './ControlPanel';
+export * from './ResizablePanels';
+export * from './Sequencer';
+export * from './MoodSelector';
+export * from './GuitarChord';
+export * from './SongwritingBoard';

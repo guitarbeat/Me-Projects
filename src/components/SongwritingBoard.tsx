@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useStore } from '../store';
 import { Chord } from '../types';
-import { cn } from './ui';
+import { cn } from './UI';
 import { Mic2, Type, Music } from 'lucide-react';
 
 interface LyricsBlockProps {

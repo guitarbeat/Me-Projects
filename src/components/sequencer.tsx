@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { Plus, X, GripHorizontal, Filter, Search } from 'lucide-react';
-import { cn } from './ui';
+import { cn } from './UI';
 import { Chord, useStore, useDerivedData } from '../lib';
 
 const PIXELS_PER_BEAT = 40;
@@ -53,7 +53,7 @@ export const DraggableChord: React.FC<{ chord: Chord, className?: string, onClic
 
     return (
         <div draggable onDragStart={handleDragStart} onClick={onClick}
-            className={cn("h-9 px-3 rounded-md border flex items-center justify-between gap-2 cursor-grab active:cursor-grabbing hover:translate-x-1 transition-all interact-base group relative overflow-hidden shrink-0",
+            className={cn("h-9 px-3 rounded-md border flex items-center justify-between gap-2 cursor-grab active:cursor-grabbing interact-base group relative overflow-hidden shrink-0",
                 classes.border, classes.bg, classes.hover, className)}>
             <div className="flex items-baseline gap-2 pointer-events-none">
                 <span className={cn("font-bold text-xs", classes.text)}>{chord.symbol}</span>

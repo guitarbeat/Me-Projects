@@ -36,8 +36,8 @@ const SettingsPopover = ({
     bpm: number, setBpm: (b: number) => void,
     isScaleLocked: boolean, toggleScaleLock: () => void
 }) => (
-    <div className="absolute left-14 bottom-4 z-50 w-72 glass-panel rounded-2xl p-5 flex flex-col gap-5 animate-in fade-in slide-in-from-left-4">
-        <div className="flex items-center justify-between pb-3 border-b border-[var(--border)]">
+    <div className="absolute left-14 bottom-4 z-50 w-72 glass-panel rounded-lg p-4 flex flex-col gap-4">
+        <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
             <div className="flex items-center gap-2">
                 <Music2 size={14} className="text-[var(--accent)]" />
                 <h4 className="text-xs font-black uppercase tracking-widest text-[var(--text-main)]">Studio Settings</h4>
@@ -121,8 +121,8 @@ const ProjectLibrary = ({ onClose }: { onClose: () => void }) => {
     };
 
     return (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-300 p-4">
-            <div className="w-full max-w-lg glass-panel rounded-2xl overflow-hidden relative scale-100 animate-in zoom-in-95 duration-200 flex flex-col max-h-[500px]">
+        <div className="absolute inset-0 z-50 flex items-center justify-center p-4">
+            <div className="w-full max-w-lg glass-panel rounded-lg overflow-hidden relative flex flex-col max-h-[500px]">
                 
                 {/* Header */}
                 <div className="p-4 border-b border-[var(--border)] flex items-center justify-between bg-[var(--bg-surface)] shrink-0">
@@ -284,14 +284,14 @@ export default function ControlPanel() {
             {/* MAIN CONTENT AREA ROW */}
             <div className="flex-1 min-h-0 flex overflow-hidden">
                 {/* LEFT SIDEBAR (GLOBAL CONTROLS) */}
-                <div className="w-16 glass-panel border-r-0 border-r border-white/5 mx-2 my-2 rounded-2xl flex flex-col items-center py-6 gap-5 shrink-0 z-40 shadow-2xl">
+                <div className="w-14 border-r border-[var(--border)] flex flex-col items-center py-4 gap-3 shrink-0 z-40 bg-[var(--bg-main)]">
                     
                     {/* Transport (Play/Pause) on Top */}
                     <button 
                         onClick={togglePlay}
                         className={cn(
-                            "w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-lg hover:scale-105 active:scale-95 border border-[var(--border)]",
-                            isPlaying ? "bg-[var(--accent)] text-black shadow-[var(--accent)]/30" : "bg-[var(--bg-element)] text-[var(--text-muted)] hover:bg-[var(--bg-panel)] hover:text-[var(--text-main)]"
+                            "w-8 h-8 rounded-full flex items-center justify-center border border-[var(--border)] transition-colors",
+                            isPlaying ? "bg-[var(--accent)] text-black" : "bg-[var(--bg-element)] text-[var(--text-muted)] hover:text-[var(--text-main)]"
                         )}
                         title={isPlaying ? "Pause" : "Play"}
                     >
@@ -303,55 +303,31 @@ export default function ControlPanel() {
                     {/* Show/Hide Toggles */}
                     <button 
                         onClick={() => togglePanel('map')}
-                        className={cn(
-                            "p-3 rounded-xl transition-all duration-300 relative overflow-hidden group", 
-                            visiblePanels.map 
-                            ? "bg-gradient-to-br from-[var(--bg-element)] to-[var(--bg-surface)] text-[var(--accent)] shadow-lg ring-1 ring-[var(--accent)]/20 scale-110" 
-                            : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5 hover:scale-105"
-                        )}
+                        className={cn("p-2 rounded-lg transition-colors", visiblePanels.map ? "text-[var(--accent)] bg-[var(--bg-element)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)]")}
                         title="Harmonic Map"
                     >
-                        <Network size={20} className={cn("transition-transform duration-300", visiblePanels.map && "scale-110")} />
-                        {visiblePanels.map && <div className="absolute inset-0 bg-[var(--accent)]/5 animate-pulse" />}
+                        <Network size={18} />
                     </button>
                     <button 
                         onClick={() => togglePanel('sequencer')}
-                        className={cn(
-                            "p-3 rounded-xl transition-all duration-300 relative overflow-hidden group", 
-                            visiblePanels.sequencer 
-                            ? "bg-gradient-to-br from-[var(--bg-element)] to-[var(--bg-surface)] text-[var(--accent)] shadow-lg ring-1 ring-[var(--accent)]/20 scale-110" 
-                            : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5 hover:scale-105"
-                        )}
+                        className={cn("p-2 rounded-lg transition-colors", visiblePanels.sequencer ? "text-[var(--accent)] bg-[var(--bg-element)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)]")}
                         title="Sequencer"
                     >
-                        <ListMusic size={20} className={cn("transition-transform duration-300", visiblePanels.sequencer && "scale-110")} />
-                        {visiblePanels.sequencer && <div className="absolute inset-0 bg-[var(--accent)]/5 animate-pulse" />}
+                        <ListMusic size={18} />
                     </button>
                     <button 
                         onClick={() => togglePanel('palette')}
-                        className={cn(
-                            "p-3 rounded-xl transition-all duration-300 relative overflow-hidden group", 
-                            visiblePanels.palette 
-                            ? "bg-gradient-to-br from-[var(--bg-element)] to-[var(--bg-surface)] text-[var(--accent)] shadow-lg ring-1 ring-[var(--accent)]/20 scale-110" 
-                            : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5 hover:scale-105"
-                        )}
+                        className={cn("p-2 rounded-lg transition-colors", visiblePanels.palette ? "text-[var(--accent)] bg-[var(--bg-element)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)]")}
                         title="Chord Palette"
                     >
-                        <PenTool size={20} className={cn("transition-transform duration-300", visiblePanels.palette && "scale-110")} />
-                        {visiblePanels.palette && <div className="absolute inset-0 bg-[var(--accent)]/5 animate-pulse" />}
+                        <PenTool size={18} />
                     </button>
                     <button 
                         onClick={() => togglePanel('mood')}
-                        className={cn(
-                            "p-3 rounded-xl transition-all duration-300 relative overflow-hidden group", 
-                            visiblePanels.mood 
-                            ? "bg-gradient-to-br from-[var(--bg-element)] to-[var(--bg-surface)] text-[var(--accent)] shadow-lg ring-1 ring-[var(--accent)]/20 scale-110" 
-                            : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5 hover:scale-105"
-                        )}
+                        className={cn("p-2 rounded-lg transition-colors", visiblePanels.mood ? "text-[var(--accent)] bg-[var(--bg-element)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)]")}
                         title="Mood Selector"
                     >
-                        <Zap size={20} className={cn("transition-transform duration-300", visiblePanels.mood && "scale-110")} />
-                        {visiblePanels.mood && <div className="absolute inset-0 bg-[var(--accent)]/5 animate-pulse" />}
+                        <Zap size={18} />
                     </button>
 
                      <div className="w-6 h-px bg-[var(--border)]" />
@@ -360,15 +336,14 @@ export default function ControlPanel() {
                      <button 
                         onClick={() => setView(view === 'songwriting' ? 'standard' : 'songwriting')}
                         className={cn(
-                            "p-3 rounded-xl transition-all duration-300 relative group overflow-hidden",
+                            "p-2 rounded-lg transition-colors",
                             view === 'songwriting' 
-                                ? "bg-gradient-to-br from-[var(--bg-element)] to-[var(--bg-surface)] text-[var(--accent)] shadow-lg ring-1 ring-[var(--accent)]/20 scale-110" 
-                                : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5 hover:scale-105"
+                                ? "text-[var(--accent)] bg-[var(--bg-element)]" 
+                                : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
                         )}
                         title={view === 'songwriting' ? "Exit Songwriting Mode" : "Songwriting Mode"}
                     >
-                        <Keyboard size={20} className={cn("transition-transform duration-300", view === 'songwriting' && "scale-110")} />
-                        {view === 'songwriting' && <div className="absolute inset-0 bg-[var(--accent)]/5 animate-pulse" />}
+                        <Keyboard size={18} />
                     </button>
 
                     <div className="flex-1" />
@@ -379,14 +354,12 @@ export default function ControlPanel() {
                     <button 
                         onClick={() => setShowSettings(!showSettings)}
                         className={cn(
-                            "p-3 rounded-xl transition-all duration-300 relative group overflow-hidden", 
-                            showSettings 
-                            ? "bg-gradient-to-br from-[var(--bg-element)] to-[var(--bg-surface)] text-[var(--accent)] shadow-lg ring-1 ring-[var(--accent)]/20 scale-110" 
-                            : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5 hover:scale-105"
+                            "p-2 rounded-lg transition-colors", 
+                            showSettings ? "text-[var(--accent)] bg-[var(--bg-element)]" : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
                         )}
                         title="Global Settings (Key, Scale, Tempo)"
                     >
-                        <Music2 size={20} className={cn("transition-transform duration-300", showSettings && "rotate-90 scale-110")} />
+                        <Music2 size={18} />
                         {showSettings && (
                            <SettingsPopover 
                                onClose={() => setShowSettings(false)}
@@ -400,18 +373,18 @@ export default function ControlPanel() {
 
                     <button 
                          onClick={() => setShowLibrary(true)}
-                         className="p-3 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5 rounded-xl transition-all duration-300 hover:scale-105"
+                         className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-lg transition-colors"
                          title="Projects"
                     >
-                        <FolderOpen size={20} />
+                        <FolderOpen size={18} />
                     </button>
 
                     <button 
                         onClick={toggleTheme} 
-                        className="p-3 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-white/5 rounded-xl transition-all duration-300 hover:scale-105"
+                        className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] rounded-lg transition-colors"
                         title="Toggle Theme"
                     >
-                        {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
                     </button>
                 </div>
 

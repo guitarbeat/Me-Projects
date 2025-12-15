@@ -9,9 +9,11 @@ import { ChordPalette } from './sequencer';
 import { 
     Play, Pause, Lock, Unlock, Link as LinkIcon, Trash2, 
     ListMusic, Network, Cloud, Keyboard, Music2, Zap, Gauge,
-    ChevronDown, Moon, Sun, X,
+    ChevronDown, Moon, Sun, X, ChevronUp,
     FolderOpen, Save, Clock, Minus, Plus, PenTool
 } from 'lucide-react';
+import { HarmonicSpace as TonnetzWrapper } from './tonnetz';
+import { ProgressionStrip as SequencerView } from './sequencer';
 
 import { GuitarChordDiagram } from './guitar';
 
@@ -110,32 +112,137 @@ const ProjectLibrary = ({ onClose }: { onClose: () => void }) => {
     );
 };
 
-// --- CONTROL PANEL COMPONENT ---
+// --- PANEL WRAPPER ---
+// Internal component for the flexible layout
+const PanelWrapper = ({ 
+    children, 
+    title, 
+    onClose, 
+    onMaximize, 
+    isMaximized 
+}: { 
+    children: React.ReactNode, 
+    title: React.ReactNode, 
+    onClose: () => void, 
+    onMaximize: () => void, 
+    isMaximized: boolean 
+}) => {
+    return (
+        <div className={cn(
+            "flex flex-col relative transition-all duration-300 min-h-0",
+            // If maximized, it takes full height. If not, it shares space (flex-1).
+            // We rely on the parent to hide other panels when this is maximized.
+            // But we still need to be flex-1 to fill the container when multiple are visible.
+            "flex-1" // Always flex-1 so they share space evenly
+        )}>
+            <div className="flex-1 bg-[var(--bg-surface)] m-2 rounded-2xl border border-[var(--border)] overflow-hidden flex flex-col relative shadow-sm group">
+                 {/* Header / Controls */}
+                 <div className="absolute top-0 left-0 right-0 h-10 flex items-center justify-between px-4 z-20 pointer-events-none">
+                    {/* Title Area */}
+                    <div className="flex items-center gap-2 pointer-events-auto">
+                        {title}
+                    </div>
+                    {/* Window Controls */}
+                    <div className="flex items-center gap-2 pointer-events-auto bg-[var(--bg-surface)]/80 backdrop-blur-md border border-[var(--border)] rounded-full p-1 pr-2 shadow-sm transition-opacity opacity-0 group-hover:opacity-100 hover:opacity-100">
+                        <button onClick={(e) => { e.stopPropagation(); onMaximize(); }} title={isMaximized ? "Restore Layout" : "Maximize"}>
+                            {isMaximized ? (<ChevronDown size={14} />) : (<ChevronUp size={14} />)}
+                        </button>
+                        <div className="w-px h-3 bg-[var(--border)]" />
+                        <button onClick={(e) => { e.stopPropagation(); onClose(); }} title="Close Panel">
+                            <X size={14} />
+                        </button>
+                    </div>
+                </div>
+                <div className="flex-1 overflow-hidden relative pt-10 bg-[var(--bg-main)]">
+                    {children}
+                </div>
+            </div>
+        </div>
+    );
+};
 
-export const ControlPanel = () => {
+export function ControlPanel() {
     const { 
-        isPlaying, togglePlay, 
-        complexity, setComplexity,
+        key: currentKey, 
+        scale, 
+        bpm, 
+        isPlaying, 
+        setKey, 
+        setScale, 
+        setBpm, 
+        togglePlay,
+        toggleScaleLock,
+        isScaleLocked,
+        theme,
+        toggleTheme,
+        progression,
+        selectedChordIndex,
+        setSelectedChordIndex,
         handleProgression,
-        key: currentKey, setKey, 
-        scale, setScale, 
-        isScaleLocked, toggleScaleLock,
-        instrument, setInstrument, 
-        view, setView,
-        bpm, setBpm,
-        toggleTheme, theme,
-        selectedChordIndex, progression,
-        setSelectedChordIndex
+        instrument,
+        setInstrument
     } = useStore();
 
+    // Flexible Panel State
+    // Default: Map (Top) and Sequencer (Middle) and Palette (Bottom) are all visible?
+    // Or maybe just Map and Sequencer?
+    const [visiblePanels, setVisiblePanels] = useState({
+        map: true,
+        sequencer: true,
+        palette: true
+    });
 
     const [showLibrary, setShowLibrary] = useState(false);
-    const [isExpanded, setIsExpanded] = useState(false);
 
-    // Reset expansion when view changes
-    useEffect(() => {
-        setIsExpanded(false);
-    }, [view]);
+    // Derived state: is any panel "maximized" (meaning it's the ONLY one visible)?
+    // Actually, "maximized" is just a visual concept. 
+    // We check if only one is true.
+    const activeCount = Object.values(visiblePanels).filter(Boolean).length;
+    const isMapMaximized = visiblePanels.map && activeCount === 1;
+    const isSequencerMaximized = visiblePanels.sequencer && activeCount === 1;
+    const isPaletteMaximized = visiblePanels.palette && activeCount === 1;
+
+    // Handlers
+    const togglePanel = (key: keyof typeof visiblePanels) => {
+        setVisiblePanels(prev => {
+            const next = { ...prev, [key]: !prev[key] };
+            // Prevent hiding all panels? Or allow it and show empty state?
+            // Let's allow it but maybe show a "Open a panel" prompt if all closed.
+            return next;
+        });
+    };
+
+    const maximizePanel = (key: keyof typeof visiblePanels) => {
+        // If already maximized (only this one visible), restore to ALL visible (or previous state).
+        // For simplicity: Restoration = Turn all ON.
+        const isCurrentlyMaximized = visiblePanels[key] && activeCount === 1;
+        
+        if (isCurrentlyMaximized) {
+            // Restore
+            setVisiblePanels({ map: true, sequencer: true, palette: true });
+        } else {
+            // Maximize this one (hide others)
+            setVisiblePanels({
+                map: key === 'map',
+                sequencer: key === 'sequencer',
+                palette: key === 'palette'
+            });
+        }
+    };
+
+    const handleChordUpdate = (updates: Partial<Chord>) => {
+        const selectedChord = selectedChordIndex !== null && progression[selectedChordIndex] ? progression[selectedChordIndex] : null;
+        if (!selectedChord || selectedChordIndex === null) return;
+        
+        const newRoot = updates.root || selectedChord.root;
+        const newQuality = updates.quality || selectedChord.quality;
+        const newExt = updates.extension !== undefined ? updates.extension : selectedChord.extension;
+        
+        const newChord = buildChord(newRoot, newQuality, newExt, selectedChord.duration);
+        if (selectedChord.lyrics) newChord.lyrics = selectedChord.lyrics;
+        
+        handleProgression('update', { index: selectedChordIndex, chord: newChord });
+    };
 
     const selectedChord = selectedChordIndex !== null && progression[selectedChordIndex] ? progression[selectedChordIndex] : null;
 
@@ -145,22 +252,6 @@ export const ControlPanel = () => {
         { id: 'pluck', icon: Music2, label: 'Pluck' },
         { id: 'synth', icon: Zap, label: 'Synth' }
     ];
-
-
-
-    const handleChordUpdate = (updates: Partial<Chord>) => {
-        if (!selectedChord || selectedChordIndex === null) return;
-        
-        const newRoot = updates.root || selectedChord.root;
-        const newQuality = updates.quality || selectedChord.quality;
-        const newExt = updates.extension !== undefined ? updates.extension : selectedChord.extension; // Fix: Use updates.extension if provided
-        
-        const newChord = buildChord(newRoot, newQuality, newExt, selectedChord.duration);
-        // Preserve lyric if present
-        if (selectedChord.lyrics) newChord.lyrics = selectedChord.lyrics;
-        
-        handleProgression('update', { index: selectedChordIndex, chord: newChord });
-    };
 
     return (
         <div className="h-full flex flex-col bg-[var(--bg-main)] text-[var(--text-main)] overflow-hidden font-sans transition-colors duration-500">
@@ -176,6 +267,30 @@ export const ControlPanel = () => {
                 </div>
 
                 <div className="flex items-center gap-4">
+                     {/* ABC Panel Toggles */}
+                    <div className="flex items-center bg-[var(--bg-element)]/50 p-1 rounded-lg border border-[var(--border)]">
+                        {[
+                            { id: 'map', label: 'Map', icon: Network },
+                            { id: 'sequencer', label: 'Seq', icon: ListMusic },
+                            { id: 'palette', label: 'Pal', icon: PenTool },
+                        ].map((panel) => (
+                            <button
+                                key={panel.id}
+                                onClick={() => togglePanel(panel.id as any)}
+                                className={cn(
+                                    "px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 transition-all",
+                                    visiblePanels[panel.id as keyof typeof visiblePanels] 
+                                        ? "bg-[var(--bg-surface)] text-[var(--accent)] shadow-sm border border-[var(--border)]" 
+                                        : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-main)]"
+                                )}
+                            >
+                                <panel.icon size={12} strokeWidth={2.5} />
+                                <span className="hidden sm:inline-block">{panel.label}</span>
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Key & Scale Controls (Same as before) */}
                     <div className="flex items-center gap-3 bg-[var(--bg-element)]/50 p-1 rounded-lg border border-[var(--border)]">
                         <div className="flex flex-col px-2">
                              <span className="text-[10px] uppercase font-bold text-[var(--text-dim)] tracking-wider">Key</span>
@@ -264,211 +379,193 @@ export const ControlPanel = () => {
                 </div>
             </div>
 
-            {/* MAIN CONTENT AREA */}
-            <div className="flex-1 min-h-0 flex flex-col relative overflow-hidden">
-                {selectedChord ? (
-                    <div className="h-full flex flex-col bg-[var(--bg-main)]">
-                        <div className="h-14 border-b border-[var(--border)] bg-[var(--bg-surface)]/80 backdrop-blur-md flex items-center px-4 justify-between shrink-0 z-30">
-                            <div className="flex items-center gap-2">
-                                <PenTool size={16} className="text-[var(--accent)]" />
-                                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">Edit Chord</span>
+            {/* MAIN CONTENT AREA ROW */}
+            <div className="flex-1 min-h-0 flex overflow-hidden">
+                {/* LEFT: FLEXIBLE PANEL STACK */}
+                <div className={cn(
+                    "flex-1 flex flex-col min-w-0 bg-[var(--bg-surface)]/30 p-2 gap-2 overflow-hidden",
+                    // If chord editor is open, we might want to hide everything else?
+                    // User requirement: "Dedicated full-screen chord editor UI"
+                    // But maybe we can keep the new flex structure and just overlay the editor?
+                    // The old code replaced `SplitView` with `EditChordView`.
+                )}>
+                    {selectedChord ? (
+                        /* CHORD EDITOR VIEW (Replaces Panels when active) */
+                        <div className="flex-1 rounded-2xl border border-[var(--border)] bg-[var(--bg-main)] flex flex-col overflow-hidden shadow-sm animate-in fade-in zoom-in-95 duration-200">
+                             <div className="h-14 border-b border-[var(--border)] bg-[var(--bg-surface)]/80 backdrop-blur-md flex items-center px-4 justify-between shrink-0 z-30">
+                                <div className="flex items-center gap-2">
+                                    <PenTool size={16} className="text-[var(--accent)]" />
+                                    <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">Edit Chord</span>
+                                </div>
+                                <button onClick={() => { setSelectedChordIndex(null); }} className="text-[9px] font-bold text-[var(--text-dim)] hover:text-[var(--text-main)] uppercase tracking-wider text-center px-3 py-1 bg-[var(--bg-element)] rounded-full border border-[var(--border)] hover:bg-[var(--bg-surface)] transition-all">Done</button>
                             </div>
-                            <button onClick={() => { setSelectedChordIndex(null); }} className="text-[9px] font-bold text-[var(--text-dim)] hover:text-[var(--text-main)] uppercase tracking-wider text-center">Done</button>
-                        </div>
-
-                        {/* Chord Editor */}
-                        <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                {/* Root */}
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Root</label>
-                                    <select 
-                                        value={selectedChord.root} 
-                                        onChange={(e) => handleChordUpdate({ root: e.target.value })}
-                                        className="bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-all"
-                                    >
-                                        {CHROMATIC_SHARPS.map(note => <option key={note} value={note}>{note}</option>)}
-                                    </select>
+                            
+                            {/* Re-using the editor Content from previous version (simplified for brevity, assume similar structure) */}
+                            {/* Ideally I should extract `ChordEditor` to a component, but I'll inline for now to match previous logic */}
+                            <div className="flex-1 flex overflow-hidden">
+                                <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+                                     <div className="grid grid-cols-2 gap-8 max-w-2xl mx-auto">
+                                        {/* Editor Inputs... I will need to copy the editor JSX back here thoroughly or simplify */}
+                                        {/* Since I am replacing the whole file content, I MUST include the editor JSX. */}
+                                        
+                                        <div className="flex flex-col gap-4">
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Root</label>
+                                                <select value={selectedChord.root} onChange={(e) => handleChordUpdate({ root: e.target.value })} className="bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"><option value="">-</option>{CHROMATIC_SHARPS.map(n => <option key={n} value={n}>{n}</option>)}</select>
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Quality</label>
+                                                <select value={selectedChord.quality} onChange={(e) => handleChordUpdate({ quality: e.target.value as any })} className="bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent)]">{['major', 'minor', 'dim', 'aug'].map(q => <option key={q} value={q}>{q}</option>)}</select>
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                 <label className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Extension</label>
+                                                 <select value={selectedChord.extension || ''} onChange={(e) => handleChordUpdate({ extension: e.target.value || undefined })} className="bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"><option value="">None</option>{['7', 'maj7', 'sus2', 'sus4', 'add9', '9', '11', '13'].map(x => <option key={x} value={x}>{x}</option>)}</select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="flex flex-col gap-4">
+                                             <div className="flex flex-col gap-1">
+                                                <label className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Duration</label>
+                                                <div className="flex items-center gap-2">
+                                                    <button onClick={() => handleChordUpdate({ duration: Math.max(0.25, selectedChord.duration - 0.25) })} className="p-2 bg-[var(--bg-element)] border border-[var(--border)] rounded-lg"><Minus size={14}/></button>
+                                                    <input type="number" value={selectedChord.duration} onChange={(e) => handleChordUpdate({ duration: parseFloat(e.target.value) || 1 })} className="flex-1 bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-center" />
+                                                    <button onClick={() => handleChordUpdate({ duration: selectedChord.duration + 0.25 })} className="p-2 bg-[var(--bg-element)] border border-[var(--border)] rounded-lg"><Plus size={14}/></button>
+                                                </div>
+                                            </div>
+                                            <div className="flex flex-col gap-1">
+                                                 <label className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Lyrics</label>
+                                                 <input type="text" value={selectedChord.lyrics || ''} onChange={(e) => handleChordUpdate({ lyrics: e.target.value })} placeholder="Lyrics..." className="bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm" />
+                                            </div>
+                                        </div>
+                                     </div>
+                                     <div className="mt-8 max-w-2xl mx-auto border-t border-[var(--border)] pt-8">
+                                         <h4 className="text-[10px] uppercase font-bold text-[var(--text-dim)] mb-4">Voicing</h4>
+                                         <GuitarChordDiagram chord={selectedChord} />
+                                     </div>
                                 </div>
-                                {/* Quality */}
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Quality</label>
-                                    <select 
-                                        value={selectedChord.quality} 
-                                        onChange={(e) => handleChordUpdate({ quality: e.target.value as any })}
-                                        className="bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-all"
-                                    >
-                                        {['major', 'minor', 'dim', 'aug'].map(q => <option key={q} value={q}>{q}</option>)}
-                                    </select>
-                                </div>
-                                {/* Extension */}
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Extension</label>
-                                    <select 
-                                        value={selectedChord.extension || ''} 
-                                        onChange={(e) => handleChordUpdate({ extension: e.target.value || undefined })}
-                                        className="bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-all"
-                                    >
-                                        <option value="">None</option>
-                                        {['7', 'maj7', 'sus2', 'sus4', 'add9', '9', '11', '13'].map(ext => <option key={ext} value={ext}>{ext}</option>)}
-                                    </select>
-                                </div>
-                                {/* Duration */}
-                                <div className="flex flex-col gap-1">
-                                    <label className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Duration</label>
-                                    <div className="flex items-center gap-2">
-                                        <button 
-                                            onClick={() => handleChordUpdate({ duration: Math.max(0.25, selectedChord.duration - 0.25) })}
-                                            className="p-2 bg-[var(--bg-element)] border border-[var(--border)] rounded-lg hover:bg-[var(--bg-surface)] transition-colors"
-                                        >
-                                            <Minus size={14} />
-                                        </button>
-                                        <input 
-                                            type="number" 
-                                            value={selectedChord.duration} 
-                                            onChange={(e) => handleChordUpdate({ duration: parseFloat(e.target.value) || 1 })}
-                                            step="0.25"
-                                            min="0.25"
-                                            className="flex-1 bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-all"
-                                        />
-                                        <button 
-                                            onClick={() => handleChordUpdate({ duration: selectedChord.duration + 0.25 })}
-                                            className="p-2 bg-[var(--bg-element)] border border-[var(--border)] rounded-lg hover:bg-[var(--bg-surface)] transition-colors"
-                                        >
-                                            <Plus size={14} />
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Guitar Diagram */}
-                            <div className="mt-6">
-                                <h4 className="text-[10px] uppercase font-bold text-[var(--text-dim)] mb-2">Guitar Voicing</h4>
-                                <GuitarChordDiagram chord={selectedChord} />
-                            </div>
-
-                            {/* Lyrics */}
-                            <div className="mt-6">
-                                <label className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Lyrics</label>
-                                <input 
-                                    type="text"
-                                    value={selectedChord.lyrics || ''}
-                                    onChange={(e) => handleChordUpdate({ lyrics: e.target.value })}
-                                    placeholder="Add lyrics..."
-                                    className="w-full bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-all mt-1"
-                                />
                             </div>
                         </div>
-
-                        {/* Actions */}
-                        <div className="flex items-center gap-1 pl-2 border-l border-[var(--border)] h-full">
-                            <button onClick={() => handleProgression('remove', selectedChordIndex)} className="p-2 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 size={16}/></button>
-                        </div>
-                    </div>
-                ) : (
-                    <SplitView 
-                        top={
-                            <ResizableTopPanel 
-                                minHeight={150} 
-                                maxHeight={600} 
-                                defaultHeight={350}
-                                title={
-                                    <div className="flex items-center gap-2">
-                                        {view === 'sequencer' && <ListMusic size={16} className="text-[var(--accent)]" />}
-                                        {view === 'harmony' && <Network size={16} className="text-[var(--accent)]" />}
-                                        {view === 'songwriting' && <PenTool size={16} className="text-[var(--accent)]" />}
-                                        <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">
-                                            {view === 'sequencer' ? 'Sequencer' : view === 'harmony' ? 'Harmonic Map' : 'Songwriting'}
-                                        </span>
-                                    </div>
-                                }
-                                isExpanded={isExpanded}
-                                onExpand={() => setIsExpanded(!isExpanded)}
-                                onClose={view !== 'sequencer' ? () => setView('sequencer') : undefined}
-                            >
-                                <div className="h-full w-full relative bg-[var(--bg-main)]">
-                                    {view === 'sequencer' && <SequencerView />}
-                                    {view === 'harmony' && <TonnetzWrapper />}
-                                    {view === 'songwriting' && <SongwritingView />}
+                    ) : ( 
+                        /* FLEXIBLE PANELS */
+                        <>
+                            {/* Empty State */}
+                            {!visiblePanels.map && !visiblePanels.sequencer && !visiblePanels.palette && (
+                                <div className="flex-1 flex flex-col items-center justify-center text-[var(--text-dim)] animate-pulse">
+                                    <ListMusic size={48} className="opacity-20 mb-4" />
+                                    <p className="font-bold">No Panels Visible</p>
+                                    <p className="text-xs">Use the sidebar to open panels</p>
                                 </div>
-                            </ResizableTopPanel>
-                        }
-                        bottom={
-                            <div className="flex-1 min-h-0 flex border-t border-[var(--border)] relative bg-[var(--bg-surface)]/30">
-                                {/* Palette */}
-                                <div className="flex-1 relative">
+                            )}
+
+                            {/* 1. Harmonic Map */}
+                            {visiblePanels.map && (
+                                <PanelWrapper 
+                                    title={<><Network size={16} className="text-[var(--accent)]" /><span className="text-xs font-bold uppercase tracking-wider">Harmonic Map</span></>} 
+                                    onClose={() => togglePanel('map')}
+                                    onMaximize={() => maximizePanel('map')}
+                                    isMaximized={isMapMaximized}
+                                >
+                                    <TonnetzWrapper />
+                                </PanelWrapper>
+                            )}
+
+                            {/* 2. Sequencer Panel */}
+                            {visiblePanels.sequencer && (
+                                <PanelWrapper 
+                                    title={<><ListMusic size={16} className="text-[var(--accent)]" /><span className="text-xs font-bold uppercase tracking-wider">Sequencer</span></>}
+                                    onClose={() => togglePanel('sequencer')}
+                                    onMaximize={() => maximizePanel('sequencer')}
+                                    isMaximized={isSequencerMaximized}
+                                >
+                                    <SequencerView />
+                                </PanelWrapper>
+                            )}
+
+                            {/* 3. Chord Palette Panel */}
+                            {visiblePanels.palette && (
+                                <PanelWrapper 
+                                    title={<><PenTool size={16} className="text-[var(--accent)]" /><span className="text-xs font-bold uppercase tracking-wider">Palette</span></>}
+                                    onClose={() => togglePanel('palette')}
+                                    onMaximize={() => maximizePanel('palette')}
+                                    isMaximized={isPaletteMaximized}
+                                >
                                     <ChordPalette className="px-3" />
-                                </div>
+                                </PanelWrapper>
+                            )}
+                        </>
+                    )}
+                </div>
 
-                                {/* Right Sidebar: Views & Instruments */}
-                                <div className="w-[50px] shrink-0 border-l border-[var(--border)] bg-[var(--bg-surface)] flex flex-col items-center py-3 gap-3 z-10 overflow-y-auto custom-scrollbar">
-                                    {/* View Toggles */}
-                                    <div className="flex flex-col gap-2">
-                                        <button 
-                                            onClick={() => setView('sequencer')} 
-                                            title="Sequencer View"
-                                            className={cn(
-                                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200", 
-                                                view === 'sequencer' 
-                                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
-                                                    : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
-                                            )}
-                                        >
-                                            <ListMusic size={18} strokeWidth={1.5} />
-                                        </button>
-                                        <button 
-                                            onClick={() => setView('harmony')} 
-                                            title="Harmonic Map View"
-                                            className={cn(
-                                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200", 
-                                                view === 'harmony' 
-                                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
-                                                    : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
-                                            )}
-                                        >
-                                            <Network size={18} strokeWidth={1.5} />
-                                        </button>
-                                        <button 
-                                            onClick={() => setView('songwriting')} 
-                                            title="Songwriting View"
-                                            className={cn(
-                                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200", 
-                                                view === 'songwriting' 
-                                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
-                                                    : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
-                                            )}
-                                        >
-                                            <PenTool size={18} strokeWidth={1.5} />
-                                        </button>
-                                    </div>
+                {/* RIGHT SIDEBAR: VIEW CONTROLS */}
+                <div className="w-[50px] shrink-0 border-l border-[var(--border)] bg-[var(--bg-surface)] flex flex-col items-center py-3 gap-3 z-10 overflow-y-auto custom-scrollbar">
+                    {/* View Toggles */}
+                    <div className="flex flex-col gap-2">
+                        {/* Map Toggle */}
+                        <button 
+                            onClick={() => togglePanel('map')} 
+                            title="Toggle Harmonic Map"
+                            className={cn(
+                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200", 
+                                visiblePanels.map 
+                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
+                                    : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
+                            )}
+                        >
+                            <Network size={18} strokeWidth={1.5} />
+                        </button>
+                        
+                        {/* Sequencer Toggle */}
+                        <button 
+                            onClick={() => togglePanel('sequencer')} 
+                            title="Toggle Sequencer"
+                            className={cn(
+                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200", 
+                                visiblePanels.sequencer 
+                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
+                                    : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
+                            )}
+                        >
+                            <ListMusic size={18} strokeWidth={1.5} />
+                        </button>
 
-                                    <div className="w-6 h-px bg-[var(--border)]" />
+                         {/* Palette Toggle */}
+                         <button 
+                            onClick={() => togglePanel('palette')} 
+                            title="Toggle Chord Palette"
+                            className={cn(
+                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200", 
+                                visiblePanels.palette 
+                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
+                                    : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
+                            )}
+                        >
+                            <PenTool size={18} strokeWidth={1.5} />
+                        </button>
+                    </div>
 
-                                    {/* Instruments */}
-                                    <div className="flex flex-col gap-2">
-                                        {instruments.map(inst => (
-                                            <button 
-                                                key={inst.id} 
-                                                onClick={() => setInstrument(inst.id)}
-                                                className={cn(
-                                                    "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 border border-transparent", 
-                                                    instrument === inst.id 
-                                                        ? "text-[var(--accent)] bg-[var(--accent)]/10 border-[var(--accent)]/20 shadow-sm" 
-                                                        : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]"
-                                                )}
-                                                title={inst.label}
-                                            >
-                                                <inst.icon size={16} strokeWidth={1.5} />
-                                            </button>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        }
-                    />
-                )}
+                    <div className="w-6 h-px bg-[var(--border)]" />
+
+                    {/* Instruments */}
+                    <div className="flex flex-col gap-2">
+                        {instruments.map(inst => (
+                            <button 
+                                key={inst.id} 
+                                onClick={() => setInstrument(inst.id)}
+                                className={cn(
+                                    "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 border border-transparent", 
+                                    instrument === inst.id 
+                                        ? "text-[var(--accent)] bg-[var(--accent)]/10 border-[var(--accent)]/20 shadow-sm" 
+                                        : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]"
+                                )}
+                                title={inst.label}
+                            >
+                                <inst.icon size={16} strokeWidth={1.5} />
+                            </button>
+                        ))}
+                    </div>
+                </div>
             </div>
         </div>
     );
-};
+}
 

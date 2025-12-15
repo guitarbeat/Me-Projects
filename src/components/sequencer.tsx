@@ -84,9 +84,6 @@ export const ChordPalette = ({ className }: { className?: string }) => {
         <div className={cn("flex flex-col h-full gap-2", className)}>
             {/* Controls */}
             <div className="flex items-center gap-2 shrink-0">
-                <span className="text-[9px] font-black text-[var(--text-dim)] uppercase tracking-wider">Palette</span>
-                <div className="w-px h-3 bg-[var(--border)]" />
-                
                 <div className="flex items-center gap-1.5 bg-[var(--bg-element)] rounded-md border border-[var(--border)] px-1.5 h-6">
                     <Filter size={10} className="text-[var(--text-dim)]" />
                     <select 

@@ -22,6 +22,82 @@ import { GuitarChordDiagram } from './guitar';
 
 
 
+// --- SETTINGS POPOVER ---
+
+const SettingsPopover = ({ 
+    onClose, 
+    currentKey, setKey, 
+    scale, setScale, 
+    bpm, setBpm, 
+    isScaleLocked, toggleScaleLock 
+}: { 
+    onClose: () => void,
+    currentKey: string, setKey: (k: string) => void,
+    scale: string, setScale: (s: string) => void,
+    bpm: number, setBpm: (b: number) => void,
+    isScaleLocked: boolean, toggleScaleLock: () => void
+}) => (
+    <div className="absolute left-14 bottom-4 z-50 w-64 bg-[var(--bg-panel)] border border-[var(--border)] rounded-xl shadow-2xl p-4 flex flex-col gap-4 animate-in fade-in slide-in-from-left-4">
+        <div className="flex items-center justify-between pb-2 border-b border-[var(--border)]">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-[var(--text-muted)]">Global Settings</h4>
+            <button onClick={onClose} className="p-1 hover:bg-[var(--bg-element)] rounded"><X size={14}/></button>
+        </div>
+
+        {/* Key */}
+        <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Key</label>
+            <div className="grid grid-cols-4 gap-1">
+                {CIRCLE_KEYS.map(k => (
+                    <button 
+                        key={k} 
+                        onClick={() => setKey(k)}
+                        className={cn(
+                            "text-xs font-bold py-1 rounded border transition-colors",
+                            currentKey === k 
+                            ? "bg-[var(--accent)] text-black border-[var(--accent)]" 
+                            : "bg-[var(--bg-element)] border-transparent hover:border-[var(--border)]"
+                        )}
+                    >
+                        {k}
+                    </button>
+                ))}
+            </div>
+        </div>
+
+        {/* Scale */}
+        <div className="flex flex-col gap-1">
+            <div className="flex items-center justify-between">
+                <label className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Scale</label>
+                <button onClick={toggleScaleLock} title={isScaleLocked ? "Unlock Scale" : "Lock Scale"} className={cn("p-1 rounded", isScaleLocked ? "text-[var(--accent)]" : "text-[var(--text-dim)]")}>
+                    {isScaleLocked ? <Lock size={10} /> : <Unlock size={10} />}
+                </button>
+            </div>
+            <select 
+                value={scale} 
+                onChange={(e) => setScale(e.target.value as ScaleType)}
+                className="w-full bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-2 py-1.5 text-xs font-bold focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+            >
+                {Object.values(ScaleType).map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+        </div>
+
+        {/* Tempo */}
+        <div className="flex flex-col gap-1">
+            <label className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Tempo</label>
+            <div className="flex items-center gap-2">
+                <Gauge size={14} className="text-[var(--text-dim)]" />
+                <input 
+                    type="range" min="40" max="220" 
+                    value={bpm} 
+                    onChange={(e) => setBpm(Number(e.target.value))}
+                    className="flex-1 h-1 bg-[var(--bg-element)] rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-[var(--accent)] [&::-webkit-slider-thumb]:rounded-full"
+                />
+                <span className="text-xs font-mono w-8 text-right">{bpm}</span>
+            </div>
+        </div>
+    </div>
+);
+
 // --- PROJECT LIBRARY MODAL ---
 
 const ProjectLibrary = ({ onClose }: { onClose: () => void }) => {
@@ -143,6 +219,10 @@ export default function ControlPanel() {
 
     // Flexible Panel State
     // Default: Map (Top) and Sequencer (Middle) and Palette (Bottom) are all visible?
+    const [showSettings, setShowSettings] = useState(false);
+
+    // Flexible Panel State
+    // Default: Map (Top) and Sequencer (Middle) and Palette (Bottom) are all visible?
     // Or maybe just Map and Sequencer?
     const [visiblePanels, setVisiblePanels] = useState({
         map: true,
@@ -197,104 +277,8 @@ export default function ControlPanel() {
         <div className="h-full flex flex-col bg-[var(--bg-main)] text-[var(--text-main)] overflow-hidden font-sans transition-colors duration-500">
             {showLibrary && <ProjectLibrary onClose={() => setShowLibrary(false)} />}
 
-            {/* TOP BAR */}
-            <div className="h-14 border-b border-[var(--border)] bg-[var(--bg-surface)]/80 backdrop-blur-md flex items-center px-4 justify-between shrink-0 z-30">
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gradient-to-br from-[var(--accent)] to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-[var(--accent)]/20">
-                        <Music2 size={18} className="text-white" />
-                    </div>
-                    <span className="font-black text-lg tracking-tight hidden sm:inline-block">Harmonic<span className="text-[var(--accent)]">Studio</span></span>
-                </div>
+            {/* TOP BAR REMOVED - Controls moved to Sidebar */}
 
-                <div className="flex items-center gap-4">
-                    {/* Key & Scale Controls (Same as before) */}
-                    <div className="flex items-center gap-3 bg-[var(--bg-element)]/50 p-1 rounded-lg border border-[var(--border)]">
-                        <div className="flex flex-col px-2">
-                             <span className="text-[10px] uppercase font-bold text-[var(--text-dim)] tracking-wider">Key</span>
-                             <div className="flex items-baseline gap-1 relative group cursor-pointer">
-                                 <select 
-                                     value={currentKey} 
-                                     onChange={(e) => setKey(e.target.value)}
-                                     className="appearance-none bg-transparent font-black text-lg w-full outline-none cursor-pointer z-10 opacity-0 absolute inset-0"
-                                 >
-                                     {CIRCLE_KEYS.map(k => <option key={k} value={k}>{k}</option>)}
-                                 </select>
-                                 <span className="font-black text-lg">{currentKey}</span>
-                                 <ChevronDown size={12} className="text-[var(--text-dim)] group-hover:text-[var(--text-main)] transition-colors"/>
-                             </div>
-                        </div>
-                        <div className="w-px h-8 bg-[var(--border)]" />
-                        <div className="flex flex-col px-2 flex-1 min-w-[120px]">
-                             <span className="text-[10px] uppercase font-bold text-[var(--text-dim)] tracking-wider">Scale</span>
-                            <div className="flex items-baseline gap-1 relative group cursor-pointer">
-                                 <select 
-                                     value={scale} 
-                                     onChange={(e) => setScale(e.target.value as ScaleType)}
-                                     className="appearance-none bg-transparent font-bold text-sm w-full outline-none cursor-pointer z-10 opacity-0 absolute inset-0"
-                                 >
-                                     {Object.values(ScaleType).map(s => <option key={s} value={s}>{s}</option>)}
-                                 </select>
-                                 <span className="font-bold text-sm truncate">{scale}</span>
-                                 <ChevronDown size={12} className="text-[var(--text-dim)] group-hover:text-[var(--text-main)] transition-colors"/>
-                             </div>
-                        </div>
-                        <button 
-                            onClick={toggleScaleLock}
-                            className={cn("p-1.5 rounded-md transition-all", isScaleLocked ? "text-[var(--accent)] bg-[var(--accent)]/10" : "text-[var(--text-muted)] hover:bg-[var(--bg-panel)]")}
-                            title={isScaleLocked ? "Scale Locked" : "Scale Unlocked"}
-                        >
-                            {isScaleLocked ? <Lock size={14} /> : <Unlock size={14} />}
-                        </button>
-                    </div>
-
-                    <div className="h-8 w-px bg-[var(--border)]" />
-
-                     {/* BPM & Play */}
-                    <div className="flex items-center gap-3">
-                         <div className="flex flex-col">
-                             <span className="text-[10px] uppercase font-bold text-[var(--text-dim)] tracking-wider">Tempo</span>
-                             <div className="flex items-center gap-1 group">
-                                 <Gauge size={12} className="text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors" />
-                                 <input 
-                                     type="number" 
-                                     value={bpm} 
-                                     onChange={(e) => setBpm(Number(e.target.value))}
-                                     className="w-12 bg-transparent font-bold text-sm text-right outline-none border-b border-transparent focus:border-[var(--accent)] transition-colors"
-                                 />
-                                 <span className="text-[10px] font-bold text-[var(--text-dim)]">BPM</span>
-                             </div>
-                         </div>
-                        
-                        <button 
-                            onClick={togglePlay}
-                            className={cn(
-                                "w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-lg hover:scale-105 active:scale-95 border border-[var(--border)]",
-                                isPlaying ? "bg-[var(--accent)] text-white shadow-[var(--accent)]/30" : "bg-[var(--bg-element)] text-[var(--text-main)] hover:bg-[var(--bg-panel)]"
-                            )}
-                        >
-                            {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-0.5" />}
-                        </button>
-                    </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                    <button 
-                         onClick={() => setShowLibrary(true)}
-                         className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] rounded-lg transition-colors"
-                         title="Projects"
-                    >
-                        <FolderOpen size={18} strokeWidth={2} />
-                    </button>
-                    
-                    <button 
-                        onClick={toggleTheme} 
-                        className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] rounded-lg transition-colors"
-                        title={theme === 'dark' ? "Light Mode" : "Dark Mode"}
-                    >
-                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-                    </button>
-                </div>
-            </div>
 
             {/* MAIN CONTENT AREA ROW */}
             <div className="flex-1 min-h-0 flex overflow-hidden">
@@ -454,51 +438,93 @@ export default function ControlPanel() {
                         >
                             <ListMusic size={18} strokeWidth={1.5} />
                         </button>
-
-                         {/* Palette Toggle */}
-                         <button 
-                            onClick={() => togglePanel('palette')} 
-                            title="Toggle Chord Palette"
-                            className={cn(
-                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200", 
-                                visiblePanels.palette 
-                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
-                                    : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
-                            )}
-                        >
-                            <PenTool size={18} strokeWidth={1.5} />
-                        </button>
-
-                         {/* Mood Toggle */}
-                         <button 
-                            onClick={() => togglePanel('mood')} 
-                            title="Toggle Mood Selector"
-                            className={cn(
-                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200", 
-                                visiblePanels.mood 
-                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
-                                    : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
-                            )}
-                        >
-                            <Zap size={18} strokeWidth={1.5} />
-                        </button>
-                    </div>
+                            <div className="w-12 border-r border-[var(--border)] flex flex-col items-center py-4 gap-4 bg-[var(--bg-surface)] shrink-0 z-40">
+                    
+                    {/* Transport (Play/Pause) on Top */}
+                    <button 
+                        onClick={togglePlay}
+                        className={cn(
+                            "w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-lg hover:scale-105 active:scale-95 border border-[var(--border)]",
+                            isPlaying ? "bg-[var(--accent)] text-black shadow-[var(--accent)]/30" : "bg-[var(--bg-element)] text-[var(--text-muted)] hover:bg-[var(--bg-panel)] hover:text-[var(--text-main)]"
+                        )}
+                        title={isPlaying ? "Pause" : "Play"}
+                    >
+                        {isPlaying ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" className="ml-0.5" />}
+                    </button>
 
                     <div className="w-6 h-px bg-[var(--border)]" />
 
-                    {/* Instruments */}
-                    <div className="flex flex-col gap-2">
-                        {instruments.map(inst => (
-                            <button 
-                                key={inst.id} 
-                                onClick={() => setInstrument(inst.id)}
-                                className={cn(
-                                    "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 border border-transparent", 
-                                    instrument === inst.id 
-                                        ? "text-[var(--accent)] bg-[var(--accent)]/10 border-[var(--accent)]/20 shadow-sm" 
-                                        : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]"
-                                )}
-                                title={inst.label}
+                    {/* Show/Hide Toggles */}
+                    <button 
+                        onClick={() => togglePanel('map')}
+                        className={cn("p-2 rounded-lg transition-all", visiblePanels.map ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]")}
+                        title="Harmonic Map"
+                    >
+                        <Network size={18} />
+                    </button>
+                    <button 
+                        onClick={() => togglePanel('sequencer')}
+                        className={cn("p-2 rounded-lg transition-all", visiblePanels.sequencer ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]")}
+                        title="Sequencer"
+                    >
+                        <ListMusic size={18} />
+                    </button>
+                    <button 
+                        onClick={() => togglePanel('palette')}
+                        className={cn("p-2 rounded-lg transition-all", visiblePanels.palette ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]")}
+                        title="Chord Palette"
+                    >
+                        <PenTool size={18} />
+                    </button>
+                    <button 
+                        onClick={() => togglePanel('mood')}
+                        className={cn("p-2 rounded-lg transition-all", visiblePanels.mood ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]")}
+                        title="Mood Selector"
+                    >
+                        <Zap size={18} />
+                    </button>
+
+                    <div className="flex-1" />
+
+                    {/* Bottom Controls */}
+                    
+                    {/* Settings Trigger */}
+                    <button 
+                        onClick={() => setShowSettings(!showSettings)}
+                        className={cn(
+                            "p-2 rounded-lg transition-all relative", 
+                            showSettings ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-inner" : "text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]"
+                        )}
+                        title="Global Settings (Key, Scale, Tempo)"
+                    >
+                        <Music2 size={18} />
+                        {showSettings && (
+                           <SettingsPopover 
+                               onClose={() => setShowSettings(false)}
+                               currentKey={currentKey} setKey={setKey}
+                               scale={scale} setScale={setScale}
+                               bpm={bpm} setBpm={setBpm}
+                               isScaleLocked={isScaleLocked} toggleScaleLock={toggleScaleLock}
+                           />
+                        )}
+                    </button>
+
+                    <button 
+                         onClick={() => setShowLibrary(true)}
+                         className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] rounded-lg transition-colors"
+                         title="Projects"
+                    >
+                        <FolderOpen size={18} />
+                    </button>
+
+                    <button 
+                        onClick={toggleTheme} 
+                        className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] rounded-lg transition-colors"
+                        title="Toggle Theme"
+                    >
+                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                    </button>
+                </div>tle={inst.label}
                             >
                                 <inst.icon size={16} strokeWidth={1.5} />
                             </button>

@@ -9,13 +9,14 @@ import { ChordPalette } from './sequencer';
 import { 
     Play, Pause, Lock, Unlock, Trash2, 
     ListMusic, Network, Cloud, Keyboard, Music2, Zap, Gauge,
-    ChevronDown, Moon, Sun, X, ChevronUp,
+    ChevronDown, Moon, Sun, X,
     FolderOpen, Save, Clock, Minus, Plus, PenTool, LucideIcon
 } from 'lucide-react';
 import { HarmonicSpace as TonnetzWrapper } from './tonnetz';
 import { ProgressionStrip as SequencerView } from './sequencer';
 import { PanelStack } from './resizable-panels';
 import { MoodSelector } from './mood';
+import { SongwritingBoard } from './songwriting';
 
 import { GuitarChordDiagram } from './guitar';
 
@@ -115,8 +116,11 @@ const ProjectLibrary = ({ onClose }: { onClose: () => void }) => {
 };
 
 
+
+
 export default function ControlPanel() {
     const { 
+        view,
         key: currentKey, 
         scale, 
         bpm, 
@@ -152,10 +156,7 @@ export default function ControlPanel() {
     // Derived state: is any panel "maximized" (meaning it's the ONLY one visible)?
     // Actually, "maximized" is just a visual concept. 
     // We check if only one is true.
-    const activeCount = Object.values(visiblePanels).filter(Boolean).length;
-    const isMapMaximized = visiblePanels.map && activeCount === 1;
-    const isSequencerMaximized = visiblePanels.sequencer && activeCount === 1;
-    const isPaletteMaximized = visiblePanels.palette && activeCount === 1;
+
 
     // Handlers
     const togglePanel = (key: keyof typeof visiblePanels) => {
@@ -167,24 +168,7 @@ export default function ControlPanel() {
         });
     };
 
-    const maximizePanel = (key: keyof typeof visiblePanels) => {
-        // If already maximized (only this one visible), restore to ALL visible (or previous state).
-        // For simplicity: Restoration = Turn all ON.
-        const isCurrentlyMaximized = visiblePanels[key] && activeCount === 1;
-        
-        if (isCurrentlyMaximized) {
-            // Restore
-            setVisiblePanels({ map: true, sequencer: true, palette: true, mood: false });
-        } else {
-            // Maximize this one (hide others)
-            setVisiblePanels({
-                map: key === 'map',
-                sequencer: key === 'sequencer',
-                palette: key === 'palette',
-                mood: key === 'mood'
-            });
-        }
-    };
+
 
     const handleChordUpdate = (updates: Partial<Chord>) => {
         const selectedChord = selectedChordIndex !== null && progression[selectedChordIndex] ? progression[selectedChordIndex] : null;
@@ -390,51 +374,51 @@ export default function ControlPanel() {
                                 </div>
                             )}
 
-                            <PanelStack 
-                                panels={[
-                                    {
-                                        id: 'map',
-                                        title: <><Network size={16} className="text-[var(--accent)]" /><span className="text-xs font-bold uppercase tracking-wider">Harmonic Map</span></>,
-                                        content: <TonnetzWrapper />,
-                                        defaultSize: 40,
-                                        minSize: 10,
-                                        collapsible: true, // We will control visibility via the existing 'visiblePanels' logic if needed, 
-                                                           // or better yet, let PanelStack handle collapsing via its internal state?
-                                                           // Actually, 'visiblePanels' in this file is redundant if PanelStack has internal state.
-                                                           // But we have global toggles in the sidebar.
-                                                           // Let's pass 'isCollapsed' logic if PanelStack supports controlled state?
-                                                           // Looking at PanelStack source: it initializes state but doesn't accept prop for it.
-                                                           // EXCEPT it uses 'collapsible' to init state.
-                                                           // If we want EXTERNAL control (sidebar buttons), we need to update PanelStack or use a key.
-                                                           // Let's stick to conditional rendering of the PANELS ARRAY.
-                                                           // If visiblePanels.map is FALSE, we just don't include it in the array!
-                                    },
-                                    {
-                                        id: 'sequencer',
-                                        title: <><ListMusic size={16} className="text-[var(--accent)]" /><span className="text-xs font-bold uppercase tracking-wider">Sequencer</span></>,
-                                        content: <SequencerView />,
-                                        defaultSize: 30,
-                                        minSize: 10,
-                                        collapsible: true,
-                                    },
-                                    {
-                                        id: 'palette',
-                                        title: <><PenTool size={16} className="text-[var(--accent)]" /><span className="text-xs font-bold uppercase tracking-wider">Palette</span></>,
-                                        content: <ChordPalette className="px-3" />,
-                                        defaultSize: 25,
-                                        minSize: 10,
-                                        collapsible: true,
-                                    },
-                                    {
-                                        id: 'mood',
-                                        title: <><Zap size={16} className="text-[var(--accent)]" /><span className="text-xs font-bold uppercase tracking-wider">Mood</span></>,
-                                        content: <MoodSelector />,
-                                        defaultSize: 15,
-                                        minSize: 10,
-                                        collapsible: true, // Should logic be 'isHidden'? PanelStack filters visible panels anyway.
-                                    }
-                                ].filter(p => visiblePanels[p.id as keyof typeof visiblePanels])}
-                            />
+                            
+                            {/* Songwriting Mode */}
+                            {view === 'songwriting' ? (
+                                <div className="flex-1 min-h-0 relative">
+                                    <SongwritingBoard />
+                                </div>
+                            ) : (
+                                /* Standard 3-Panel Layout */
+                                <PanelStack 
+                                    panels={[
+                                        {
+                                            id: 'map',
+                                            title: 'Harmonic Map',
+                                            content: <TonnetzWrapper />,
+                                            defaultSize: 40,
+                                            minSize: 10,
+                                            collapsible: true, 
+                                        },
+                                        {
+                                            id: 'sequencer',
+                                            title: 'Sequencer',
+                                            content: <SequencerView />,
+                                            defaultSize: 30,
+                                            minSize: 10,
+                                            collapsible: true,
+                                        },
+                                        {
+                                            id: 'palette',
+                                            title: 'Palette',
+                                            content: <ChordPalette className="px-3" />,
+                                            defaultSize: 25,
+                                            minSize: 10,
+                                            collapsible: true,
+                                        },
+                                        {
+                                            id: 'mood',
+                                            title: 'Mood',
+                                            content: <MoodSelector />,
+                                            defaultSize: 15,
+                                            minSize: 10,
+                                            collapsible: true, 
+                                        }
+                                    ].filter(p => visiblePanels[p.id as keyof typeof visiblePanels])}
+                                />
+                            )}
                         </>
                     )}
                 </div>

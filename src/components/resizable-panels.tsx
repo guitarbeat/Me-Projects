@@ -92,6 +92,10 @@ export interface ResizableTopPanelProps {
     minHeight?: number;
     maxHeight?: number;
     defaultHeight?: number;
+    title?: React.ReactNode;
+    isExpanded?: boolean;
+    onExpand?: () => void;
+    onClose?: () => void;
     cn?: CnFunction;
 }
 

@@ -18,25 +18,25 @@ const getChordColorClass = (roman: string) => {
     // Explicit return of full class strings for Tailwind scanner
     switch(color) {
         case 'emerald': return { 
-            border: 'border-emerald-500/30', bg: 'bg-emerald-500/10', hover: 'hover:bg-emerald-500/20', 
+            border: 'border-border', bg: 'bg-emerald-500/10', hover: 'hover:bg-emerald-500/20', 
             text: 'text-emerald-900 dark:text-emerald-100', icon: 'text-emerald-600 dark:text-emerald-400',
-            borderHover: 'border-emerald-500/40'
+            borderHover: 'border-border'
         };
         case 'sky': return { 
-            border: 'border-sky-500/30', bg: 'bg-sky-500/10', hover: 'hover:bg-sky-500/20', 
+            border: 'border-border', bg: 'bg-sky-500/10', hover: 'hover:bg-sky-500/20', 
             text: 'text-sky-900 dark:text-sky-100', icon: 'text-sky-600 dark:text-sky-400',
-            borderHover: 'border-sky-500/40'
+            borderHover: 'border-border'
         };
         case 'rose': return { 
-            border: 'border-rose-500/30', bg: 'bg-rose-500/10', hover: 'hover:bg-rose-500/20', 
+            border: 'border-border', bg: 'bg-rose-500/10', hover: 'hover:bg-rose-500/20', 
             text: 'text-rose-900 dark:text-rose-100', icon: 'text-rose-600 dark:text-rose-400',
-            borderHover: 'border-rose-500/40'
+            borderHover: 'border-border'
         };
         case 'stone': 
         default: return { 
-            border: 'border-stone-500/30', bg: 'bg-stone-500/10', hover: 'hover:bg-stone-500/20', 
+            border: 'border-border', bg: 'bg-stone-500/10', hover: 'hover:bg-stone-500/20', 
             text: 'text-stone-900 dark:text-stone-100', icon: 'text-stone-600 dark:text-stone-400',
-            borderHover: 'border-stone-500/40'
+            borderHover: 'border-border'
         };
     }
 };

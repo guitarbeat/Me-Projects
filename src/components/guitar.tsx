@@ -157,7 +157,7 @@ export const GuitarChordDiagram = ({ chord, className }: { chord: Chord, classNa
 
                 {/* Fret Label */}
                 {startFret > 1 && (
-                    <text x={4} y={paddingY + fretGap / 2 + 3} fontSize={8} fontWeight="bold" fill="#78716c">
+                    <text x={4} y={paddingY + fretGap / 2 + 3} fontSize={8} fontWeight="bold" fill="var(--text-dim)">
                         {startFret}fr
                     </text>
                 )}

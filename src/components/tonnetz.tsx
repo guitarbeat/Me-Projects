@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { Plus, Minus, Maximize2 } from 'lucide-react';
 import { buildChord, generateSecondaryDominants, getHarmonicSuggestions, getScaleNotes, estimateChordSentiment, ChordComplexity, Note, ScaleType, Chord, useStore, useDerivedData } from '../lib';
 import { cn } from './ui';
@@ -287,7 +286,7 @@ const TonnetzTriangle = React.memo(({ t, mood, state, matchScore, onClick, onEnt
         <g 
             className={cn("cursor-pointer interact-base transition-transform duration-300", isActive && "z-10")} 
             style={{ transformOrigin: `${t.center.x}px ${t.center.y}px`, transform: `scale(${finalScale})` }}
-            onMouseEnter={() => onEnter(t)} onMouseLeave={onLeave} onClick={(e) => { e.stopPropagation(); onClick(t); }}
+            onMouseEnter={onEnter} onMouseLeave={onLeave} onClick={(e) => { e.stopPropagation(); onClick(); }}
         >
             {isTarget && (
                 <circle cx={t.center.x} cy={t.center.y} r={25} fill="none" stroke="var(--accent)" strokeWidth={1} opacity={0.4}>
@@ -304,7 +303,11 @@ const TonnetzTriangle = React.memo(({ t, mood, state, matchScore, onClick, onEnt
 
             <polygon 
                 points={(t.points as any).map((p: any) => `${p.x},${p.y}`).join(' ')} 
-                fill={fill} stroke={stroke} strokeWidth={strokeW} strokeDasharray={dash} strokeLinejoin="round" 
+                fill={fill} 
+                stroke={t.diatonic ? "var(--border)" : "var(--border-soft)"} 
+                strokeWidth={isActive ? 2 : 1} 
+                strokeDasharray={t.diatonic ? undefined : "2,2"} 
+                strokeLinejoin="round" 
                 className="transition-all duration-200"
                 filter={(isActive && t.isTension) ? "url(#noise)" : undefined}
             />
@@ -312,8 +315,11 @@ const TonnetzTriangle = React.memo(({ t, mood, state, matchScore, onClick, onEnt
             <text 
                 x={t.center.x} y={t.center.y} dy={3} textAnchor="middle" 
                 fontSize={isActive ? 12 : 10} fontWeight={isActive ? "900" : "bold"} 
-                className={cn("pointer-events-none select-none transition-all duration-300", (isActive||isHover||isLinked||matchScore>0.9)?"fill-white opacity-100":t.diatonic?"fill-white/80 opacity-60":"fill-white/40 opacity-20")}
-                style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+                className={cn("pointer-events-none select-none transition-all duration-300", 
+                    (isActive||isHover||isLinked||matchScore>0.9) ? "fill-white opacity-100" : // Active cells are colored, keep white
+                    t.diatonic ? "fill-[var(--text-muted)] opacity-60" : "fill-[var(--text-dim)] opacity-40" // Inactive cells use theme text
+                )}
+                style={{ textShadow: (isActive||isHover) ? '0 1px 2px rgba(0,0,0,0.5)' : 'none' }}
             >
                 {t.label}
             </text>
@@ -415,10 +421,57 @@ export const HarmonicSpace = () => {
         return streams;
     }, [hover, activeIds, tris, currentKey]);
 
-    const handleDrag = (e: React.PointerEvent) => {
-        if(e.type === 'pointerdown') { setDrag({active:true, last:{x:e.clientX, y:e.clientY}}); try { (e.target as Element).setPointerCapture(e.pointerId); } catch { /* Ignore capture errors */ } }
-        else if(e.type === 'pointermove' && drag.active && drag.last) { setView(v => ({...v, x: v.x + e.clientX - drag.last!.x, y: v.y + e.clientY - drag.last!.y})); setDrag(prev => ({...prev, last:{x:e.clientX, y:e.clientY}})); }
-        else if(e.type === 'pointerup') { setDrag({active:false, last:null}); try { (e.target as Element).releasePointerCapture(e.pointerId); } catch { /* Ignore release errors */ } }
+    // --- NAVIGATION LOGIC ---
+    const pointerCache = useRef<Map<number, {x: number, y: number}>>(new Map());
+    const prevDiff = useRef<number>(-1);
+
+    const handlePointerDown = (e: React.PointerEvent) => {
+        (e.target as Element).setPointerCapture(e.pointerId);
+        pointerCache.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    };
+
+    const handlePointerMove = (e: React.PointerEvent) => {
+        if (!pointerCache.current.has(e.pointerId)) return;
+        
+        // Update this pointer's position
+        pointerCache.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        // If 1 pointer: Pan
+        if (pointerCache.current.size === 1) {
+            setView(prev => ({
+                ...prev,
+                x: prev.x + e.movementX,
+                y: prev.y + e.movementY
+            }));
+        } 
+        // If 2 pointers: Pinch Zoom & Pan (via midpoint)
+        else if (pointerCache.current.size === 2) {
+            // Convert map values to array
+            const points = Array.from(pointerCache.current.values());
+            const p1 = points[0];
+            const p2 = points[1];
+
+            // Calculate distance
+            const curDiff = Math.hypot(p2.x - p1.x, p2.y - p1.y);
+            
+            if (prevDiff.current > 0) {
+                const delta = curDiff - prevDiff.current;
+                // Zoom
+                setView(prev => ({
+                    ...prev,
+                    k: Math.max(0.2, Math.min(5, prev.k * (1 + delta * 0.005)))
+                }));
+            }
+            prevDiff.current = curDiff;
+        }
+    };
+
+    const handlePointerUp = (e: React.PointerEvent) => {
+        (e.target as Element).releasePointerCapture(e.pointerId);
+        pointerCache.current.delete(e.pointerId);
+        if (pointerCache.current.size < 2) {
+            prevDiff.current = -1;
+        }
     };
 
     const handleChordAction = useCallback((t: { chordInfo: Chord; root: string; type: string }) => {
@@ -431,7 +484,7 @@ export const HarmonicSpace = () => {
     return (
         <div className="w-full h-full relative overflow-hidden bg-[var(--bg-main)] touch-none select-none flex items-center justify-center cursor-move"
              onWheel={(e) => setView(v => ({ ...v, k: Math.max(0.5, Math.min(4, v.k * (1 - e.deltaY * 0.001))) }))}
-             onPointerDown={handleDrag} onPointerMove={handleDrag} onPointerUp={handleDrag}>
+             onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerLeave={handlePointerUp} onPointerCancel={handlePointerUp}>
             
             <div className="absolute inset-0 opacity-80 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 50%, var(--bg-surface) 0%, var(--bg-main) 100%)' }} />
             

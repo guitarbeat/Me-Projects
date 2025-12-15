@@ -1,178 +1,276 @@
-
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <meta name="theme-color" content="#000000">
-    <meta name="description" content="A professional musical composition tool for exploring harmony, scales, and chord progressions.">
-    <title>Harmonic Studio</title>
-    
-    <!-- PWA Manifest & Icons -->
-    <link rel="manifest" href="manifest.json" />
-    <link rel="apple-touch-icon" href="icon-192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Harmonic">
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      tailwind.config = {
-        darkMode: ['class', '[data-theme="dark"]'],
-        theme: {
-          extend: {
-            colors: {
-              border: "var(--border)",
-              input: "var(--input)",
-              ring: "var(--ring)",
-              background: "var(--bg-main)",
-              foreground: "var(--text-main)",
-            }
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#000000">
+  <meta name="description"
+    content="A professional musical composition tool for exploring harmony, scales, and chord progressions.">
+  <title>Harmonic Studio</title>
+
+  <!-- PWA Manifest & Icons -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Harmonic">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: ['class', '[data-theme="dark"]'],
+      theme: {
+        extend: {
+          colors: {
+            border: "var(--border)",
+            input: "var(--input)",
+            ring: "var(--ring)",
+            background: "var(--bg-main)",
+            foreground: "var(--text-main)",
           }
         }
       }
-    </script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-    <style>
-      :root {
-        /* 
-         * --- COLOR PALETTE (Light Theme) ---
+    }
+  </script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      /* 
+         * --- COLOR PALETTE (Light Theme - High Contrast) ---
+         * Structural, Airy, Defined.
          */
-        --bg-main: #fafaf9;       /* stone-50 */
-        --bg-panel: #ffffff;      /* white */
-        --bg-surface: #f5f5f4;    /* stone-100 */
-        --bg-element: #e7e5e4;    /* stone-200 */
-        --bg-glass: rgba(255, 255, 255, 0.8);
-        
-        --text-main: #1c1917;     /* stone-900 */
-        --text-muted: #57534e;    /* stone-600 */
-        --text-dim: #a8a29e;      /* stone-400 */
-        
-        --border: #e7e5e4;        /* stone-200 */
-        --border-hover: #d6d3d1;  /* stone-300 */
-        --border-soft: rgba(0, 0, 0, 0.08);
-        
-        --accent: #dc2626;        /* red-600 */
+      --bg-main: #ffffff;
+      /* Pure White */
+      --bg-surface: #f4f4f5;
+      /* Zinc 100 */
+      --bg-panel: #ffffff;
+      /* Pure White */
+      --bg-element: #f4f4f5;
+      /* Zinc 100 */
+      --bg-glass: rgba(255, 255, 255, 0.95);
 
-        --bg-soft: rgba(0, 0, 0, 0.04);
-        --bg-soft-hover: rgba(0, 0, 0, 0.08);
-        
-        /* --- MOTION CURVES --- */
-        --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-        --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
-      }
+      --text-main: #000000;
+      /* Pure Black */
+      --text-muted: #52525b;
+      /* Zinc 600 */
+      --text-dim: #a1a1aa;
+      /* Zinc 400 */
 
-      [data-theme="dark"] {
-        /* 
-         * --- COLOR PALETTE (Dark Theme - Pure Black) ---
+      /* BLACK BORDERS - User Requirement */
+      --border: #000000;
+      --border-hover: #000000;
+      --border-soft: #000000;
+      /* No soft borders, strict lines */
+
+      --accent: #000000;
+      /* Black Accent for Monochrome feel */
+
+      /* Semantic Colors - High Clarity */
+      --color-success: #059669;
+      /* emerald-600 */
+      --color-warning: #d97706;
+      /* amber-600 */
+      --color-error: #dc2626;
+      /* red-600 */
+      --color-info: #0284c7;
+      /* sky-600 */
+
+      --bg-soft: rgba(0, 0, 0, 0.05);
+      --bg-soft-hover: rgba(0, 0, 0, 0.1);
+
+      /* --- MOTION CURVES --- */
+      --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+      --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    [data-theme="dark"] {
+      /* 
+         * --- COLOR PALETTE (Dark Theme - Lighter Dark) ---
+         * Engraved, Deep, Not "All Black".
          */
-        --bg-main: #000000;       /* Pure Black */
-        --bg-panel: #000000;      /* Pure Black */
-        --bg-surface: #0a0a0a;    /* Zinc 950 */
-        --bg-element: #171717;    /* Zinc 900 */
-        --bg-glass: rgba(0, 0, 0, 0.7); 
-        
-        --text-main: #ededed;     /* Zinc 100 */
-        --text-muted: #a1a1aa;    /* Zinc 400 */
-        --text-dim: #52525b;      /* Zinc 600 */
-        
-        --border: #27272a;        /* Zinc 800 - Visible on black */
-        --border-hover: #3f3f46;  /* Zinc 700 */
-        --border-soft: rgba(255, 255, 255, 0.15);
-        
-        --accent: #dc2626;
-        
-        --bg-soft: rgba(255, 255, 255, 0.07);
-        --bg-soft-hover: rgba(255, 255, 255, 0.12);
-      }
+      --bg-main: #18181b;
+      /* Zinc 900 - Lighter than black */
+      --bg-surface: #27272a;
+      /* Zinc 800 */
+      --bg-panel: #18181b;
+      /* Zinc 900 */
+      --bg-element: #27272a;
+      /* Zinc 800 */
+      --bg-glass: rgba(24, 24, 27, 0.9);
 
-      body {
-        background-color: var(--bg-main);
-        color: var(--text-main);
-        font-family: 'Inter', sans-serif;
-        margin: 0;
-        height: 100vh;
-        overflow: hidden;
-        -webkit-font-smoothing: antialiased;
-        transition: background-color 0.3s ease, color 0.3s ease;
-      }
+      --text-main: #ffffff;
+      /* Pure White */
+      --text-muted: #a1a1aa;
+      /* Zinc 400 */
+      --text-dim: #52525b;
+      /* Zinc 600 */
 
-      /* Hide number input spinners */
-      input[type=number]::-webkit-inner-spin-button, 
-      input[type=number]::-webkit-outer-spin-button { 
-        -webkit-appearance: none; 
-        margin: 0; 
-      }
-      input[type=number] {
-        -moz-appearance: textfield;
-      }
-      
-      /* Utilities */
-      .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-      .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-      .custom-scrollbar::-webkit-scrollbar-thumb { background: var(--border-hover); border-radius: 10px; }
-      .scrollbar-hide::-webkit-scrollbar { display: none; }
-      .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+      /* BLACK BORDERS - User Requirement */
+      --border: #000000;
+      /* Pure Black Borders on Dark Grey */
+      --border-hover: #000000;
+      --border-soft: #000000;
 
-      /* Interaction classes */
-      .interact-base {
-        transition-property: transform, opacity, background-color, border-color, box-shadow, color, filter;
-        transition-duration: 300ms;
-        transition-timing-function: var(--ease-out-expo);
-        will-change: transform, opacity;
-        backface-visibility: hidden;
-        transform: translateZ(0);
+      --accent: #ffffff;
+      /* White accent for contrast */
+
+      /* Semantic Colors - Pastels for dark mode */
+      --color-success: #34d399;
+      /* emerald-400 */
+      --color-warning: #fbbf24;
+      /* amber-400 */
+      --color-error: #f87171;
+      /* red-400 */
+      --color-info: #38bdf8;
+      /* sky-400 */
+
+      --bg-soft: rgba(255, 255, 255, 0.1);
+      --bg-soft-hover: rgba(255, 255, 255, 0.15);
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Hide number input spinners */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+
+    /* Utilities */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: var(--border-hover);
+      border-radius: 10px;
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Input Zoom Fix for iOS */
+    @media screen and (max-width: 768px) {
+
+      input,
+      select,
+      textarea {
+        font-size: 16px !important;
       }
-      
+    }
+
+    /* Interaction classes */
+    .interact-base {
+      transition-property: transform, opacity, background-color, border-color, box-shadow, color, filter;
+      transition-duration: 300ms;
+      transition-timing-function: var(--ease-out-expo);
+      will-change: transform, opacity;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+      touch-action: manipulation;
+      /* Improves touch response */
+    }
+
+    @media (hover: hover) {
       .interact-lift:hover {
         transform: translateY(-2px);
-        box-shadow: 0 12px 24px -10px rgba(0,0,0,0.5);
+        box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5);
         border-color: var(--border-hover);
         z-index: 10;
-      }
-      .interact-lift:active {
-        transform: translateY(0) scale(0.99);
-        box-shadow: 0 2px 8px -4px rgba(0,0,0,0.5);
-        transition-duration: 150ms;
       }
 
       .interact-lift-sm:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 12px -4px rgba(0,0,0,0.3);
+        box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.3);
         border-color: var(--border-hover);
         z-index: 5;
       }
+
       [data-theme="dark"] .interact-lift-sm:hover {
         filter: brightness(1.1);
       }
 
-      .interact-lift-sm:active {
-        transform: translateY(0) scale(0.98);
-        box-shadow: none;
-        transition-duration: 100ms;
-      }
-
-      .interact-push:hover { transform: translateY(-1px); }
-      [data-theme="dark"] .interact-push:hover { filter: brightness(1.1); }
-      
-      .interact-push:active { transform: translateY(1px) scale(0.97); transition-duration: 100ms; }
-      [data-theme="dark"] .interact-push:active { filter: brightness(0.95); }
-
-      .interact-scale:hover { transform: scale(1.1); color: var(--text-main); }
-      .interact-scale:active { transform: scale(0.9); transition-duration: 100ms; }
-      
-      .interact-input:focus {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 1px var(--accent);
+      .interact-push:hover {
         transform: translateY(-1px);
       }
-    </style>
-    <script>
-      (function() {
+
+      [data-theme="dark"] .interact-push:hover {
+        filter: brightness(1.1);
+      }
+
+      .interact-scale:hover {
+        transform: scale(1.1);
+        color: var(--text-main);
+      }
+    }
+
+    /* Active states (work on touch) */
+    .interact-lift:active {
+      transform: translateY(0) scale(0.99);
+      box-shadow: 0 2px 8px -4px rgba(0, 0, 0, 0.5);
+      transition-duration: 150ms;
+    }
+
+    .interact-lift-sm:active {
+      transform: translateY(0) scale(0.98);
+      box-shadow: none;
+      transition-duration: 100ms;
+    }
+
+    .interact-push:active {
+      transform: translateY(1px) scale(0.97);
+      transition-duration: 100ms;
+    }
+
+    [data-theme="dark"] .interact-push:active {
+      filter: brightness(0.95);
+    }
+
+    .interact-scale:active {
+      transform: scale(0.9);
+      transition-duration: 100ms;
+    }
+
+    .interact-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+      transform: translateY(-1px);
+    }
+  </style>
+  <script>
+      (function () {
         try {
           var localTheme = localStorage.getItem('theme');
           var supportDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-          
+
           // Default to Dark Mode if no preference is set
           if (localTheme === 'dark' || (!localTheme && true)) {
             document.documentElement.setAttribute('data-theme', 'dark');
@@ -185,8 +283,8 @@
           console.error(e);
         }
       })();
-    </script>
-    <script type="importmap">
+  </script>
+  <script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@18.2.0",
@@ -206,9 +304,11 @@
   }
 }
 </script>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/index.tsx"></script>
-  </body>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/index.tsx"></script>
+</body>
+
 </html>

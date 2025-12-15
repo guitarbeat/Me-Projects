@@ -130,6 +130,12 @@ export const ControlPanel = () => {
 
 
     const [showLibrary, setShowLibrary] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
+
+    // Reset expansion when view changes
+    useEffect(() => {
+        setIsExpanded(false);
+    }, [view]);
 
     const selectedChord = selectedChordIndex !== null && progression[selectedChordIndex] ? progression[selectedChordIndex] : null;
 
@@ -147,7 +153,7 @@ export const ControlPanel = () => {
         
         const newRoot = updates.root || selectedChord.root;
         const newQuality = updates.quality || selectedChord.quality;
-        const newExt = updates.extension !== undefined ? updates.extension : selectedChord.extension;
+        const newExt = updates.extension !== undefined ? updates.extension : selectedChord.extension; // Fix: Use updates.extension if provided
         
         const newChord = buildChord(newRoot, newQuality, newExt, selectedChord.duration);
         // Preserve lyric if present
@@ -157,272 +163,312 @@ export const ControlPanel = () => {
     };
 
     return (
-        <div className="w-full h-full flex flex-col select-none font-sans text-[var(--text-main)] bg-[var(--bg-panel)] overflow-hidden relative">
-            
-
+        <div className="h-full flex flex-col bg-[var(--bg-main)] text-[var(--text-main)] overflow-hidden font-sans transition-colors duration-500">
             {showLibrary && <ProjectLibrary onClose={() => setShowLibrary(false)} />}
 
-            {/* Top Bar with Theme Toggle (Absolute) */}
-             <div className="absolute top-3 left-3 z-30">
-                <button 
-                    onClick={toggleTheme} 
-                    className="w-8 h-8 flex items-center justify-center rounded-full bg-[var(--bg-element)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors"
-                >
-                    {theme === 'dark' ? <Moon size={14}/> : <Sun size={14}/>}
-                </button>
-             </div>
+            {/* TOP BAR */}
+            <div className="h-14 border-b border-[var(--border)] bg-[var(--bg-surface)]/80 backdrop-blur-md flex items-center px-4 justify-between shrink-0 z-30">
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-gradient-to-br from-[var(--accent)] to-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-[var(--accent)]/20">
+                        <Music2 size={18} className="text-white" />
+                    </div>
+                    <span className="font-black text-lg tracking-tight hidden sm:inline-block">Harmonic<span className="text-[var(--accent)]">Studio</span></span>
+                </div>
 
-            {/* CENTER CONTROL ISLANDS */}
-            <div className="shrink-0 flex flex-col items-center justify-center gap-2.5 py-4 px-4 z-20">
-                
-                {selectedChord ? (
-                    // --- SELECTED CHORD INSPECTOR ---
-                    <div className="animate-in fade-in slide-in-from-top-4 duration-300 w-full max-w-lg flex items-start gap-3">
-                         {/* Guitar Diagram */}
-                         <GuitarChordDiagram chord={selectedChord} className="hidden sm:block shrink-0" />
-                         
-                         <div className="flex-1 flex items-center justify-between bg-[var(--bg-element)] rounded-xl p-3 border border-[var(--border)] shadow-sm gap-4 h-[100px]">
-                             
-                             {/* Chord Edit Controls */}
-                             <div className="flex flex-col gap-1.5 min-w-[140px]">
-                                <div className="flex items-center gap-1">
-                                    {/* Root */}
-                                    <div className="relative bg-[var(--bg-surface)] rounded-lg border border-[var(--border)] h-8 w-12 flex items-center justify-center hover:border-[var(--accent)] transition-colors">
-                                         <select 
-                                            value={selectedChord.root}
-                                            onChange={(e) => handleChordUpdate({ root: e.target.value })}
-                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                        >
-                                            {CHROMATIC_SHARPS.map(n => <option key={n} value={n}>{n}</option>)}
-                                        </select>
-                                        <span className="text-sm font-black text-[var(--text-main)]">{selectedChord.root}</span>
-                                    </div>
-
-                                    {/* Quality */}
-                                    <div className="relative bg-[var(--bg-surface)] rounded-lg border border-[var(--border)] h-8 flex-1 flex items-center px-2 hover:border-[var(--accent)] transition-colors">
-                                        <select 
-                                            value={selectedChord.quality}
-                                            onChange={(e) => handleChordUpdate({ quality: e.target.value as Chord['quality'] })}
-                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                        >
-                                            {['Major', 'Minor', 'Dominant', 'Diminished', 'Augmented', 'Sus2', 'Sus4'].map(q => <option key={q} value={q}>{q}</option>)}
-                                        </select>
-                                         <span className="text-[10px] font-bold uppercase text-[var(--text-main)] truncate">{selectedChord.quality}</span>
-                                         <ChevronDown size={10} className="ml-auto text-[var(--text-dim)]"/>
-                                    </div>
-                                </div>
-                                
-                                {/* Extension */}
-                                <div className="relative bg-[var(--bg-surface)] rounded-lg border border-[var(--border)] h-6 flex items-center px-2 hover:border-[var(--accent)] transition-colors w-full">
-                                     <select 
-                                        value={selectedChord.extension || ''}
-                                        onChange={(e) => handleChordUpdate({ extension: e.target.value })}
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                    >
-                                        <option value="">Triad (None)</option>
-                                        <option value="7">7th</option>
-                                        <option value="9">9th</option>
-                                        <option value="11">11th</option>
-                                    </select>
-                                    <span className="text-[9px] font-bold text-[var(--text-muted)] uppercase flex items-center gap-1 w-full">
-                                        <span className="flex-1 truncate">{selectedChord.extension ? `${selectedChord.extension} Extension` : 'Basic Triad'}</span>
-                                         <ChevronDown size={10} className="text-[var(--text-dim)]"/>
-                                    </span>
-                                </div>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-3 bg-[var(--bg-element)]/50 p-1 rounded-lg border border-[var(--border)]">
+                        <div className="flex flex-col px-2">
+                             <span className="text-[10px] uppercase font-bold text-[var(--text-dim)] tracking-wider">Key</span>
+                             <div className="flex items-baseline gap-1 relative group cursor-pointer">
+                                 <select 
+                                     value={currentKey} 
+                                     onChange={(e) => setKey(e.target.value)}
+                                     className="appearance-none bg-transparent font-black text-lg w-full outline-none cursor-pointer z-10 opacity-0 absolute inset-0"
+                                 >
+                                     {CIRCLE_KEYS.map(k => <option key={k} value={k}>{k}</option>)}
+                                 </select>
+                                 <span className="font-black text-lg">{currentKey}</span>
+                                 <ChevronDown size={12} className="text-[var(--text-dim)] group-hover:text-[var(--text-main)] transition-colors"/>
                              </div>
-
-                             {/* Duration Controls */}
-                             <div className="flex flex-col gap-2">
-                                <div className="flex items-center gap-1 bg-[var(--bg-surface)] rounded-lg p-1 border border-[var(--border)]">
-                                     <button onClick={() => handleProgression('resize', { index: selectedChordIndex, duration: Math.max(0.25, selectedChord.duration - 0.25) })} className="p-1 hover:bg-[var(--bg-element)] rounded text-[var(--text-muted)] hover:text-[var(--text-main)]"><Minus size={14}/></button>
-                                     <div className="w-12 text-center flex flex-col items-center">
-                                         <span className="text-xs font-bold text-[var(--text-main)]">{selectedChord.duration}</span>
-                                         <span className="text-[8px] text-[var(--text-dim)] uppercase font-bold">Beats</span>
-                                     </div>
-                                     <button onClick={() => handleProgression('resize', { index: selectedChordIndex, duration: selectedChord.duration + 0.25 })} className="p-1 hover:bg-[var(--bg-element)] rounded text-[var(--text-muted)] hover:text-[var(--text-main)]"><Plus size={14}/></button>
-                                 </div>
-                                 <button onClick={() => { setSelectedChordIndex(null); }} className="text-[9px] font-bold text-[var(--text-dim)] hover:text-[var(--text-main)] uppercase tracking-wider text-center">Done</button>
+                        </div>
+                        <div className="w-px h-8 bg-[var(--border)]" />
+                        <div className="flex flex-col px-2 flex-1 min-w-[120px]">
+                             <span className="text-[10px] uppercase font-bold text-[var(--text-dim)] tracking-wider">Scale</span>
+                            <div className="flex items-baseline gap-1 relative group cursor-pointer">
+                                 <select 
+                                     value={scale} 
+                                     onChange={(e) => setScale(e.target.value as ScaleType)}
+                                     className="appearance-none bg-transparent font-bold text-sm w-full outline-none cursor-pointer z-10 opacity-0 absolute inset-0"
+                                 >
+                                     {Object.values(ScaleType).map(s => <option key={s} value={s}>{s}</option>)}
+                                 </select>
+                                 <span className="font-bold text-sm truncate">{scale}</span>
+                                 <ChevronDown size={12} className="text-[var(--text-dim)] group-hover:text-[var(--text-main)] transition-colors"/>
                              </div>
+                        </div>
+                        <button 
+                            onClick={toggleScaleLock}
+                            className={cn("p-1.5 rounded-md transition-all", isScaleLocked ? "text-[var(--accent)] bg-[var(--accent)]/10" : "text-[var(--text-muted)] hover:bg-[var(--bg-panel)]")}
+                            title={isScaleLocked ? "Scale Locked" : "Scale Unlocked"}
+                        >
+                            {isScaleLocked ? <Lock size={14} /> : <Unlock size={14} />}
+                        </button>
+                    </div>
 
-                             {/* Actions */}
-                             <div className="flex items-center gap-1 pl-2 border-l border-[var(--border)] h-full">
-                                 <button onClick={() => handleProgression('remove', selectedChordIndex)} className="p-2 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 size={16}/></button>
+                    <div className="h-8 w-px bg-[var(--border)]" />
+
+                     {/* BPM & Play */}
+                    <div className="flex items-center gap-3">
+                         <div className="flex flex-col">
+                             <span className="text-[10px] uppercase font-bold text-[var(--text-dim)] tracking-wider">Tempo</span>
+                             <div className="flex items-center gap-1 group">
+                                 <Gauge size={12} className="text-[var(--text-muted)] group-hover:text-[var(--accent)] transition-colors" />
+                                 <input 
+                                     type="number" 
+                                     value={bpm} 
+                                     onChange={(e) => setBpm(Number(e.target.value))}
+                                     className="w-12 bg-transparent font-bold text-sm text-right outline-none border-b border-transparent focus:border-[var(--accent)] transition-colors"
+                                 />
+                                 <span className="text-[10px] font-bold text-[var(--text-dim)]">BPM</span>
                              </div>
                          </div>
-                    </div>
-                ) : (
-                    <>
-                    {/* ROW 1: Musical Context */}
-                    <div className="flex items-center gap-2">
-                        {/* Key & Scale Group */}
-                        <div className="flex items-center bg-[var(--bg-element)] rounded-lg p-1 border border-[var(--border)] shadow-sm h-9">
-                            {/* Key */}
-                            <div className="px-2 border-r border-[var(--border)] h-full flex items-center hover:bg-[var(--bg-surface)] rounded-l transition-colors">
-                                <select 
-                                    value={currentKey} 
-                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setKey(e.target.value)} 
-                                    className="bg-transparent font-bold text-xs outline-none cursor-pointer text-[var(--text-main)] hover:text-[var(--accent)] appearance-none text-center min-w-[32px] h-full"
-                                >
-                                    {CIRCLE_KEYS.map((k: string) => <option key={k} value={k}>{k}</option>)}
-                                </select>
-                            </div>
-                            
-                            {/* Scale */}
-                            <div className="relative h-full flex items-center justify-center hover:bg-[var(--bg-surface)] transition-colors px-1">
-                                <select 
-                                    value={scale} 
-                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setScale(e.target.value as ScaleType)} 
-                                    disabled={isScaleLocked} 
-                                    className="bg-transparent text-[11px] font-bold text-[var(--text-muted)] outline-none cursor-pointer w-[120px] hover:text-[var(--text-main)] appearance-none py-1 uppercase tracking-wide text-center truncate"
-                                >
-                                    {Object.values(ScaleType).map((s) => <option key={s} value={s}>{s}</option>)}
-                                </select>
-                            </div>
-
-                            {/* Lock */}
-                            <button 
-                                onClick={toggleScaleLock}
-                                className={cn("w-8 h-full flex items-center justify-center transition-all hover:bg-[var(--bg-surface)] border-l border-[var(--border)] rounded-r", isScaleLocked ? "text-[var(--accent)]" : "text-[var(--text-dim)]")}
-                                title={isScaleLocked ? "Scale Locked" : "Scale Unlocked"}
-                            >
-                                {isScaleLocked ? <Lock size={12} strokeWidth={2.5} /> : <Unlock size={12} />}
-                            </button>
-                        </div>
-
-                        {/* BPM Group */}
-                        <div className="flex items-center gap-2 bg-[var(--bg-element)] rounded-lg p-1 border border-[var(--border)] shadow-sm h-9 px-3">
-                            <Gauge size={14} className="text-[var(--text-dim)]" />
-                            <input 
-                                type="number" 
-                                value={bpm} 
-                                onChange={(e) => setBpm(Math.max(40, Math.min(240, parseInt(e.target.value)||120)))}
-                                className="bg-transparent text-xs font-mono font-bold text-center outline-none text-[var(--text-main)] w-12 appearance-none"
-                            />
-                        </div>
-                    </div>
-
-                    {/* ROW 2: Transport & Actions */}
-                    <div className="flex items-center gap-2">
-                        {/* Complexity */}
-                        <div className="flex items-center bg-[var(--bg-element)] rounded-lg p-1 border border-[var(--border)] shadow-sm h-8">
-                            <select 
-                                value={complexity} 
-                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setComplexity(e.target.value as ChordComplexity)}
-                                className="bg-transparent text-[10px] font-bold uppercase outline-none px-2 h-full text-[var(--text-dim)] hover:text-[var(--text-main)] appearance-none cursor-pointer"
-                            >
-                                {(['triad', '7th', '9th', '11th'] as ChordComplexity[]).map(c => <option key={c} value={c}>{c}</option>)}
-                            </select>
-                        </div>
-
-                        {/* Play */}
+                        
                         <button 
                             onClick={togglePlay}
                             className={cn(
-                                "flex items-center justify-center w-12 h-8 rounded-lg transition-all active:scale-95 shadow-lg",
-                                isPlaying 
-                                    ? "bg-[var(--accent)] text-black shadow-[var(--accent)]/20 hover:brightness-110" 
-                                    : "bg-[var(--bg-element)] border border-[var(--border)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-surface)]"
+                                "w-10 h-10 rounded-full flex items-center justify-center transition-all shadow-lg hover:scale-105 active:scale-95 border border-[var(--border)]",
+                                isPlaying ? "bg-[var(--accent)] text-white shadow-[var(--accent)]/30" : "bg-[var(--bg-element)] text-[var(--text-main)] hover:bg-[var(--bg-panel)]"
                             )}
                         >
-                            {isPlaying ? <Pause size={14} fill="currentColor"/> : <Play size={14} fill="currentColor"/>}
+                            {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" className="ml-0.5" />}
                         </button>
-
-                        {/* Divider */}
-                        <div className="w-px h-6 bg-[var(--border)] mx-1" />
-
-                        {/* Tools */}
-                        <div className="flex items-center bg-[var(--bg-element)] rounded-lg p-0.5 border border-[var(--border)] shadow-sm h-8 gap-0.5">
-                            <IconButton icon={LinkIcon} size="sm" onClick={() => handleProgression('quantize')} title="Quantize" className="h-7 w-7 rounded-md" />
-                            <IconButton icon={Trash2} size="sm" variant="danger" onClick={() => handleProgression('clear')} title="Clear" className="h-7 w-7 rounded-md" />
-                            
-                            {/* Library Button */}
-                            <div className="w-px h-4 bg-[var(--border)] mx-0.5" />
-                            <button 
-                                onClick={() => setShowLibrary(true)}
-                                className="h-7 px-2 rounded-md flex items-center gap-1.5 text-[var(--text-muted)] hover:bg-[var(--bg-surface)] hover:text-[var(--text-main)] transition-all text-[10px] font-bold uppercase tracking-wider"
-                                title="Library"
-                            >
-                                <FolderOpen size={12} />
-                            </button>
-
-
-                        </div>
                     </div>
-                    </>
-                )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <button 
+                         onClick={() => setShowLibrary(true)}
+                         className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] rounded-lg transition-colors"
+                         title="Projects"
+                    >
+                        <FolderOpen size={18} strokeWidth={2} />
+                    </button>
+                    
+                    <button 
+                        onClick={toggleTheme} 
+                        className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] rounded-lg transition-colors"
+                        title={theme === 'dark' ? "Light Mode" : "Dark Mode"}
+                    >
+                        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+                    </button>
+                </div>
             </div>
 
-            {/* BOTTOM: Palette & Sidebar */}
-            <div className="flex-1 min-h-0 flex border-t border-[var(--border)] relative bg-[var(--bg-surface)]/30">
-                {/* Palette */}
-                <div className="flex-1 relative">
-                    <ChordPalette className="px-3" />
-                </div>
+            {/* MAIN CONTENT AREA */}
+            <div className="flex-1 min-h-0 flex flex-col relative overflow-hidden">
+                {selectedChord ? (
+                    <div className="h-full flex flex-col bg-[var(--bg-main)]">
+                        <div className="h-14 border-b border-[var(--border)] bg-[var(--bg-surface)]/80 backdrop-blur-md flex items-center px-4 justify-between shrink-0 z-30">
+                            <div className="flex items-center gap-2">
+                                <PenTool size={16} className="text-[var(--accent)]" />
+                                <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">Edit Chord</span>
+                            </div>
+                            <button onClick={() => { setSelectedChordIndex(null); }} className="text-[9px] font-bold text-[var(--text-dim)] hover:text-[var(--text-main)] uppercase tracking-wider text-center">Done</button>
+                        </div>
 
-                {/* Right Sidebar: Views & Instruments */}
-                <div className="w-[50px] shrink-0 border-l border-[var(--border)] bg-[var(--bg-panel)] flex flex-col items-center py-3 gap-3 z-10 overflow-y-auto custom-scrollbar">
-                    {/* View Toggles */}
-                    <div className="flex flex-col gap-2">
-                        <button 
-                            onClick={() => setView('sequencer')} 
-                            title="Sequencer View"
-                            className={cn(
-                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200", 
-                                view === 'sequencer' 
-                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
-                                    : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
-                            )}
-                        >
-                            <ListMusic size={18} strokeWidth={1.5} />
-                        </button>
-                        <button 
-                            onClick={() => setView('harmony')} 
-                            title="Harmonic Map View"
-                            className={cn(
-                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200", 
-                                view === 'harmony' 
-                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
-                                    : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
-                            )}
-                        >
-                            <Network size={18} strokeWidth={1.5} />
-                        </button>
-                        <button 
-                            onClick={() => setView('songwriting')} 
-                            title="Songwriting View"
-                            className={cn(
-                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200", 
-                                view === 'songwriting' 
-                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
-                                    : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
-                            )}
-                        >
-                            <PenTool size={18} strokeWidth={1.5} />
-                        </button>
+                        {/* Chord Editor */}
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                {/* Root */}
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Root</label>
+                                    <select 
+                                        value={selectedChord.root} 
+                                        onChange={(e) => handleChordUpdate({ root: e.target.value })}
+                                        className="bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-all"
+                                    >
+                                        {CHROMATIC_SHARPS.map(note => <option key={note} value={note}>{note}</option>)}
+                                    </select>
+                                </div>
+                                {/* Quality */}
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Quality</label>
+                                    <select 
+                                        value={selectedChord.quality} 
+                                        onChange={(e) => handleChordUpdate({ quality: e.target.value as any })}
+                                        className="bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-all"
+                                    >
+                                        {['major', 'minor', 'dim', 'aug'].map(q => <option key={q} value={q}>{q}</option>)}
+                                    </select>
+                                </div>
+                                {/* Extension */}
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Extension</label>
+                                    <select 
+                                        value={selectedChord.extension || ''} 
+                                        onChange={(e) => handleChordUpdate({ extension: e.target.value || undefined })}
+                                        className="bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-all"
+                                    >
+                                        <option value="">None</option>
+                                        {['7', 'maj7', 'sus2', 'sus4', 'add9', '9', '11', '13'].map(ext => <option key={ext} value={ext}>{ext}</option>)}
+                                    </select>
+                                </div>
+                                {/* Duration */}
+                                <div className="flex flex-col gap-1">
+                                    <label className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Duration</label>
+                                    <div className="flex items-center gap-2">
+                                        <button 
+                                            onClick={() => handleChordUpdate({ duration: Math.max(0.25, selectedChord.duration - 0.25) })}
+                                            className="p-2 bg-[var(--bg-element)] border border-[var(--border)] rounded-lg hover:bg-[var(--bg-surface)] transition-colors"
+                                        >
+                                            <Minus size={14} />
+                                        </button>
+                                        <input 
+                                            type="number" 
+                                            value={selectedChord.duration} 
+                                            onChange={(e) => handleChordUpdate({ duration: parseFloat(e.target.value) || 1 })}
+                                            step="0.25"
+                                            min="0.25"
+                                            className="flex-1 bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm text-center focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-all"
+                                        />
+                                        <button 
+                                            onClick={() => handleChordUpdate({ duration: selectedChord.duration + 0.25 })}
+                                            className="p-2 bg-[var(--bg-element)] border border-[var(--border)] rounded-lg hover:bg-[var(--bg-surface)] transition-colors"
+                                        >
+                                            <Plus size={14} />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Guitar Diagram */}
+                            <div className="mt-6">
+                                <h4 className="text-[10px] uppercase font-bold text-[var(--text-dim)] mb-2">Guitar Voicing</h4>
+                                <GuitarChordDiagram chord={selectedChord} />
+                            </div>
+
+                            {/* Lyrics */}
+                            <div className="mt-6">
+                                <label className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Lyrics</label>
+                                <input 
+                                    type="text"
+                                    value={selectedChord.lyrics || ''}
+                                    onChange={(e) => handleChordUpdate({ lyrics: e.target.value })}
+                                    placeholder="Add lyrics..."
+                                    className="w-full bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent)] transition-all mt-1"
+                                />
+                            </div>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1 pl-2 border-l border-[var(--border)] h-full">
+                            <button onClick={() => handleProgression('remove', selectedChordIndex)} className="p-2 text-[var(--text-muted)] hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"><Trash2 size={16}/></button>
+                        </div>
                     </div>
-
-                    <div className="w-6 h-px bg-[var(--border)]" />
-
-                    {/* Instruments */}
-                    <div className="flex flex-col gap-2">
-                        {instruments.map(inst => (
-                            <button 
-                                key={inst.id} 
-                                onClick={() => setInstrument(inst.id)}
-                                className={cn(
-                                    "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 border border-transparent", 
-                                    instrument === inst.id 
-                                        ? "text-[var(--accent)] bg-[var(--accent)]/10 border-[var(--accent)]/20 shadow-sm" 
-                                        : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]"
-                                )}
-                                title={inst.label}
+                ) : (
+                    <SplitView 
+                        top={
+                            <ResizableTopPanel 
+                                minHeight={150} 
+                                maxHeight={600} 
+                                defaultHeight={350}
+                                title={
+                                    <div className="flex items-center gap-2">
+                                        {view === 'sequencer' && <ListMusic size={16} className="text-[var(--accent)]" />}
+                                        {view === 'harmony' && <Network size={16} className="text-[var(--accent)]" />}
+                                        {view === 'songwriting' && <PenTool size={16} className="text-[var(--accent)]" />}
+                                        <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-main)]">
+                                            {view === 'sequencer' ? 'Sequencer' : view === 'harmony' ? 'Harmonic Map' : 'Songwriting'}
+                                        </span>
+                                    </div>
+                                }
+                                isExpanded={isExpanded}
+                                onExpand={() => setIsExpanded(!isExpanded)}
+                                onClose={view !== 'sequencer' ? () => setView('sequencer') : undefined}
                             >
-                                <inst.icon size={16} strokeWidth={1.5} />
-                            </button>
-                        ))}
-                    </div>
-                </div>
+                                <div className="h-full w-full relative bg-[var(--bg-main)]">
+                                    {view === 'sequencer' && <SequencerView />}
+                                    {view === 'harmony' && <TonnetzWrapper />}
+                                    {view === 'songwriting' && <SongwritingView />}
+                                </div>
+                            </ResizableTopPanel>
+                        }
+                        bottom={
+                            <div className="flex-1 min-h-0 flex border-t border-[var(--border)] relative bg-[var(--bg-surface)]/30">
+                                {/* Palette */}
+                                <div className="flex-1 relative">
+                                    <ChordPalette className="px-3" />
+                                </div>
+
+                                {/* Right Sidebar: Views & Instruments */}
+                                <div className="w-[50px] shrink-0 border-l border-[var(--border)] bg-[var(--bg-surface)] flex flex-col items-center py-3 gap-3 z-10 overflow-y-auto custom-scrollbar">
+                                    {/* View Toggles */}
+                                    <div className="flex flex-col gap-2">
+                                        <button 
+                                            onClick={() => setView('sequencer')} 
+                                            title="Sequencer View"
+                                            className={cn(
+                                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200", 
+                                                view === 'sequencer' 
+                                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
+                                                    : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
+                                            )}
+                                        >
+                                            <ListMusic size={18} strokeWidth={1.5} />
+                                        </button>
+                                        <button 
+                                            onClick={() => setView('harmony')} 
+                                            title="Harmonic Map View"
+                                            className={cn(
+                                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200", 
+                                                view === 'harmony' 
+                                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
+                                                    : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
+                                            )}
+                                        >
+                                            <Network size={18} strokeWidth={1.5} />
+                                        </button>
+                                        <button 
+                                            onClick={() => setView('songwriting')} 
+                                            title="Songwriting View"
+                                            className={cn(
+                                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200", 
+                                                view === 'songwriting' 
+                                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
+                                                    : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
+                                            )}
+                                        >
+                                            <PenTool size={18} strokeWidth={1.5} />
+                                        </button>
+                                    </div>
+
+                                    <div className="w-6 h-px bg-[var(--border)]" />
+
+                                    {/* Instruments */}
+                                    <div className="flex flex-col gap-2">
+                                        {instruments.map(inst => (
+                                            <button 
+                                                key={inst.id} 
+                                                onClick={() => setInstrument(inst.id)}
+                                                className={cn(
+                                                    "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200 border border-transparent", 
+                                                    instrument === inst.id 
+                                                        ? "text-[var(--accent)] bg-[var(--accent)]/10 border-[var(--accent)]/20 shadow-sm" 
+                                                        : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)]"
+                                                )}
+                                                title={inst.label}
+                                            >
+                                                <inst.icon size={16} strokeWidth={1.5} />
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    />
+                )}
             </div>
         </div>
     );
 };
+

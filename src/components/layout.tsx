@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { cn } from './ui';
 // Re-export panel components for backward compatibility
-export { ResizableTopPanel, SplitView } from './resizable-panels';
+// Removed deprecated ResizableTopPanel, SplitView exports
 import { useStore, ScaleType, CIRCLE_KEYS, InstrumentType, Chord, buildChord, CHROMATIC_SHARPS } from '../lib';
 import { ChordPalette } from './sequencer';
 import { 

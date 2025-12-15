@@ -99,7 +99,7 @@
       /* Zinc 900 */
       --bg-element: #27272a;
       /* Zinc 800 */
-      --bg-glass: rgba(24, 24, 27, 0.9);
+      --bg-glass: rgba(24, 24, 27, 0.8);
 
       --text-main: #ffffff;
       /* Pure White */
@@ -133,19 +133,37 @@
 
     body {
       background-color: var(--bg-main);
+      /* Subtle premium gradient */
+      background-image: radial-gradient(circle at 50% 0%, var(--bg-surface), var(--bg-main) 80%);
       color: var(--text-main);
       font-family: 'Inter', sans-serif;
       margin: 0;
       height: 100vh;
       overflow: hidden;
       -webkit-font-smoothing: antialiased;
-      transition: background-color 0.3s ease, color 0.3s ease;
+      transition: background-color 0.5s ease, color 0.3s ease;
+    }
+
+    /* Premium Glassmorphism Utility */
+    .glass-panel {
+      background: var(--bg-glass);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    }
+
+    [data-theme="light"] .glass-panel {
+      border: 1px solid rgba(0, 0, 0, 0.05);
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);
+      background: rgba(255, 255, 255, 0.85);
     }
 
     /* Hide number input spinners */
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button {
       -webkit-appearance: none;
+      appearance: none;
       margin: 0;
     }
 

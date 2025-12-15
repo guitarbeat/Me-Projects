@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
-import { useStore } from './store';
-import { Chord } from './types';
+import { useStore } from '../store';
+import { Chord } from '../types';
 import { cn } from './ui';
 import { Mic2, Type, Music } from 'lucide-react';
 
@@ -10,7 +10,7 @@ interface LyricsBlockProps {
     isActive: boolean;
     isSelected: boolean;
     onClick: () => void;
-    onChangeLyrics: (lyrics: string) => void;
+    onChangeLyrics: (index: number, lyrics: string) => void;
 }
 const LyricsBlock = ({ chord, index, isActive, isSelected, onClick, onChangeLyrics }: LyricsBlockProps) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);

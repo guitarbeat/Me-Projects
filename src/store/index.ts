@@ -1,9 +1,17 @@
 
 import { create } from 'zustand';
-import { Chord, Note, ScaleType, InstrumentType, ChordComplexity } from './types';
-import { audioEngine } from './audio';
-import { SCALE_DEFS } from './constants';
-import { findClosestScale, getTempoFromArousal } from './theory';
+import { Chord, Note, ScaleType, InstrumentType, ChordComplexity } from '../types';
+import { audioEngine } from '../lib/audio';
+import { SCALE_DEFS } from '../lib/constants';
+import { findClosestScale, getTempoFromArousal } from '../lib/theory';
+
+type AddPayload = Chord | Chord[] | { chord: Chord; index: number } | { chords: Chord[]; index: number };
+type RemovePayload = number;
+type ReorderPayload = { from: number; to: number };
+type ResizePayload = { index: number; duration: number };
+type UpdatePayload = { index: number; chord: Chord };
+
+type ProgressionPayload = AddPayload | RemovePayload | ReorderPayload | ResizePayload | UpdatePayload;
 
 export interface SavedProject {
     id: string;
@@ -31,7 +39,7 @@ interface AppState {
     instrument: InstrumentType;
     showPath: boolean;
     view: string;
-    
+
     // Interaction State
     hoveredChord: Chord | null;
     selectedChordIndex: number | null;
@@ -62,13 +70,13 @@ interface AppState {
     setSelectedChordIndex: (i: number | null) => void;
     setTargetMood: (m: { v: number, a: number } | null) => void;
     setHoveredSequenceIndex: (i: number | null) => void;
-    
+
     // Logic Actions
     setMood: (v: number, a: number, t?: number) => void;
-    handleProgression: (action: 'add' | 'remove' | 'clear' | 'reorder' | 'resize' | 'quantize' | 'update', payload?: unknown) => void;
+    handleProgression: (action: 'add' | 'remove' | 'clear' | 'reorder' | 'resize' | 'quantize' | 'update', payload?: ProgressionPayload) => void;
     togglePlay: () => void;
     playOne: (c: Chord) => void;
-    
+
     // Persistence
     saveProject: (name: string) => void;
     loadProject: (id: string) => void;
@@ -117,7 +125,7 @@ export const useStore = create<AppState>((set, get) => ({
     }),
 
     setKey: (key) => set({ key }),
-    
+
     setScale: (scale) => {
         const state = get();
         if (!state.isScaleLocked) {
@@ -127,7 +135,7 @@ export const useStore = create<AppState>((set, get) => ({
                 // Update Mood to match Scale
                 set({ scale, mood: { valence: v, arousal: a, tension: t } });
                 audioEngine.setMood(v, a, t);
-                
+
                 // Optional: Snap BPM if significant change to reinforce genre feel
                 const targetBpm = getTempoFromArousal(a);
                 if (Math.abs(targetBpm - state.bpm) > 5) {
@@ -136,25 +144,25 @@ export const useStore = create<AppState>((set, get) => ({
                 }
             }
         } else {
-             set({ scale });
+            set({ scale });
         }
     },
-    
+
     setComplexity: (complexity) => set({ complexity }),
     toggleScaleLock: () => set((s) => ({ isScaleLocked: !s.isScaleLocked })),
-    
+
     setBpm: (bpm) => {
         set({ bpm });
         audioEngine.setBpm(bpm);
     },
-    
+
     setTimeSig: (timeSig) => set({ timeSig }),
-    
+
     setInstrument: (instrument) => {
         set({ instrument });
         audioEngine.setInstrument(instrument);
     },
-    
+
     togglePath: () => set((s) => ({ showPath: !s.showPath })),
     setView: (view) => set({ view }),
     setHoveredChord: (hoveredChord) => set({ hoveredChord }),
@@ -165,17 +173,17 @@ export const useStore = create<AppState>((set, get) => ({
     setMood: (v, a, t) => {
         const state = get();
         const currentTension = t !== undefined ? t : state.mood.tension;
-        
+
         // 1. Update Audio Engine immediately
         audioEngine.setMood(v, a, currentTension);
-        
+
         // 2. Snap to Scale if unlocked
         let newScale = state.scale;
         if (!state.isScaleLocked) {
-             newScale = findClosestScale(v, a, currentTension, state.scale);
+            newScale = findClosestScale(v, a, currentTension, state.scale);
         }
-        
-        set({ 
+
+        set({
             mood: { valence: v, arousal: a, tension: currentTension },
             scale: newScale
         });
@@ -192,15 +200,17 @@ export const useStore = create<AppState>((set, get) => ({
                     let newChords: Chord[] = [];
                     let insertIndex = -1;
                     if (payload && typeof payload === 'object' && ('chord' in payload || 'chords' in payload) && 'index' in payload) {
-                         const c = payload.chord || payload.chords;
-                         newChords = Array.isArray(c) ? c : [c];
-                         insertIndex = payload.index;
+                        // @ts-ignore - Union type complexity, runtime check is sufficient
+                        const c = payload.chord || payload.chords;
+                        newChords = Array.isArray(c) ? c : [c];
+                        // @ts-ignore
+                        insertIndex = payload.index;
                     } else {
-                         newChords = Array.isArray(payload) ? payload : [payload];
+                        newChords = Array.isArray(payload) ? payload : [payload as Chord];
                     }
                     // Assign current duration default
-                    const processed = newChords.map(c => ({...c, duration: timeSig.num}));
-                    
+                    const processed = newChords.map(c => ({ ...c, duration: timeSig.num }));
+
                     if (insertIndex !== -1 && insertIndex <= newProgression.length) {
                         newProgression.splice(insertIndex, 0, ...processed);
                         // Shift selection if needed
@@ -224,21 +234,23 @@ export const useStore = create<AppState>((set, get) => ({
                     newSelected = null;
                     break;
                 case 'reorder':
-                    if (payload && typeof payload.from === 'number' && typeof payload.to === 'number') {
-                        const [moved] = newProgression.splice(payload.from, 1);
-                        newProgression.splice(payload.to, 0, moved);
-                        
+                    const reorderPayload = payload as ReorderPayload;
+                    if (payload && typeof reorderPayload.from === 'number' && typeof reorderPayload.to === 'number') {
+                        const [moved] = newProgression.splice(reorderPayload.from, 1);
+                        newProgression.splice(reorderPayload.to, 0, moved);
+
                         // Update selection index if involved
-                        if (newSelected === payload.from) newSelected = payload.to;
+                        if (newSelected === reorderPayload.from) newSelected = reorderPayload.to;
                         else if (newSelected !== null) {
-                            if (newSelected > payload.from && newSelected <= payload.to) newSelected -= 1;
-                            else if (newSelected < payload.from && newSelected >= payload.to) newSelected += 1;
+                            if (newSelected > reorderPayload.from && newSelected <= reorderPayload.to) newSelected -= 1;
+                            else if (newSelected < reorderPayload.from && newSelected >= reorderPayload.to) newSelected += 1;
                         }
                     }
                     break;
                 case 'resize':
-                    if (payload && typeof payload.index === 'number' && typeof payload.duration === 'number') {
-                        newProgression[payload.index] = { ...newProgression[payload.index], duration: payload.duration };
+                    const resizePayload = payload as ResizePayload;
+                    if (payload && typeof resizePayload.index === 'number' && typeof resizePayload.duration === 'number') {
+                        newProgression[resizePayload.index] = { ...newProgression[resizePayload.index], duration: resizePayload.duration };
                     }
                     break;
                 case 'quantize': {
@@ -256,8 +268,9 @@ export const useStore = create<AppState>((set, get) => ({
                     break;
                 }
                 case 'update':
-                    if (payload && typeof payload.index === 'number' && payload.chord) {
-                         newProgression[payload.index] = payload.chord;
+                    const updatePayload = payload as UpdatePayload;
+                    if (payload && typeof updatePayload.index === 'number' && updatePayload.chord) {
+                        newProgression[updatePayload.index] = updatePayload.chord;
                     }
                     break;
             }
@@ -274,7 +287,7 @@ export const useStore = create<AppState>((set, get) => ({
         } else {
             audioEngine.setMood(s.mood.valence, s.mood.arousal, s.mood.tension);
             set({ isPlaying: true });
-            audioEngine.playProgression(s.progression, s.bpm, 
+            audioEngine.playProgression(s.progression, s.bpm,
                 (idx) => set({ playIndex: idx }),
                 () => set({ isPlaying: false, playIndex: null })
             );
@@ -311,7 +324,7 @@ export const useStore = create<AppState>((set, get) => ({
     loadProject: (id) => set((state) => {
         const project = state.savedProjects.find(p => p.id === id);
         if (!project) return {};
-        
+
         // Restore audio engine state
         audioEngine.setMood(project.state.mood.valence, project.state.mood.arousal, project.state.mood.tension);
         audioEngine.setBpm(project.state.bpm);

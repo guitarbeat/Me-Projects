@@ -1,8 +1,8 @@
 
-
-import { Note, ScaleType, Chord, ChordComplexity } from './types';
+import { Chord, Note, ScaleType, ChordComplexity } from '../types';
 import { CHROMATIC_SHARPS, CHROMATIC_FLATS, SCALE_DEFS } from './constants';
-import { ScaleDef } from './types';
+import { ScaleType as ST } from '../types';
+import { ScaleDef } from '../types';
 
 export const getScaleNotes = (root: Note, scaleType: ScaleType): Note[] => {
     if (!SCALE_DEFS[scaleType]) return [];
@@ -15,17 +15,17 @@ export const getScaleNotes = (root: Note, scaleType: ScaleType): Note[] => {
 export const buildChord = (root: Note, quality: Chord['quality'], extension: string = '', duration: number = 4): Chord => {
     const chromatic = CHROMATIC_SHARPS.includes(root) || ['G', 'D', 'A', 'E', 'B', 'F#'].includes(root) ? CHROMATIC_SHARPS : CHROMATIC_FLATS;
     const rootIdx = chromatic.indexOf(root);
-    
+
     let intervals: number[] = [];
     let suffix = '';
-    
+
     // Basic Triad Intervals
-    switch(quality) {
+    switch (quality) {
         case 'Major': intervals = [0, 4, 7]; suffix = ''; break;
         case 'Minor': intervals = [0, 3, 7]; suffix = 'm'; break;
         case 'Diminished': intervals = [0, 3, 6]; suffix = 'dim'; break;
         case 'Augmented': intervals = [0, 4, 8]; suffix = 'aug'; break;
-        case 'Dominant': intervals = [0, 4, 7]; suffix = ''; break; 
+        case 'Dominant': intervals = [0, 4, 7]; suffix = ''; break;
         case 'Half-Dim': intervals = [0, 3, 6]; suffix = 'm(b5)'; break;
         case 'Sus2': intervals = [0, 2, 7]; suffix = 'sus2'; break;
         case 'Sus4': intervals = [0, 5, 7]; suffix = 'sus4'; break;
@@ -42,23 +42,23 @@ export const buildChord = (root: Note, quality: Chord['quality'], extension: str
             else if (quality === 'Half-Dim') { intervals.push(10); suffix = 'm7b5'; }
             else if (quality === 'Diminished') { intervals.push(9); suffix = 'dim7'; }
         }
-        
+
         // 9ths
         if (extension.includes('9')) {
-             if (!intervals.includes(10) && !intervals.includes(11)) {
-                 if (quality === 'Major') intervals.push(11);
-                 else if (quality === 'Dominant' || quality === 'Minor') intervals.push(10);
-             }
-             if (!intervals.includes(14)) intervals.push(14); 
+            if (!intervals.includes(10) && !intervals.includes(11)) {
+                if (quality === 'Major') intervals.push(11);
+                else if (quality === 'Dominant' || quality === 'Minor') intervals.push(10);
+            }
+            if (!intervals.includes(14)) intervals.push(14);
 
-             if (quality === 'Major') suffix = 'maj9';
-             else if (quality === 'Minor') suffix = 'm9';
-             else if (quality === 'Dominant') suffix = '9';
+            if (quality === 'Major') suffix = 'maj9';
+            else if (quality === 'Minor') suffix = 'm9';
+            else if (quality === 'Dominant') suffix = '9';
         }
 
         // 11ths
         if (extension.includes('11')) {
-            if (!intervals.includes(14)) intervals.push(14); 
+            if (!intervals.includes(14)) intervals.push(14);
             const isSharp11 = extension.includes('#11');
             intervals.push(isSharp11 ? 18 : 17);
 
@@ -78,9 +78,9 @@ export const buildChord = (root: Note, quality: Chord['quality'], extension: str
         extension,
         suffix,
         symbol,
-        romanNumeral: '', 
+        romanNumeral: '',
         notes,
-        interval: -1, 
+        interval: -1,
         duration
     };
 };
@@ -88,9 +88,9 @@ export const buildChord = (root: Note, quality: Chord['quality'], extension: str
 export const generateChordsForScale = (root: Note, scaleType: ScaleType, complexity: ChordComplexity = 'triad'): Chord[] => {
     const scaleNotes = getScaleNotes(root, scaleType);
     const chords: Chord[] = [];
-    
+
     // Relative to Major Scale
-    const intervalToDegree: Record<number, {num: string, prefix: string}> = {
+    const intervalToDegree: Record<number, { num: string, prefix: string }> = {
         0: { num: 'I', prefix: '' },
         1: { num: 'II', prefix: 'b' },
         2: { num: 'II', prefix: '' },
@@ -125,7 +125,7 @@ export const generateChordsForScale = (root: Note, scaleType: ScaleType, complex
         const i3 = getInt(thirdIdx);
         const i5 = getInt(fifthIdx);
         const i7 = getInt(seventhIdx);
-        
+
         // 3. Determine Quality
         let quality: Chord['quality'] = 'Major';
         let suffix = '';
@@ -161,15 +161,15 @@ export const generateChordsForScale = (root: Note, scaleType: ScaleType, complex
         // 4. Construct Roman Numeral
         const scaleRootInterval = SCALE_DEFS[scaleType].intervals[index];
         const degInfo = intervalToDegree[scaleRootInterval] || { num: '?', prefix: '' };
-        
+
         let roman = degInfo.num;
         if (quality === 'Minor' || quality === 'Diminished' || quality === 'Half-Dim') roman = roman.toLowerCase();
-        
+
         roman = degInfo.prefix + roman;
-        
+
         if (quality === 'Augmented') roman += '+';
         if (quality === 'Diminished' && complexity === 'triad') roman += '°';
-        
+
         // Add extensions to Roman Numeral
         if (complexity !== 'triad') {
             if (quality === 'Half-Dim') roman += 'ø7';
@@ -184,7 +184,7 @@ export const generateChordsForScale = (root: Note, scaleType: ScaleType, complex
         if (complexity !== 'triad') noteIndices.push(seventhIdx);
         if (complexity === '9th' || complexity === '11th') noteIndices.push(ninthIdx);
         if (complexity === '11th') noteIndices.push(eleventhIdx);
-        
+
         const notes = noteIndices.map(i => scaleNotes[i]);
 
         chords.push({
@@ -200,40 +200,40 @@ export const generateChordsForScale = (root: Note, scaleType: ScaleType, complex
             complexity
         });
     });
-    
+
     return chords;
 };
 
 export const generateSecondaryDominants = (root: Note, scaleType: ScaleType): Chord[] => {
-    const diatonicChords = generateChordsForScale(root, scaleType, 'triad'); 
+    const diatonicChords = generateChordsForScale(root, scaleType, 'triad');
     const secondary: Chord[] = [];
-    
+
     diatonicChords.forEach(target => {
-        if (target.quality === 'Diminished' || target.quality === 'Half-Dim') return; 
-        if (target.interval === 0) return; 
+        if (target.quality === 'Diminished' || target.quality === 'Half-Dim') return;
+        if (target.interval === 0) return;
 
         const targetRootNotes = CHROMATIC_SHARPS.includes(target.root) ? CHROMATIC_SHARPS : CHROMATIC_FLATS;
         const targetIdx = targetRootNotes.indexOf(target.root);
         const domRootIndex = (targetIdx + 7) % 12;
         const domRoot = targetRootNotes[domRootIndex];
-        
+
         const realChord = buildChord(domRoot, 'Dominant', '7');
-        
+
         realChord.symbol = `${domRoot}7`;
-        realChord.romanNumeral = `V7/${target.romanNumeral.replace(/[°ø7maj]/g,'')}`;
-        
+        realChord.romanNumeral = `V7/${target.romanNumeral.replace(/[°ø7maj]/g, '')}`;
+
         secondary.push(realChord);
     });
-    
+
     return secondary;
 };
 
 export const getTensionChords = (root: Note, scaleType: ScaleType, tension: number): Chord[] => {
     const chords: Chord[] = [];
-    const chromatic = (['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb'].includes(root) || root.includes('b')) 
-        ? CHROMATIC_FLATS 
+    const chromatic = (['F', 'Bb', 'Eb', 'Ab', 'Db', 'Gb', 'Cb'].includes(root) || root.includes('b'))
+        ? CHROMATIC_FLATS
         : CHROMATIC_SHARPS;
-        
+
     const rootIdx = chromatic.indexOf(root);
 
     const addTensionChord = (intervalOffset: number, quality: Chord['quality'], extension: string, roman: string, type: string) => {
@@ -241,11 +241,11 @@ export const getTensionChords = (root: Note, scaleType: ScaleType, tension: numb
         const note = chromatic[noteIdx];
         const chord = buildChord(note, quality, extension);
         chord.romanNumeral = roman;
-        chord.tensionType = type; 
-        
+        chord.tensionType = type;
+
         if (quality === 'Augmented' && extension === '7') chord.symbol = `${note}+7`;
         if (type === 'sub') chord.symbol = `${note}7`;
-        
+
         // Specific Chromatic Labels
         if (roman === 'N') chord.symbol = `${note}`; // Neapolitan is just Major triad
         if (roman === 'Ger+6') chord.symbol = `${note}7`; // Enharmonic to Dom7
@@ -260,7 +260,7 @@ export const getTensionChords = (root: Note, scaleType: ScaleType, tension: numb
         // Neapolitan (bII Major)
         addTensionChord(1, 'Major', '', 'N', 'chromatic');
     }
-    
+
     // 2. MEDIUM TENSION (Substitutions) - Threshold 0.50
     if (tension > 0.50) {
         addTensionChord(1, 'Dominant', '7', 'bII7', 'sub'); // Tritone Sub
@@ -278,7 +278,7 @@ export const getTensionChords = (root: Note, scaleType: ScaleType, tension: numb
     // 4. EXTREME TENSION (Altered) - Threshold 0.85
     if (tension > 0.85) {
         addTensionChord(7, 'Augmented', '7', 'V+7', 'alt');
-        addTensionChord(3, 'Dominant', '7', 'bIII7', 'alt'); 
+        addTensionChord(3, 'Dominant', '7', 'bIII7', 'alt');
     }
 
     return chords;
@@ -287,18 +287,18 @@ export const getTensionChords = (root: Note, scaleType: ScaleType, tension: numb
 export const estimateChordSentiment = (chord: Chord, _key: Note, _scale: ScaleType) => {
     let v = 0;
     let a = 0;
-    
+
     if (chord.quality === 'Major') { v += 0.5; a += 0.1; }
     else if (chord.quality === 'Minor') { v -= 0.4; a -= 0.1; }
     else if (chord.quality === 'Diminished') { v -= 0.6; a += 0.3; }
     else if (chord.quality === 'Dominant') { v += 0.2; a += 0.4; }
-    
+
     if (chord.complexity === '7th') { v *= 1.1; a *= 1.1; }
-    if (chord.complexity === '9th') { v += 0.1; a -= 0.1; } 
-    
-    if (chord.interval === 0) { 
-        a -= 0.3; 
-        if (chord.quality === 'Major') v += 0.3; 
+    if (chord.complexity === '9th') { v += 0.1; a -= 0.1; }
+
+    if (chord.interval === 0) {
+        a -= 0.3;
+        if (chord.quality === 'Major') v += 0.3;
     }
     if (chord.interval === 4) { a += 0.4; v += 0.1; }
     if (chord.interval === 6) { a += 0.3; v -= 0.2; }
@@ -328,29 +328,29 @@ export const getMusicalCharacteristics = (v: number, a: number, t: number) => {
     let vibe = "Neutral";
     if (v > 0.25) vibe = "Bright";
     else if (v < -0.25) vibe = "Dark";
-    
+
     let mode = "Stable";
     if (t > 0.5) mode = "Unstable";
     else if (a > 0.5) mode = "Dynamic";
-    
+
     let texture = "Moderate";
     if (a > 0.4) texture = "Dense";
     else if (a < -0.4) texture = "Sparse";
-    
+
     return { vibe, mode, texture };
 };
 
 export const getHarmonicSuggestions = (contextChord: Chord | null): number[] => {
-    if (!contextChord) return [0, 4, 5]; 
+    if (!contextChord) return [0, 4, 5];
     const i = contextChord.interval;
-    switch(i) {
-        case 0: return [3, 4, 5, 1]; 
-        case 1: return [4, 6];       
-        case 2: return [5, 3];       
-        case 3: return [4, 0, 1];    
-        case 4: return [0, 5];       
-        case 5: return [3, 1];       
-        case 6: return [0, 5];       
+    switch (i) {
+        case 0: return [3, 4, 5, 1];
+        case 1: return [4, 6];
+        case 2: return [5, 3];
+        case 3: return [4, 0, 1];
+        case 4: return [0, 5];
+        case 5: return [3, 1];
+        case 6: return [0, 5];
         default: return [0, 4, 5];
     }
 };
@@ -360,9 +360,9 @@ export const findClosestScale = (v: number, a: number, t: number, currentScale: 
     let closest = currentScale;
     Object.entries(SCALE_DEFS).forEach(([st, def]) => {
         const sDef = def as ScaleDef;
-         const d = Math.sqrt(
-            Math.pow(v - sDef.scaleCoordinates.v, 2) + 
-            Math.pow(a - sDef.scaleCoordinates.a, 2) + 
+        const d = Math.sqrt(
+            Math.pow(v - sDef.scaleCoordinates.v, 2) +
+            Math.pow(a - sDef.scaleCoordinates.a, 2) +
             Math.pow(t - sDef.scaleCoordinates.t, 2)
         );
         const weightedDist = st === currentScale ? d * 0.75 : d;

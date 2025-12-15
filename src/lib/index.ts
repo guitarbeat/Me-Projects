@@ -11,9 +11,9 @@
  * - store.ts (State Management)
  */
 
-export * from './types';
+export * from '../types';
 export * from './constants';
 export * from './theory';
 export * from './audio';
-export * from './hooks';
-export * from './store';
+export * from '../hooks/hooks';
+export * from '../store';

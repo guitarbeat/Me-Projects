@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Chord } from './types';
+import { Chord } from '../types';
 import { cn } from './ui';
 
 // --- DATA ---

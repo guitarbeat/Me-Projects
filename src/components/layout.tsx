@@ -4,116 +4,18 @@ import React, { useState } from 'react';
 import { cn, IconButton } from './ui';
 // Re-export panel components for backward compatibility
 export { ResizableTopPanel, SplitView } from './resizable-panels';
-import { useStore, ScaleType, CIRCLE_KEYS, InstrumentType, ChordComplexity, Chord, buildChord, CHROMATIC_SHARPS } from './lib';
+import { useStore, ScaleType, CIRCLE_KEYS, InstrumentType, ChordComplexity, Chord, buildChord, CHROMATIC_SHARPS } from '../lib';
 import { ChordPalette } from './sequencer';
 import { 
     Play, Pause, Lock, Unlock, Link as LinkIcon, Trash2, 
     ListMusic, Network, Cloud, Keyboard, Music2, Zap, Gauge,
-    ChevronDown, Moon, Sun, Sparkles, Wand2, X, Loader2, Dices,
+    ChevronDown, Moon, Sun, X,
     FolderOpen, Save, Clock, Minus, Plus, PenTool
 } from 'lucide-react';
-import { GoogleGenAI, Type } from "@google/genai";
+
 import { GuitarChordDiagram } from './guitar';
 
-// --- AI COMPOSER MODAL ---
 
-const AIComposer = ({ onClose, onGenerate }: { onClose: () => void, onGenerate: (prompt: string) => Promise<void> }) => {
-    const [prompt, setPrompt] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    const handleSurpriseMe = () => {
-        const prompts = [
-            "A neo-soul progression in Eb minor with extended chords",
-            "A melancholic jazz ballad in C Dorian",
-            "An uplifting pop anthem in D Major using suspended chords",
-            "A dark cinematic sequence in F# Minor with tension",
-            "A lo-fi hip hop loop with jazzy passing chords",
-            "A dreamy Lydian soundscape for meditation",
-            "A driving rock chorus in A Mixolydian with power chords"
-        ];
-        const random = prompts[Math.floor(Math.random() * prompts.length)];
-        setPrompt(random);
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!prompt.trim()) return;
-        
-        setLoading(true);
-        setError(null);
-        try {
-            await onGenerate(prompt);
-            onClose();
-        } catch (err: unknown) {
-            setError("Failed to generate. Please try again.");
-            console.error(err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-[var(--bg-main)]/80 backdrop-blur-sm animate-in fade-in duration-200 p-4">
-            <div className="w-full max-w-md bg-[var(--bg-panel)] border border-[var(--border)] rounded-2xl shadow-2xl overflow-hidden relative scale-100 animate-in zoom-in-95 duration-200">
-                
-                {/* Header */}
-                <div className="p-4 border-b border-[var(--border)] flex items-center justify-between bg-[var(--bg-surface)]">
-                    <div className="flex items-center gap-2 text-[var(--text-main)]">
-                        <Sparkles className="text-[var(--accent)]" size={16} />
-                        <h3 className="text-sm font-bold tracking-wide uppercase">AI Composer</h3>
-                    </div>
-                    <button onClick={onClose} className="p-1 hover:bg-[var(--bg-element)] rounded-md transition-colors"><X size={14} /></button>
-                </div>
-
-                {/* Body */}
-                <div className="p-6">
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                        <div>
-                            <div className="flex justify-between items-center mb-2">
-                                <label className="text-[10px] uppercase font-bold text-[var(--text-muted)]">Describe your idea</label>
-                                <button 
-                                    type="button" 
-                                    onClick={handleSurpriseMe}
-                                    className="flex items-center gap-1 text-[10px] text-[var(--accent)] hover:underline font-medium"
-                                >
-                                    <Dices size={10} /> Surprise Me
-                                </button>
-                            </div>
-                            <textarea 
-                                autoFocus
-                                value={prompt}
-                                onChange={(e) => setPrompt(e.target.value)}
-                                placeholder="E.g., A melancholic jazz progression in Eb minor ending with a picardy third..."
-                                className="w-full h-24 bg-[var(--bg-element)] border border-[var(--border)] rounded-lg p-3 text-sm text-[var(--text-main)] placeholder:text-[var(--text-dim)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)] resize-none transition-all"
-                            />
-                        </div>
-
-                        {error && <div className="text-xs text-red-400 bg-red-500/10 p-2 rounded border border-red-500/20">{error}</div>}
-
-                        <div className="flex justify-end gap-2 pt-2">
-                             <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] transition-colors">
-                                Cancel
-                            </button>
-                            <button 
-                                type="submit" 
-                                disabled={loading || !prompt.trim()}
-                                className="px-4 py-2 rounded-lg text-xs font-bold bg-[var(--accent)] text-black hover:brightness-110 transition-all shadow-lg shadow-[var(--accent)]/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                            >
-                                {loading ? <Loader2 size={12} className="animate-spin"/> : <Wand2 size={12}/>}
-                                {loading ? 'Composing...' : 'Generate Music'}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-                
-                {/* Decorative BG */}
-                <div className="absolute top-0 right-0 -mt-10 -mr-10 w-32 h-32 bg-[var(--accent)] rounded-full blur-[80px] opacity-10 pointer-events-none" />
-                <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-32 h-32 bg-blue-500 rounded-full blur-[80px] opacity-10 pointer-events-none" />
-            </div>
-        </div>
-    );
-};
 
 // --- PROJECT LIBRARY MODAL ---
 
@@ -226,60 +128,19 @@ export const ControlPanel = () => {
         setSelectedChordIndex
     } = useStore();
 
-    const [showAI, setShowAI] = useState(false);
+
     const [showLibrary, setShowLibrary] = useState(false);
 
     const selectedChord = selectedChordIndex !== null && progression[selectedChordIndex] ? progression[selectedChordIndex] : null;
 
-    const instruments: { id: InstrumentType, icon: React.ComponentType<{ size?: number; className?: string }>, label: string }[] = [
+    const instruments: { id: InstrumentType, icon: any, label: string }[] = [
         { id: 'rhodes', icon: Keyboard, label: 'Keys' },
         { id: 'pad', icon: Cloud, label: 'Pad' },
         { id: 'pluck', icon: Music2, label: 'Pluck' },
         { id: 'synth', icon: Zap, label: 'Synth' }
     ];
 
-    const handleAIGeneration = async (userPrompt: string) => {
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-        
-        // Define Strict Output Schema for structured chords
-        const responseSchema = {
-            type: Type.ARRAY,
-            items: {
-                type: Type.OBJECT,
-                properties: {
-                    root: { type: Type.STRING, description: "Root note (e.g., C, F#, Bb)" },
-                    quality: { type: Type.STRING, description: "Major, Minor, Diminished, Augmented, Half-Dim, Dominant, Sus2, Sus4" },
-                    extension: { type: Type.STRING, description: "Extension string (e.g., 7, 9, 11, maj7, m7) or empty" },
-                    duration: { type: Type.NUMBER, description: "Duration in beats (default 4)" }
-                },
-                required: ["root", "quality", "duration"]
-            }
-        };
 
-        const result = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
-            contents: userPrompt,
-            config: {
-                systemInstruction: "You are a professional music composer. Generate a chord progression array based on the user's description. Map chords to simple root/quality/extension structure. For guitar-style requests, favor standard open chord keys (E, A, D, G, C) and mixolydian/blues influences where appropriate.",
-                responseMimeType: "application/json",
-                responseSchema: responseSchema
-            }
-        });
-
-        const json = JSON.parse(result.text || "[]");
-        
-        // Transform JSON to App Chords using internal builder
-        const chords = json.map((c: { root: string; quality: string; extension?: string; duration?: number }) => {
-            const chord = buildChord(c.root, c.quality, c.extension || '', c.duration || 4);
-            return chord;
-        });
-
-        // Clear and Add
-        if (chords.length > 0) {
-            handleProgression('clear');
-            handleProgression('add', { chords, index: 0 });
-        }
-    };
 
     const handleChordUpdate = (updates: Partial<Chord>) => {
         if (!selectedChord || selectedChordIndex === null) return;
@@ -298,7 +159,7 @@ export const ControlPanel = () => {
     return (
         <div className="w-full h-full flex flex-col select-none font-sans text-[var(--text-main)] bg-[var(--bg-panel)] overflow-hidden relative">
             
-            {showAI && <AIComposer onClose={() => setShowAI(false)} onGenerate={handleAIGeneration} />}
+
             {showLibrary && <ProjectLibrary onClose={() => setShowLibrary(false)} />}
 
             {/* Top Bar with Theme Toggle (Absolute) */}
@@ -410,7 +271,7 @@ export const ControlPanel = () => {
                             <div className="relative h-full flex items-center justify-center hover:bg-[var(--bg-surface)] transition-colors px-1">
                                 <select 
                                     value={scale} 
-                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setScale(e.target.value)} 
+                                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setScale(e.target.value as ScaleType)} 
                                     disabled={isScaleLocked} 
                                     className="bg-transparent text-[11px] font-bold text-[var(--text-muted)] outline-none cursor-pointer w-[120px] hover:text-[var(--text-main)] appearance-none py-1 uppercase tracking-wide text-center truncate"
                                 >
@@ -484,16 +345,7 @@ export const ControlPanel = () => {
                                 <FolderOpen size={12} />
                             </button>
 
-                            {/* AI Button */}
-                            <div className="w-px h-4 bg-[var(--border)] mx-0.5" />
-                            <button 
-                                onClick={() => setShowAI(true)}
-                                className="h-7 px-2 rounded-md flex items-center gap-1.5 bg-gradient-to-r from-violet-500/10 to-fuchsia-500/10 border border-violet-500/20 text-violet-500 hover:from-violet-500/20 hover:to-fuchsia-500/20 transition-all text-[10px] font-bold uppercase tracking-wider hover:scale-105 active:scale-95"
-                                title="AI Composer"
-                            >
-                                <Sparkles size={10} />
-                                <span>AI</span>
-                            </button>
+
                         </div>
                     </div>
                     </>

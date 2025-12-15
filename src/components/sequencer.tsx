@@ -2,7 +2,7 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { Plus, X, GripHorizontal, Filter, Search } from 'lucide-react';
 import { cn } from './ui';
-import { Chord, useStore, useDerivedData } from './lib';
+import { Chord, useStore, useDerivedData } from '../lib';
 
 const PIXELS_PER_BEAT = 40;
 
@@ -138,12 +138,12 @@ interface TimelineNodeProps {
     index: number;
     isActive: boolean;
     isSelected: boolean;
-    onRemove: () => void;
-    onResize: (duration: number) => void;
+    onRemove: (index: number) => void;
+    onResize: (index: number, duration: number) => void;
     onDragStart: (e: React.DragEvent) => void;
     onDragEnter: (e: React.DragEvent) => void;
     onDrop: (e: React.DragEvent) => void;
-    onSelect: () => void;
+    onSelect: (index: number) => void;
     isDropTarget: boolean;
     isDragging: boolean;
 }

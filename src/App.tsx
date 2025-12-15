@@ -6,7 +6,7 @@ import { ProgressionStrip, cn, ControlPanel, PanelStack, ResizableTopPanel, Mood
 import { Loader2 } from 'lucide-react';
 
 // Lazy load heavy visualization components
-const HarmonicSpace = React.lazy(() => import('./tonnetz').then(module => ({ default: module.HarmonicSpace })));
+const HarmonicSpace = React.lazy(() => import('./components/tonnetz').then(module => ({ default: module.HarmonicSpace })));
 
 // --- SUB-COMPONENTS ---
 

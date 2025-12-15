@@ -1,5 +1,5 @@
 import * as Tone from 'tone';
-import { Chord, Note, ScaleType, InstrumentType } from '../types';
+import { Chord, InstrumentType } from '../types';
 
 export class AudioEngine {
     private polySynth: Tone.PolySynth;

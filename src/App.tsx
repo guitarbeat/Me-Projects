@@ -1,8 +1,7 @@
 
-
 import React, { Suspense } from 'react';
 import { useStore, useUrlSync } from './lib';
-import { ProgressionStrip, cn, ControlPanel, PanelStack, ResizableTopPanel, MoodSelector, SongwritingBoard } from './components';
+import { ProgressionStrip, cn, ControlPanel, PanelStack, MoodSelector, SongwritingBoard } from './components';
 import { Loader2 } from 'lucide-react';
 
 // Lazy load heavy visualization components

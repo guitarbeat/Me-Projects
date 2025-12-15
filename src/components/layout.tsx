@@ -1,19 +1,21 @@
 
 
 import React, { useState } from 'react';
-import { cn, IconButton } from './ui';
+import { cn } from './ui';
 // Re-export panel components for backward compatibility
 export { ResizableTopPanel, SplitView } from './resizable-panels';
-import { useStore, ScaleType, CIRCLE_KEYS, InstrumentType, ChordComplexity, Chord, buildChord, CHROMATIC_SHARPS } from '../lib';
+import { useStore, ScaleType, CIRCLE_KEYS, InstrumentType, Chord, buildChord, CHROMATIC_SHARPS } from '../lib';
 import { ChordPalette } from './sequencer';
 import { 
-    Play, Pause, Lock, Unlock, Link as LinkIcon, Trash2, 
+    Play, Pause, Lock, Unlock, Trash2, 
     ListMusic, Network, Cloud, Keyboard, Music2, Zap, Gauge,
     ChevronDown, Moon, Sun, X, ChevronUp,
-    FolderOpen, Save, Clock, Minus, Plus, PenTool
+    FolderOpen, Save, Clock, Minus, Plus, PenTool, LucideIcon
 } from 'lucide-react';
 import { HarmonicSpace as TonnetzWrapper } from './tonnetz';
 import { ProgressionStrip as SequencerView } from './sequencer';
+import { PanelStack } from './resizable-panels';
+import { MoodSelector } from './mood';
 
 import { GuitarChordDiagram } from './guitar';
 
@@ -112,56 +114,8 @@ const ProjectLibrary = ({ onClose }: { onClose: () => void }) => {
     );
 };
 
-// --- PANEL WRAPPER ---
-// Internal component for the flexible layout
-const PanelWrapper = ({ 
-    children, 
-    title, 
-    onClose, 
-    onMaximize, 
-    isMaximized 
-}: { 
-    children: React.ReactNode, 
-    title: React.ReactNode, 
-    onClose: () => void, 
-    onMaximize: () => void, 
-    isMaximized: boolean 
-}) => {
-    return (
-        <div className={cn(
-            "flex flex-col relative transition-all duration-300 min-h-0",
-            // If maximized, it takes full height. If not, it shares space (flex-1).
-            // We rely on the parent to hide other panels when this is maximized.
-            // But we still need to be flex-1 to fill the container when multiple are visible.
-            "flex-1" // Always flex-1 so they share space evenly
-        )}>
-            <div className="flex-1 bg-[var(--bg-surface)] m-2 rounded-2xl border border-[var(--border)] overflow-hidden flex flex-col relative shadow-sm group">
-                 {/* Header / Controls */}
-                 <div className="absolute top-0 left-0 right-0 h-10 flex items-center justify-between px-4 z-20 pointer-events-none">
-                    {/* Title Area */}
-                    <div className="flex items-center gap-2 pointer-events-auto">
-                        {title}
-                    </div>
-                    {/* Window Controls */}
-                    <div className="flex items-center gap-2 pointer-events-auto bg-[var(--bg-surface)]/80 backdrop-blur-md border border-[var(--border)] rounded-full p-1 pr-2 shadow-sm transition-opacity opacity-0 group-hover:opacity-100 hover:opacity-100">
-                        <button onClick={(e) => { e.stopPropagation(); onMaximize(); }} title={isMaximized ? "Restore Layout" : "Maximize"}>
-                            {isMaximized ? (<ChevronDown size={14} />) : (<ChevronUp size={14} />)}
-                        </button>
-                        <div className="w-px h-3 bg-[var(--border)]" />
-                        <button onClick={(e) => { e.stopPropagation(); onClose(); }} title="Close Panel">
-                            <X size={14} />
-                        </button>
-                    </div>
-                </div>
-                <div className="flex-1 overflow-hidden relative pt-10 bg-[var(--bg-main)]">
-                    {children}
-                </div>
-            </div>
-        </div>
-    );
-};
 
-export function ControlPanel() {
+export default function ControlPanel() {
     const { 
         key: currentKey, 
         scale, 
@@ -189,7 +143,8 @@ export function ControlPanel() {
     const [visiblePanels, setVisiblePanels] = useState({
         map: true,
         sequencer: true,
-        palette: true
+        palette: true,
+        mood: false
     });
 
     const [showLibrary, setShowLibrary] = useState(false);
@@ -219,13 +174,14 @@ export function ControlPanel() {
         
         if (isCurrentlyMaximized) {
             // Restore
-            setVisiblePanels({ map: true, sequencer: true, palette: true });
+            setVisiblePanels({ map: true, sequencer: true, palette: true, mood: false });
         } else {
             // Maximize this one (hide others)
             setVisiblePanels({
                 map: key === 'map',
                 sequencer: key === 'sequencer',
-                palette: key === 'palette'
+                palette: key === 'palette',
+                mood: key === 'mood'
             });
         }
     };
@@ -246,7 +202,7 @@ export function ControlPanel() {
 
     const selectedChord = selectedChordIndex !== null && progression[selectedChordIndex] ? progression[selectedChordIndex] : null;
 
-    const instruments: { id: InstrumentType, icon: any, label: string }[] = [
+    const instruments: { id: InstrumentType, icon: LucideIcon, label: string }[] = [
         { id: 'rhodes', icon: Keyboard, label: 'Keys' },
         { id: 'pad', icon: Cloud, label: 'Pad' },
         { id: 'pluck', icon: Music2, label: 'Pluck' },
@@ -267,29 +223,6 @@ export function ControlPanel() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                     {/* ABC Panel Toggles */}
-                    <div className="flex items-center bg-[var(--bg-element)]/50 p-1 rounded-lg border border-[var(--border)]">
-                        {[
-                            { id: 'map', label: 'Map', icon: Network },
-                            { id: 'sequencer', label: 'Seq', icon: ListMusic },
-                            { id: 'palette', label: 'Pal', icon: PenTool },
-                        ].map((panel) => (
-                            <button
-                                key={panel.id}
-                                onClick={() => togglePanel(panel.id as any)}
-                                className={cn(
-                                    "px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider flex items-center gap-2 transition-all",
-                                    visiblePanels[panel.id as keyof typeof visiblePanels] 
-                                        ? "bg-[var(--bg-surface)] text-[var(--accent)] shadow-sm border border-[var(--border)]" 
-                                        : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-main)]"
-                                )}
-                            >
-                                <panel.icon size={12} strokeWidth={2.5} />
-                                <span className="hidden sm:inline-block">{panel.label}</span>
-                            </button>
-                        ))}
-                    </div>
-
                     {/* Key & Scale Controls (Same as before) */}
                     <div className="flex items-center gap-3 bg-[var(--bg-element)]/50 p-1 rounded-lg border border-[var(--border)]">
                         <div className="flex flex-col px-2">
@@ -415,7 +348,7 @@ export function ControlPanel() {
                                             </div>
                                             <div className="flex flex-col gap-1">
                                                 <label className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Quality</label>
-                                                <select value={selectedChord.quality} onChange={(e) => handleChordUpdate({ quality: e.target.value as any })} className="bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent)]">{['major', 'minor', 'dim', 'aug'].map(q => <option key={q} value={q}>{q}</option>)}</select>
+                                                <select value={selectedChord.quality} onChange={(e) => handleChordUpdate({ quality: e.target.value as Chord['quality'] })} className="bg-[var(--bg-element)] border border-[var(--border)] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[var(--accent)]">{['major', 'minor', 'dim', 'aug'].map(q => <option key={q} value={q}>{q}</option>)}</select>
                                             </div>
                                             <div className="flex flex-col gap-1">
                                                  <label className="text-[10px] uppercase font-bold text-[var(--text-dim)]">Extension</label>
@@ -457,41 +390,51 @@ export function ControlPanel() {
                                 </div>
                             )}
 
-                            {/* 1. Harmonic Map */}
-                            {visiblePanels.map && (
-                                <PanelWrapper 
-                                    title={<><Network size={16} className="text-[var(--accent)]" /><span className="text-xs font-bold uppercase tracking-wider">Harmonic Map</span></>} 
-                                    onClose={() => togglePanel('map')}
-                                    onMaximize={() => maximizePanel('map')}
-                                    isMaximized={isMapMaximized}
-                                >
-                                    <TonnetzWrapper />
-                                </PanelWrapper>
-                            )}
-
-                            {/* 2. Sequencer Panel */}
-                            {visiblePanels.sequencer && (
-                                <PanelWrapper 
-                                    title={<><ListMusic size={16} className="text-[var(--accent)]" /><span className="text-xs font-bold uppercase tracking-wider">Sequencer</span></>}
-                                    onClose={() => togglePanel('sequencer')}
-                                    onMaximize={() => maximizePanel('sequencer')}
-                                    isMaximized={isSequencerMaximized}
-                                >
-                                    <SequencerView />
-                                </PanelWrapper>
-                            )}
-
-                            {/* 3. Chord Palette Panel */}
-                            {visiblePanels.palette && (
-                                <PanelWrapper 
-                                    title={<><PenTool size={16} className="text-[var(--accent)]" /><span className="text-xs font-bold uppercase tracking-wider">Palette</span></>}
-                                    onClose={() => togglePanel('palette')}
-                                    onMaximize={() => maximizePanel('palette')}
-                                    isMaximized={isPaletteMaximized}
-                                >
-                                    <ChordPalette className="px-3" />
-                                </PanelWrapper>
-                            )}
+                            <PanelStack 
+                                panels={[
+                                    {
+                                        id: 'map',
+                                        title: <><Network size={16} className="text-[var(--accent)]" /><span className="text-xs font-bold uppercase tracking-wider">Harmonic Map</span></>,
+                                        content: <TonnetzWrapper />,
+                                        defaultSize: 40,
+                                        minSize: 10,
+                                        collapsible: true, // We will control visibility via the existing 'visiblePanels' logic if needed, 
+                                                           // or better yet, let PanelStack handle collapsing via its internal state?
+                                                           // Actually, 'visiblePanels' in this file is redundant if PanelStack has internal state.
+                                                           // But we have global toggles in the sidebar.
+                                                           // Let's pass 'isCollapsed' logic if PanelStack supports controlled state?
+                                                           // Looking at PanelStack source: it initializes state but doesn't accept prop for it.
+                                                           // EXCEPT it uses 'collapsible' to init state.
+                                                           // If we want EXTERNAL control (sidebar buttons), we need to update PanelStack or use a key.
+                                                           // Let's stick to conditional rendering of the PANELS ARRAY.
+                                                           // If visiblePanels.map is FALSE, we just don't include it in the array!
+                                    },
+                                    {
+                                        id: 'sequencer',
+                                        title: <><ListMusic size={16} className="text-[var(--accent)]" /><span className="text-xs font-bold uppercase tracking-wider">Sequencer</span></>,
+                                        content: <SequencerView />,
+                                        defaultSize: 30,
+                                        minSize: 10,
+                                        collapsible: true,
+                                    },
+                                    {
+                                        id: 'palette',
+                                        title: <><PenTool size={16} className="text-[var(--accent)]" /><span className="text-xs font-bold uppercase tracking-wider">Palette</span></>,
+                                        content: <ChordPalette className="px-3" />,
+                                        defaultSize: 25,
+                                        minSize: 10,
+                                        collapsible: true,
+                                    },
+                                    {
+                                        id: 'mood',
+                                        title: <><Zap size={16} className="text-[var(--accent)]" /><span className="text-xs font-bold uppercase tracking-wider">Mood</span></>,
+                                        content: <MoodSelector />,
+                                        defaultSize: 15,
+                                        minSize: 10,
+                                        collapsible: true, // Should logic be 'isHidden'? PanelStack filters visible panels anyway.
+                                    }
+                                ].filter(p => visiblePanels[p.id as keyof typeof visiblePanels])}
+                            />
                         </>
                     )}
                 </div>
@@ -540,6 +483,20 @@ export function ControlPanel() {
                             )}
                         >
                             <PenTool size={18} strokeWidth={1.5} />
+                        </button>
+
+                         {/* Mood Toggle */}
+                         <button 
+                            onClick={() => togglePanel('mood')} 
+                            title="Toggle Mood Selector"
+                            className={cn(
+                                "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200", 
+                                visiblePanels.mood 
+                                    ? "bg-[var(--bg-element)] text-[var(--accent)] shadow-sm border border-[var(--border)] ring-1 ring-[var(--accent)]/20" 
+                                    : "text-[var(--text-dim)] hover:text-[var(--text-main)] hover:bg-[var(--bg-element)] hover:scale-105"
+                            )}
+                        >
+                            <Zap size={18} strokeWidth={1.5} />
                         </button>
                     </div>
 

@@ -200,10 +200,9 @@ export const useStore = create<AppState>((set, get) => ({
                     let newChords: Chord[] = [];
                     let insertIndex = -1;
                     if (payload && typeof payload === 'object' && ('chord' in payload || 'chords' in payload) && 'index' in payload) {
-                        // @ts-ignore - Union type complexity, runtime check is sufficient
+                        // @ts-expect-error - Union type complexity, runtime check is sufficient
                         const c = payload.chord || payload.chords;
                         newChords = Array.isArray(c) ? c : [c];
-                        // @ts-ignore
                         insertIndex = payload.index;
                     } else {
                         newChords = Array.isArray(payload) ? payload : [payload as Chord];
@@ -233,7 +232,7 @@ export const useStore = create<AppState>((set, get) => ({
                     newProgression = [];
                     newSelected = null;
                     break;
-                case 'reorder':
+                case 'reorder': {
                     const reorderPayload = payload as ReorderPayload;
                     if (payload && typeof reorderPayload.from === 'number' && typeof reorderPayload.to === 'number') {
                         const [moved] = newProgression.splice(reorderPayload.from, 1);
@@ -247,12 +246,14 @@ export const useStore = create<AppState>((set, get) => ({
                         }
                     }
                     break;
-                case 'resize':
+                }
+                case 'resize': {
                     const resizePayload = payload as ResizePayload;
                     if (payload && typeof resizePayload.index === 'number' && typeof resizePayload.duration === 'number') {
                         newProgression[resizePayload.index] = { ...newProgression[resizePayload.index], duration: resizePayload.duration };
                     }
                     break;
+                }
                 case 'quantize': {
                     const grid = 0.25;
                     let t = 0;
@@ -267,12 +268,13 @@ export const useStore = create<AppState>((set, get) => ({
                     });
                     break;
                 }
-                case 'update':
+                case 'update': {
                     const updatePayload = payload as UpdatePayload;
                     if (payload && typeof updatePayload.index === 'number' && updatePayload.chord) {
                         newProgression[updatePayload.index] = updatePayload.chord;
                     }
                     break;
+                }
             }
             return { progression: newProgression, selectedChordIndex: newSelected };
         });

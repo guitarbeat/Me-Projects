@@ -1,7 +1,6 @@
 
 import { Chord, Note, ScaleType, ChordComplexity } from '../types';
 import { CHROMATIC_SHARPS, CHROMATIC_FLATS, SCALE_DEFS } from './constants';
-import { ScaleType as ST } from '../types';
 import { ScaleDef } from '../types';
 
 export const getScaleNotes = (root: Note, scaleType: ScaleType): Note[] => {

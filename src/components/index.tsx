@@ -9,6 +9,7 @@
 
 export * from './ui';
 export * from './layout';
+export { default as ControlPanel } from './layout';
 export * from './resizable-panels';
 export * from './sequencer';
 export * from './mood';

@@ -16,33 +16,16 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Panel, PanelGroup, PanelResizeHandle, ImperativePanelHandle } from 'react-resizable-panels';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 
+// Import cn from ui module
+import { cn } from './ui';
+
 // Re-export cn utility type for convenience
-// If your project uses a different cn utility, you can override this via props
 export type CnFunction = (...classes: (string | undefined | null | false)[]) => string;
 
 // Default cn implementation - simple class name merger
 const defaultCn: CnFunction = (...classes) => classes.filter(Boolean).join(' ');
 
-// Import cn from ui module
-// NOTE: For use in other projects, modify this import to match your project structure
-// or pass your cn function via props to each component.
-// 
-// Example modifications for other projects:
-//   1. Change the import: import { cn } from './your-ui-module';
-//   2. Or use default: const projectCn = defaultCn;
-//   3. Or pass cn via props to components (all components accept a `cn` prop)
-let projectCn: CnFunction;
-
-// Try to import cn from './ui' (for this project)
-// For other projects: modify this import statement or use the default implementation
-try {
-    // @ts-ignore - Dynamic require for cross-project compatibility
-    const uiModule = require('./ui');
-    projectCn = (uiModule && typeof uiModule.cn === 'function') ? uiModule.cn : defaultCn;
-} catch {
-    // If './ui' doesn't exist, use default implementation
-    projectCn = defaultCn;
-}
+const projectCn: CnFunction = cn || defaultCn;
 
 // Use project cn if available, otherwise use default
 const getCn = (): CnFunction => projectCn;
@@ -182,7 +165,7 @@ export const PanelCard = ({
     children, 
     radius, 
     padding, 
-    gap = 0, 
+    gap: _gap = 0, 
     isCollapsed = false, 
     overlay, 
     overlayPosition = 'bottom',
@@ -642,19 +625,19 @@ export const PanelStack = ({ panels, direction = 'vertical', cn }: PanelStackPro
     const cnFn = cn || getCn();
     const containerRef = useRef<HTMLDivElement>(null);
     const panelRefs = useRef<Map<string, ImperativePanelHandle>>(new Map());
-    const [collapsedStates, setCollapsedStates] = useState<Map<string, boolean>>(new Map());
-    const { radius, padding, gap } = useDynamicLayout(containerRef);
-
+    
     // Initialize collapsed states
-    useEffect(() => {
+    const [collapsedStates, setCollapsedStates] = useState<Map<string, boolean>>(() => {
         const initialStates = new Map<string, boolean>();
         panels.forEach(panel => {
             if (panel.collapsible) {
                 initialStates.set(panel.id, false);
             }
         });
-        setCollapsedStates(initialStates);
-    }, [panels]);
+        return initialStates;
+    });
+
+    const { radius, padding, gap } = useDynamicLayout(containerRef);
 
     const togglePanel = useCallback((panelId: string) => {
         const panel = panelRefs.current.get(panelId);

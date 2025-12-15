@@ -1,5 +1,4 @@
-
-import { ScaleType, InstrumentType, ScaleDef } from '../types';
+import { ScaleType, ScaleDef } from '../types';
 
 // --- LAYOUT CONSTANTS ---
 

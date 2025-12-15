@@ -32,9 +32,9 @@ const getFunctionName = (semitones: number, isDiatonic: boolean, scaleType: Scal
 };
 
 // --- LOGIC ---
-const getSentimentMatch = (chordInfo: { quality: string }, currentKey: Note, scaleType: ScaleType, targetMood: { v: number, a: number } | null) => {
+const getSentimentMatch = (chordInfo: Chord, currentKey: Note, scaleType: ScaleType, targetMood: { v: number, a: number } | null) => {
     if (!targetMood) return 1;
-    const sentiment = estimateChordSentiment(chordInfo as any, currentKey, scaleType);
+    const sentiment = estimateChordSentiment(chordInfo, currentKey, scaleType);
     const dist = Math.hypot(sentiment.valence - targetMood.v, sentiment.arousal - targetMood.a);
     return Math.max(0.1, 1 - (dist * 0.7)); 
 };
@@ -146,7 +146,7 @@ interface TriData {
     isTension: boolean;
     isSuggested: boolean;
     isChromatic: boolean;
-    chordInfo: Chord | any;
+    chordInfo: Chord;
     functionLabel?: string;
 }
 
@@ -272,15 +272,7 @@ const TonnetzTriangle = React.memo(({ t, mood, state, matchScore, onClick, onEnt
     const baseScale = matchScore > 0.9 && !isActive && !isHover ? 0.9 : 1; 
     const finalScale = isActive ? 1.15 : isHover ? 1.05 : isTarget ? 1.1 : baseScale;
     
-    let stroke = 'transparent';
-    let strokeW = 0.5;
-    let dash = 'none';
 
-    if (isActive) { stroke = 'var(--bg-main)'; strokeW = 3; } 
-    else if (isTarget) { stroke = 'var(--accent)'; strokeW = 2; dash = '2 2'; } 
-    else if (isHover) { stroke = 'var(--text-main)'; strokeW = 1.5; } 
-    else if (isTonic && !t.isChromatic) { stroke = 'var(--text-dim)'; strokeW = 0.5; } 
-    else if (isTension) { stroke = t.functionLabel === 'Neapolitan' ? '#f97316' : '#d946ef'; strokeW = 2; dash = '1 1'; } 
     
     return (
         <g 
@@ -302,7 +294,7 @@ const TonnetzTriangle = React.memo(({ t, mood, state, matchScore, onClick, onEnt
             {isTension && isActive && <TensionField center={t.center} intensity={0.8} type={t.functionLabel} />}
 
             <polygon 
-                points={(t.points as any).map((p: any) => `${p.x},${p.y}`).join(' ')} 
+                points={t.points.map((p) => `${p.x},${p.y}`).join(' ')} 
                 fill={fill} 
                 stroke={t.diatonic ? "var(--border)" : "var(--border-soft)"} 
                 strokeWidth={isActive ? 2 : 1} 
@@ -355,7 +347,7 @@ const generateGridData = (key: Note, scale: ScaleType, chords: Chord[], secondar
                 const sec = secondary.find(c => c.root === root && c.quality === type);
                 const tens = tensionChords.find(c => c.root === root && c.quality === type);
                 const info = diatonic || sec || tens || { 
-                    root, quality: type, symbol: type==='Major'?root:`${root}m`, 
+                    root, quality: type as Chord['quality'], symbol: type==='Major'?root:`${root}m`, 
                     romanNumeral: '?', notes: [], interval: -1, duration: 0,
                     extension: '', suffix: '' 
                 };
@@ -391,7 +383,6 @@ export const HarmonicSpace = () => {
     const suggestedIndices = useMemo(() => getHarmonicSuggestions(contextChord), [contextChord]);
     
     const [view, setView] = useState({ x: 0, y: 0, k: 1 });
-    const [drag, setDrag] = useState<{active:boolean, last:{x:number,y:number}|null}>({active:false, last:null});
     const [hover, setHover] = useState<{ id: string } | null>(null);
 
     const { points, tris } = useMemo(() => generateGridData(currentKey, scaleType, chords, secondaryDominants, tensionChords, complexity, suggestedIndices), [currentKey, scaleType, chords, secondaryDominants, tensionChords, complexity, suggestedIndices]);
@@ -476,7 +467,7 @@ export const HarmonicSpace = () => {
 
     const handleChordAction = useCallback((t: { chordInfo: Chord; root: string; type: string }) => {
         let chordToPlay = t.chordInfo;
-        if (!chordToPlay.notes || chordToPlay.notes.length === 0) chordToPlay = buildChord(t.root, t.type as any, complexity === 'triad' ? '' : '7');
+        if (!chordToPlay.notes || chordToPlay.notes.length === 0) chordToPlay = buildChord(t.root, t.type as Chord['quality'], complexity === 'triad' ? '' : '7');
         playOne(chordToPlay);
         handleProgression('add', chordToPlay);
     }, [complexity, playOne, handleProgression]);

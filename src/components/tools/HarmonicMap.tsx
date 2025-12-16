@@ -6,7 +6,7 @@ import { cn } from '../ui';
 // --- HELPERS ---
 const GRID_SIZE = 6, SPACING = 80, X_VEC = { x: SPACING, y: 0 }, Y_VEC = { x: SPACING * 0.5, y: SPACING * 0.866 };
 
-const getFunctionName = (semitones: number, isDiatonic: boolean, scaleType: ScaleType, roman: string) => {
+export const getFunctionName = (semitones: number, isDiatonic: boolean, scaleType: ScaleType, roman: string) => {
     // 1. Handle Special Chromatic Functions
     if (roman === 'N') return 'Neapolitan';
     if (roman === 'Ger+6' || roman === 'Fr+6' || roman === 'It+6') return 'Augmented 6th';
@@ -508,9 +508,24 @@ export const HarmonicSpace = () => {
 export const MiniHarmonicMap = () => {
     const { key, scale, progression } = useStore();
     
+    // Derived state for the active context
     const contextChord = useMemo(() => progression.slice().reverse().find(c => !c.isRest) || null, [progression]);
-    const suggestions = useMemo(() => getHarmonicSuggestions(contextChord), [contextChord]);
     
+    // Let's do better: "Active: Dominant"
+    const displayLabel = useMemo(() => {
+        if (!contextChord) return `${key} ${scale}`;
+        // Map roman to function quickly (simpler version of getFunctionName)
+        const r = contextChord.romanNumeral;
+        if(r.match(/[vV]ii/)) return 'Leading Tone';
+        if(r.match(/[vV]/)) return 'Dominant';
+        if(r.match(/[iI]ii/)) return 'Mediant';
+        if(r.match(/[iI]v/)) return 'Subdominant'; // catch iv before i
+        if(r.match(/[iI]i/)) return 'Supertonic';
+        if(r.match(/[iI]$/)) return 'Tonic';
+        if(r.match(/[vV]i/)) return 'Submediant';
+        return 'Chromatic';
+    }, [contextChord, key, scale]);
+
     return (
         <div className="flex items-center gap-3 px-4 w-full h-full bg-[var(--bg-surface)] hover:bg-[var(--bg-element)] transition-colors cursor-pointer group">
             <div className="relative w-8 h-8 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] flex items-center justify-center overflow-hidden shrink-0 group-hover:border-[var(--accent)]">
@@ -519,12 +534,17 @@ export const MiniHarmonicMap = () => {
                     <div className="border-b border-[var(--text-muted)]"/>
                     <div className="border-r border-[var(--text-muted)]"/>
                 </div>
-                <div className="w-2 h-2 rounded-full bg-[var(--accent)] shadow-[0_0_8px_var(--accent)] animate-pulse" />
+                <div className={cn("w-2 h-2 rounded-full shadow-[0_0_8px] animate-pulse transition-colors", 
+                    displayLabel === 'Tonic' ? 'bg-emerald-500 shadow-emerald-500' :
+                    displayLabel === 'Dominant' ? 'bg-rose-500 shadow-rose-500' :
+                    displayLabel === 'Subdominant' ? 'bg-sky-500 shadow-sky-500' :
+                    'bg-[var(--accent)] shadow-[var(--accent)]'
+                )} />
             </div>
             <div className="flex flex-col min-w-0">
                  <span className="font-bold text-xs text-[var(--text-main)] truncate">Harmonic Map</span>
                  <span className="text-[10px] text-[var(--text-muted)] font-mono truncate">
-                    {key} {scale} • {suggestions.length} Suggestions
+                    {contextChord ? `Active: ${displayLabel}` : `${key} ${scale}`}
                  </span>
             </div>
         </div>

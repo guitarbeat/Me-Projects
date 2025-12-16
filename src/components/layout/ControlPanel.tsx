@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+
+import React, { useState, useRef } from 'react';
 import { cn, IconButton } from '../ui';
 // Re-export panel components
 import { useStore } from '../../lib';
@@ -12,11 +13,70 @@ import {
 import { SplitView } from './split-view';
 import { SongwritingBoard, MiniSongwritingBoard } from '../tools/SongwritingBoard';
 import { ProjectLibrary } from '../overlays/ProjectLibrary';
-import { ChordEditor } from '../tools/ChordEditor';
 import { HarmonicSpace, MiniHarmonicMap } from '../tools/HarmonicMap';
-import { ProgressionStrip, ChordPalette, MiniSequencer, MiniChordPalette } from '../tools/Sequencer'; // Note: ChordPalette is the list component
+import { ProgressionStrip, ChordPalette, MiniSequencer, MiniChordPalette } from '../tools/Sequencer';
 import { CircleOfFifths } from '../tools/CircleOfFifths';
 import { MoodSelector, MiniMoodSelector } from '../tools/MoodSelector';
+
+
+const FloatingToggle = ({ isVisible, onClick }: { isVisible: boolean, onClick: () => void }) => {
+    // Start at bottom-left with some padding
+    const [pos, setPos] = useState({ x: 20, y: 20 });
+    const isDragging = useRef(false);
+    const dragStart = useRef({ x: 0, y: 0 });
+    const buttonRef = useRef<HTMLButtonElement>(null);
+
+    const handlePointerDown = (e: React.PointerEvent) => {
+        isDragging.current = false;
+        dragStart.current = { x: e.clientX, y: e.clientY };
+        (e.target as Element).setPointerCapture(e.pointerId);
+    };
+
+    const handlePointerMove = (e: React.PointerEvent) => {
+        if (e.buttons !== 1) return; // Only process if primary button is held
+        const dx = e.clientX - dragStart.current.x;
+        const dy = e.clientY - dragStart.current.y;
+        
+        if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+            isDragging.current = true;
+            // Update position (inverted Y since we use bottom, but let's use standard Top/Left for drag to be easier?
+            // Actually user asked for "placed in the corner", usually bottom-left. 
+            // Let's use fixed Top/Left to avoid coordinate confusion or use transform.
+            // Let's stick to bottom/left relative updates if we track delta.
+            setPos(p => ({ x: p.x + dx, y: p.y - dy })); // -dy because y goes UP for 'bottom' style
+            dragStart.current = { x: e.clientX, y: e.clientY };
+        }
+    };
+
+    const handlePointerUp = (e: React.PointerEvent) => {
+        (e.target as Element).releasePointerCapture(e.pointerId);
+        if (!isDragging.current) {
+            onClick();
+        }
+        isDragging.current = false;
+    };
+
+    return (
+        <div 
+            className={cn(
+                "fixed z-[100] transition-opacity duration-300 touch-none",
+                isVisible ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+            )}
+            style={{ left: pos.x, bottom: pos.y }}
+        >
+            <button
+                ref={buttonRef}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                className="bg-black text-white hover:bg-neutral-900 border border-neutral-800 rounded-full w-10 h-10 shadow-2xl flex items-center justify-center p-0 cursor-grab active:cursor-grabbing hover:scale-105 active:scale-95 transition-transform"
+                title="Show Sidebar (Drag to move)"
+            >
+                <PanelLeftOpen size={18} />
+            </button>
+        </div>
+    );
+};
 
 export default function ControlPanel() {
     const { 
@@ -24,21 +84,14 @@ export default function ControlPanel() {
         scale, 
         isPlaying, 
         togglePlay,
-
-        progression,
-        selectedChordIndex,
-        setSelectedChordIndex,
-        handleProgression,
     } = useStore();
-
-    const selectedChord = (selectedChordIndex !== null && progression[selectedChordIndex]) ? progression[selectedChordIndex] : null;
 
     // Flexible Panel State
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     const [visiblePanels, setVisiblePanels] = useState({
         map: true,
         sequencer: true,
-        palette: true,
+        palette: false,
         mood: false,
         songwriting: false
     });
@@ -61,6 +114,74 @@ export default function ControlPanel() {
         { id: 'songwriting', icon: Keyboard, label: 'Songwriting' },
         { id: 'mood', icon: Zap, label: 'Mood Selector' },
     ];
+
+    const activePanels = [
+        {
+            id: 'map',
+            content: (
+                <HarmonicSpace />
+            ),
+            defaultSize: 40,
+            collapsible: true, // Allow collapsing
+            collapsedSize: 6, // Mini state size (~50px)
+            minSize: 15,
+            miniOverlay: <MiniHarmonicMap />
+        },
+        {
+            id: 'sequencer',
+            content: (
+                <ProgressionStrip showPalette={false} />
+            ),
+            defaultSize: 30,
+            collapsible: true,
+            collapsedSize: 6,
+            minSize: 15,
+            miniOverlay: <MiniSequencer />
+        },
+        {
+            id: 'palette',
+            content: (
+                <div className="h-full w-full flex flex-row">
+                    {/* Side-by-side Layout */}
+                    <div className="w-[180px] h-full shrink-0 border-r border-[var(--border)] bg-[var(--bg-soft)] flex items-center justify-center p-2">
+                            <CircleOfFifths 
+                            currentKey={`${currentKey} ${scale === 'Major' ? '' : 'm'}`.trim()} 
+                            className="w-full h-full"
+                            />
+                    </div>
+                    <div className="flex-1 min-w-0 h-full bg-[var(--bg-soft)]">
+                        <ChordPalette className="p-2 h-full" />
+                    </div>
+                </div>
+            ),
+            defaultSize: 15,
+            collapsible: true,
+            collapsedSize: 6,
+            minSize: 15,
+            miniOverlay: <MiniChordPalette />
+        },
+        {
+            id: 'songwriting',
+            content: <SongwritingBoard />,
+            defaultSize: 15, // Reduced default size so it doesn't take too much space initially if all open
+            collapsible: true,
+            collapsedSize: 6,
+            minSize: 15,
+            miniOverlay: <MiniSongwritingBoard />
+        },
+        {
+            id: 'mood',
+            content: (
+                <MoodSelector />
+            ),
+            defaultSize: 15,
+            collapsible: true,
+            collapsedSize: 6,
+            minSize: 15,
+            // Example Accessory: Quick Settings on the handle
+            miniOverlay: <MiniMoodSelector />
+        }
+    ].filter(p => visiblePanels[p.id as keyof typeof visiblePanels]);
 
     return (
         <div className="h-full flex flex-col bg-[var(--bg-main)] text-[var(--text-main)] overflow-hidden font-sans transition-colors duration-500">
@@ -103,7 +224,6 @@ export default function ControlPanel() {
                     {/* Bottom Controls */}
                     
 
-
                     <IconButton 
                             onClick={() => setShowLibrary(true)}
                             variant="ghost"
@@ -112,7 +232,7 @@ export default function ControlPanel() {
                     />
 
                     {/* Collapse Sidebar Button */}
-                     <IconButton 
+                        <IconButton 
                         onClick={() => setIsSidebarCollapsed(true)}
                         variant="ghost"
                         icon={PanelLeftClose}
@@ -123,119 +243,24 @@ export default function ControlPanel() {
                 </div>
 
                 {/* EXPAND SIDEBAR TRIGGER (Visible when collapsed) */}
-                <div className={cn(
-                    "absolute left-2 bottom-2 z-50 transition-all duration-300",
-                    isSidebarCollapsed ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-full pointer-events-none"
-                )}>
-                    <IconButton 
-                        onClick={() => setIsSidebarCollapsed(false)}
-                        variant="secondary"
-                        icon={PanelLeftOpen}
-                        className="shadow-md bg-[var(--bg-element)] border border-[var(--border)]"
-                        title="Show Sidebar"
-                    />
-                </div>
+                {/* Draggable Implementation */}
+                <FloatingToggle 
+                    isVisible={isSidebarCollapsed} 
+                    onClick={() => setIsSidebarCollapsed(false)} 
+                />
 
                 <div className={cn(
                     "flex-1 flex flex-col min-w-0 bg-transparent p-2 gap-2 overflow-hidden",
                 )}>
                     <div className="h-full w-full bg-black p-0">
                         <SplitView 
-                            panels={[
-                                {
-                                    id: 'map',
-                                            content: (
-                                                <HarmonicSpace />
-                                            ),
-                                            defaultSize: 40,
-                                            collapsible: true, // Allow collapsing
-                                            collapsedSize: 6, // Mini state size (~50px)
-                                            isCollapsed: !visiblePanels.map,
-                                            onCollapseChange: (c) => setVisiblePanels(prev => ({ ...prev, map: !c })),
-                                            minSize: 15,
-                                            miniOverlay: <MiniHarmonicMap />
-                                        },
-                                        {
-                                            id: 'sequencer',
-                                            content: (
-                                                <ProgressionStrip showPalette={false} />
-                                            ),
-                                            defaultSize: 30,
-                                            collapsible: true,
-                                            collapsedSize: 6,
-                                            isCollapsed: !visiblePanels.sequencer,
-                                            onCollapseChange: (c) => setVisiblePanels(prev => ({ ...prev, sequencer: !c })),
-                                            minSize: 15,
-                                            miniOverlay: <MiniSequencer />
-                                        },
-                                        {
-                                            id: 'palette',
-                                            content: (
-                                                selectedChord ? (
-                                                     <div className="h-full w-full bg-[var(--bg-soft)] p-2">
-                                                        <ChordEditor 
-                                                            selectedChord={selectedChord} 
-                                                            selectedChordIndex={selectedChordIndex} 
-                                                            progression={progression} 
-                                                            handleProgression={handleProgression} 
-                                                            onClose={() => setSelectedChordIndex(null)} 
-                                                        />
-                                                     </div>
-                                                ) : (
-                                                    <div className="h-full w-full flex flex-row">
-                                                        {/* Side-by-side Layout for Independent Panel */}
-                                                        <div className="w-[180px] h-full shrink-0 border-r border-[var(--border)] bg-[var(--bg-soft)] flex items-center justify-center p-2">
-                                                                <CircleOfFifths 
-                                                                currentKey={`${currentKey} ${scale === 'Major' ? '' : 'm'}`.trim()} 
-                                                                className="w-full h-full"
-                                                                />
-                                                        </div>
-                                                        <div className="flex-1 min-w-0 h-full bg-[var(--bg-soft)]">
-                                                            <ChordPalette className="p-2 h-full" />
-                                                        </div>
-                                                    </div>
-                                                )
-                                            ),
-                                            defaultSize: 15,
-                                            collapsible: true,
-                                            collapsedSize: 6,
-                                            isCollapsed: !visiblePanels.palette,
-                                            onCollapseChange: (c) => setVisiblePanels(prev => ({ ...prev, palette: !c })),
-                                            minSize: 15,
-                                            miniOverlay: <MiniChordPalette />
-                                        },
-                                        {
-                                            id: 'songwriting',
-                                            content: <SongwritingBoard />,
-                                            defaultSize: 15, // Reduced default size so it doesn't take too much space initially if all open
-                                            collapsible: true,
-                                            collapsedSize: 6,
-                                            isCollapsed: !visiblePanels.songwriting,
-                                            onCollapseChange: (c) => setVisiblePanels(prev => ({ ...prev, songwriting: !c })),
-                                            minSize: 15,
-                                            miniOverlay: <MiniSongwritingBoard />
-                                        },
-                                        {
-                                            id: 'mood',
-                                            content: (
-                                                <MoodSelector />
-                                            ),
-                                            defaultSize: 15,
-                                            collapsible: true,
-                                            collapsedSize: 6,
-                                            isCollapsed: !visiblePanels.mood,
-                                            onCollapseChange: (c) => setVisiblePanels(prev => ({ ...prev, mood: !c })),
-                                            minSize: 15,
-                                            // Example Accessory: Quick Settings on the handle
-                                            miniOverlay: <MiniMoodSelector />
-                                        }
-                                    ]}
-                                    direction="vertical"
-                                />
-                            </div>
+                            panels={activePanels}
+                            direction="vertical"
+                        />
                     </div>
                 </div>
             </div>
+        </div>
     );
 }
 

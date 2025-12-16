@@ -169,8 +169,26 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({
 };
 
 export const MiniCircleOfFifths = () => {
-    const { key, scale } = useStore();
+    const { key, scale, progression } = useStore();
     
+    // Find active chord
+    const contextChord = useMemo(() => progression.slice().reverse().find(c => !c.isRest) || null, [progression]);
+
+    const distanceInfo = useMemo(() => {
+        if (!contextChord) return null;
+        const keyIndex = ORDER_OF_FIFTHS.findIndex(k => k.major === key || k.minor === key);
+        const chordIndex = ORDER_OF_FIFTHS.findIndex(k => k.major === contextChord.root || k.major === contextChord.root + '#' || k.major === contextChord.root + 'b' || k.minor === contextChord.root);
+        
+        if (keyIndex === -1 || chordIndex === -1) return null; // Chromatic or not found
+
+        // Calculate shortest distance on 12-step circle
+        let diff = (chordIndex - keyIndex);
+        if (diff > 6) diff -= 12;
+        if (diff < -6) diff += 12;
+        
+        return { diff, label: diff === 0 ? 'Home' : diff > 0 ? `${diff} Sharp Side` : `${Math.abs(diff)} Flat Side` };
+    }, [key, contextChord]);
+
     const keyInfo = useMemo(() => {
         return ORDER_OF_FIFTHS.find(k => k.major === key || k.minor === key) || { sharpCount: 0 };
     }, [key]);
@@ -194,12 +212,14 @@ export const MiniCircleOfFifths = () => {
                     <circle cx="16" cy="16" r="6" fill="var(--bg-panel)" />
                 </svg>
                 <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-[8px] font-bold text-[var(--text-main)]">{key.replace(/#/, '♯').replace(/b/, '♭')}</span>
+                    <span className="text-[8px] font-bold text-[var(--text-main)]">{distanceInfo ? (distanceInfo.diff > 0 ? `+${distanceInfo.diff}` : distanceInfo.diff) : keyInfo.sharpCount}</span>
                 </div>
             </div>
             <div className="flex flex-col min-w-0">
                  <span className="font-bold text-xs text-[var(--text-main)] truncate">Circle of Fifths</span>
-                 <span className="text-[10px] text-[var(--text-muted)] truncate">{scale} • {sig}</span>
+                 <span className="text-[10px] text-[var(--text-muted)] truncate">
+                    {distanceInfo ? `Active: ${distanceInfo.label}` : `${scale} • ${sig}`}
+                 </span>
             </div>
         </div>
     );

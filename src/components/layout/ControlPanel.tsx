@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { SplitView } from './split-view';
 import { SongwritingBoard, MiniSongwritingBoard } from '../tools/SongwritingBoard';
-import { ProjectLibrary } from '../overlays/ProjectLibrary';
+import { ProjectLibrary } from '../tools/ProjectLibrary';
 import { HarmonicSpace, MiniHarmonicMap } from '../tools/HarmonicMap';
 import { ProgressionStrip, ChordPalette, MiniSequencer, MiniChordPalette } from '../tools/Sequencer';
 import { CircleOfFifths } from '../tools/CircleOfFifths';
@@ -92,11 +92,11 @@ export default function ControlPanel() {
     const [visiblePanels, setVisiblePanels] = useState({
         map: true,
         sequencer: true,
-        palette: false,
-        mood: false,
-        songwriting: false,
-        settings: false,
-        library: false
+        palette: true,
+        mood: true,
+        songwriting: true,
+        settings: true,
+        library: true
     });
 
 
@@ -190,8 +190,8 @@ export default function ControlPanel() {
             id: 'settings',
             label: 'Global Settings',
             content: <GlobalSettings />,
-            defaultSize: 20,
-            minSize: 15,
+            defaultSize: 15,
+            minSize: 12,
             miniOverlay: <MiniGlobalSettings />
         },
         {

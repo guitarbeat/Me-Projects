@@ -1,10 +1,35 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { Panel, PanelGroup, ImperativePanelHandle } from 'react-resizable-panels';
 import { cn } from '../../ui';
-import { SplitViewProps, LayoutMetrics, SplitPaneConfig, CnFunction } from './types';
+import { SplitViewProps, LayoutMetrics, SplitPaneConfig, CnFunction, SplitDetent, detentToSize } from './types';
 import { LAYOUT_METRICS } from './constants';
 import { SplitPane } from './SplitPane';
 import { Handle } from './ResizeHandle';
+
+// Helper to find nearest detent
+function findNearestDetent(
+    currentSize: number,
+    detents: SplitDetent[],
+    miniSize: number,
+    threshold: number = 5
+): SplitDetent | null {
+    if (!detents || detents.length === 0) return null;
+    
+    let nearestDetent: SplitDetent | null = null;
+    let minDistance = Infinity;
+    
+    for (const detent of detents) {
+        const detentSize = detentToSize(detent, miniSize);
+        const distance = Math.abs(currentSize - detentSize);
+        
+        if (distance < minDistance && distance <= threshold) {
+            minDistance = distance;
+            nearestDetent = detent;
+        }
+    }
+    
+    return nearestDetent;
+}
 
 const getCn = () => cn;
 
@@ -125,6 +150,37 @@ export const SplitView = ({ panels, direction = 'vertical', cn: propCn }: SplitV
         });
     }, [panels, collapsedStates]);
 
+    // Detent snapping logic
+    const resizeTimeoutRef = useRef<number | null>(null);
+    
+    const handleLayout = useCallback((sizes: number[]) => {
+        // Clear previous timeout
+        if (resizeTimeoutRef.current) {
+            clearTimeout(resizeTimeoutRef.current);
+        }
+        
+        // Debounce to detect when user stops dragging
+        resizeTimeoutRef.current = window.setTimeout(() => {
+            // Check first panel for detents
+            const firstPanel = panels[0];
+            if (firstPanel?.detents && sizes.length > 0) {
+                const currentSize = sizes[0];
+                const miniSize = firstPanel.miniDetentSize || 10;
+                const threshold = firstPanel.snapThreshold || 5;
+                
+                const nearestDetent = findNearestDetent(currentSize, firstPanel.detents, miniSize, threshold);
+                
+                if (nearestDetent) {
+                    const targetSize = detentToSize(nearestDetent, miniSize);
+                    const panelRef = panelRefs.current.get(firstPanel.id);
+                    if (panelRef && Math.abs(currentSize - targetSize) > 0.5) {
+                        panelRef.resize(targetSize);
+                    }
+                }
+            }
+        }, 150); // 150ms debounce
+    }, [panels]);
+
     if (panels.length === 0) return null;
 
     // Single panel - no handles needed
@@ -161,10 +217,11 @@ export const SplitView = ({ panels, direction = 'vertical', cn: propCn }: SplitV
         );
     }
 
+
     // Multiple panels with handles
     return (
         <div ref={containerRef} className="h-full w-full overflow-hidden relative">
-            <PanelGroup direction={direction} className="relative z-10">
+            <PanelGroup direction={direction} className="relative z-10" onLayout={handleLayout}>
                 {panels.map((panel, index) => {
                     const isCollapsed = collapsedStates.get(panel.id) || false;
                     const isLast = index === panels.length - 1;

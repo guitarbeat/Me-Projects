@@ -15,4 +15,4 @@ export * from './tools/MoodSelector';
 
 export * from './tools/SongwritingBoard';
 export * from './tools/HarmonicMap';
-export * from './overlays/ProjectLibrary';
+export * from './tools/ProjectLibrary';

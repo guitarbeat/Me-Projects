@@ -503,7 +503,7 @@ export const MiniMoodSelector = () => {
              <div className="flex flex-col min-w-0">
                  <span className="font-bold text-xs text-[var(--text-main)] truncate">Mood</span>
                  <span className="text-[10px] text-[var(--text-muted)] truncate capitalize">
-                    {currentZone?.label.toLowerCase() || 'Neutral'} • Tension: {(mood.tension * 100).toFixed(0)}%
+                    {currentZone?.label.toLowerCase() || 'Neutral'}
                  </span>
             </div>
         </div>

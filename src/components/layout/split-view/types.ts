@@ -17,6 +17,23 @@ export interface SplitAccessory {
     onClick: () => void;
 }
 
+// Detent types for snap-to positions (iOS-inspired)
+export type SplitDetent =
+    | { type: 'full'; panel: 'top' | 'bottom' }
+    | { type: 'mini'; panel: 'top' | 'bottom' }
+    | { type: 'fraction'; value: number };
+
+export function detentToSize(detent: SplitDetent, miniSize: number = 10): number {
+    switch (detent.type) {
+        case 'full':
+            return detent.panel === 'top' ? 100 : 0;
+        case 'mini':
+            return detent.panel === 'top' ? (100 - miniSize) : miniSize;
+        case 'fraction':
+            return detent.value * 100;
+    }
+}
+
 export interface SplitPaneProps {
     children?: React.ReactNode;
     radius: number;
@@ -71,6 +88,10 @@ export interface SplitPaneConfig {
     miniThreshold?: number;
     leadingAccessories?: SplitAccessory[];
     trailingAccessories?: SplitAccessory[];
+    // Detent configuration
+    detents?: SplitDetent[];  // Available snap points
+    defaultDetent?: SplitDetent;  // Initial detent
+    snapThreshold?: number;  // Distance threshold for snapping (default: 5)
 }
 
 export interface SplitViewProps {

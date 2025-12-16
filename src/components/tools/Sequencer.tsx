@@ -69,16 +69,28 @@ export const DraggableChord: React.FC<{ chord: Chord, className?: string, onClic
 
 export const ChordPalette = ({ className }: { className?: string }) => {
     const { playOne, selectedChordIndex, setSelectedChordIndex, progression, handleProgression } = useStore();
-    const { chords: availableChords } = useDerivedData();
+    const { chords: availableChords, tensionChords } = useDerivedData();
     const [searchTerm, setSearchTerm] = useState('');
 
     const selectedChord = selectedChordIndex !== null ? progression[selectedChordIndex] : null;
 
+    // Combine diatonic and tension chords
+    const allChords = useMemo(() => {
+        const combined = [...availableChords];
+        if (tensionChords.length > 0) {
+            // Mark tension chords for visual distinction
+            tensionChords.forEach(tc => {
+                combined.push({ ...tc, isTension: true });
+            });
+        }
+        return combined;
+    }, [availableChords, tensionChords]);
+
     const filteredChords = useMemo(() => {
-        return availableChords.filter(c => {
+        return allChords.filter(c => {
              return c.symbol.toLowerCase().includes(searchTerm.toLowerCase());
         });
-    }, [availableChords, searchTerm]);
+    }, [allChords, searchTerm]);
 
     const handleChordUpdate = (updates: Partial<Chord>) => {
         if (!selectedChord || selectedChordIndex === null) return;
@@ -162,7 +174,12 @@ export const ChordPalette = ({ className }: { className?: string }) => {
                         key={c.symbol + i} 
                         chord={c} 
                         onClick={() => playOne(c)}
-                        className="h-8 w-auto min-w-[64px] bg-[var(--bg-surface)] hover:bg-[var(--bg-element)] shadow-sm border border-[var(--border)] cursor-pointer hover:scale-105 active:scale-95 transition-all text-[10px]" 
+                        className={cn(
+                            "h-8 w-auto min-w-[64px] shadow-sm border cursor-pointer hover:scale-105 active:scale-95 transition-all text-[10px]",
+                            (c as any).isTension 
+                                ? "bg-[var(--accent)] bg-opacity-10 border-[var(--accent)] border-opacity-30 hover:bg-opacity-20" 
+                                : "bg-[var(--bg-surface)] hover:bg-[var(--bg-element)] border-[var(--border)]"
+                        )} 
                     />
                 ))}
                 {filteredChords.length === 0 && (

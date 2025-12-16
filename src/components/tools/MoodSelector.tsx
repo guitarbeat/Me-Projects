@@ -201,7 +201,7 @@ export const MoodSelector = () => {
                     </div>
                 )}
                 
-                {/* TENSION HUD - Simplified */}
+                {/* TENSION HUD */}
                 <div className={cn("absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none transition-opacity duration-300 z-50", isScrolling ? "opacity-100" : "opacity-0")}>
                    <div className="bg-[var(--bg-glass)] backdrop-blur-xl border border-[var(--accent)] px-4 py-3 rounded-xl flex items-center gap-3 shadow-[0_0_30px_rgba(0,0,0,0.5)]">
                        <Thermometer size={16} className="text-[var(--accent)]" />
@@ -224,6 +224,23 @@ export const MoodSelector = () => {
                         transformStyle: 'preserve-3d',
                     }}
                 >
+                    {/* DYNAMIC COLOR BACKGROUND - Shifts with tension */}
+                    <div 
+                        className="absolute inset-0 transition-all duration-1000"
+                        style={{
+                            background: `
+                                radial-gradient(circle at 50% 50%, 
+                                    ${mood.tension > 0.5 ? 'rgba(220, 38, 38, 0.3)' : 'rgba(59, 130, 246, 0.3)'} 0%, 
+                                    transparent 70%
+                                ),
+                                linear-gradient(${180 + mood.valence * 45}deg, 
+                                    rgba(16, 185, 129, ${0.1 + mood.arousal * 0.2}), 
+                                    rgba(139, 92, 246, ${0.1 + mood.tension * 0.3})
+                                )
+                            `
+                        }}
+                    />
+
                     {/* 3D GRID CONTAINER - Rotates and zooms based on mood */}
                     <div 
                         className="absolute inset-0 transition-transform duration-700 ease-out"
@@ -240,52 +257,91 @@ export const MoodSelector = () => {
                         {/* PERSPECTIVE GRID FLOOR */}
                         {Array.from({ length: 20 }).map((_, i) => {
                             const offset = (i - 10) * 60;
+                            const opacity = Math.max(0, 1 - Math.abs(i - 10) / 10) * (0.2 + mood.tension * 0.2);
                             return (
                                 <React.Fragment key={`grid-${i}`}>
-                                    {/* Horizontal lines */}
                                     <div 
-                                        className="absolute left-0 right-0 h-[1px] pointer-events-none"
+                                        className="absolute left-0 right-0 h-[1px] pointer-events-none transition-opacity duration-500"
                                         style={{
                                             top: '50%',
-                                            background: `linear-gradient(90deg, transparent, var(--border-soft) 20%, var(--border-soft) 80%, transparent)`,
+                                            background: `linear-gradient(90deg, transparent, ${mood.tension > 0.5 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(96, 165, 250, 0.4)'} 20%, ${mood.tension > 0.5 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(96, 165, 250, 0.4)'} 80%, transparent)`,
                                             transform: `translateZ(${offset}px) translateY(${offset}px)`,
-                                            opacity: Math.max(0, 1 - Math.abs(i - 10) / 10) * 0.3
+                                            opacity
                                         }}
                                     />
-                                    {/* Vertical lines */}
                                     <div 
-                                        className="absolute top-0 bottom-0 w-[1px] pointer-events-none"
+                                        className="absolute top-0 bottom-0 w-[1px] pointer-events-none transition-opacity duration-500"
                                         style={{
                                             left: '50%',
-                                            background: `linear-gradient(180deg, transparent, var(--border-soft) 20%, var(--border-soft) 80%, transparent)`,
+                                            background: `linear-gradient(180deg, transparent, ${mood.tension > 0.5 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(96, 165, 250, 0.4)'} 20%, ${mood.tension > 0.5 ? 'rgba(239, 68, 68, 0.4)' : 'rgba(96, 165, 250, 0.4)'} 80%, transparent)`,
                                             transform: `translateZ(${offset}px) translateX(${offset}px)`,
-                                            opacity: Math.max(0, 1 - Math.abs(i - 10) / 10) * 0.3
+                                            opacity
                                         }}
                                     />
                                 </React.Fragment>
                             );
                         })}
 
-                        {/* SCALE DOMAIN SPHERES - 3D positioned */}
+                        {/* STARFIELD - Particles flowing through space */}
+                        {Array.from({ length: Math.floor(150 + mood.tension * 100) }).map((_, i) => {
+                            // Distribute particles in 3D grid
+                            const gridSize = 8;
+                            const spacing = 100;
+                            const ix = (i % gridSize) - gridSize / 2;
+                            const iy = (Math.floor(i / gridSize) % gridSize) - gridSize / 2;
+                            const iz = Math.floor(i / (gridSize * gridSize)) - 2;
+                            
+                            const x = ix * spacing + ((i * 17) % 40) - 20; // Add variation
+                            const y = iy * spacing + ((i * 23) % 40) - 20;
+                            const z = iz * spacing + ((i * 31) % 60) - 30;
+                            
+                            // Depth-based sizing and opacity
+                            const depth = Math.abs(z) / 300;
+                            const size = Math.max(1, 3 - depth * 2);
+                            const opacity = Math.max(0.1, 0.6 - depth);
+                            
+                            return (
+                                <div
+                                    key={`star-${i}`}
+                                    className="absolute rounded-full pointer-events-none"
+                                    style={{
+                                        left: '50%',
+                                        top: '50%',
+                                        width: `${size}px`,
+                                        height: `${size}px`,
+                                        transform: `translate3d(${x}px, ${y}px, ${z}px)`,
+                                        background: mood.tension > 0.5 
+                                            ? `rgba(251, 146, 60, ${opacity})` 
+                                            : `rgba(147, 197, 253, ${opacity})`,
+                                        boxShadow: `0 0 ${2 + mood.tension * 4}px currentColor`,
+                                        transition: 'background 0.5s, box-shadow 0.5s'
+                                    }}
+                                />
+                            );
+                        })}
+
+                        {/* SCALE PARTICLE CLUSTERS - Each scale is a cluster of particles */}
                         {Object.entries(SCALE_DEFS).map(([st, d]) => {
                             const def = d as ScaleDef;
-                            // Map 2D coordinates to 3D space
-                            const x = def.scaleCoordinates.v * 200; // -200 to +200
+                            const x = def.scaleCoordinates.v * 200;
                             const y = -def.scaleCoordinates.a * 200;
-                            const z = Math.sin(def.scaleCoordinates.v * Math.PI) * 50; // Add depth variation
+                            const z = Math.sin(def.scaleCoordinates.v * Math.PI) * 50;
                             const isActive = st === currentScale;
                             
-                            // Calculate distance from current mood for glow effect
                             const dist = Math.hypot(
                                 mood.valence - def.scaleCoordinates.v,
                                 mood.arousal - def.scaleCoordinates.a
                             );
                             const proximity = Math.max(0, 1 - dist / 2);
                             
+                            // Particle cluster size based on activity
+                            const particleCount = isActive ? 30 : 15;
+                            const clusterRadius = isActive ? 25 : 15;
+                            
                             return (
                                 <div 
                                     key={st} 
-                                    className="absolute pointer-events-none transition-all duration-500"
+                                    className="absolute pointer-events-none"
                                     style={{ 
                                         left: '50%',
                                         top: '50%',
@@ -293,71 +349,79 @@ export const MoodSelector = () => {
                                         transform: `translate3d(${x}px, ${y}px, ${z}px)`,
                                     }}
                                 >
-                                    {/* Scale sphere/domain */}
-                                    <div 
-                                        className="relative -translate-x-1/2 -translate-y-1/2 rounded-full transition-all duration-500 flex items-center justify-center"
-                                        style={{
-                                            width: isActive ? '80px' : '40px',
-                                            height: isActive ? '80px' : '40px',
-                                            background: isActive 
-                                                ? `radial-gradient(circle, ${def.palette.accent}40, ${def.palette.accent}10)`
-                                                : `radial-gradient(circle, var(--bg-soft-hover), transparent)`,
-                                            boxShadow: isActive 
-                                                ? `0 0 ${40 + proximity * 60}px ${def.palette.accent}, inset 0 0 20px ${def.palette.accent}40`
-                                                : `0 0 ${proximity * 30}px var(--text-dim)`,
-                                            border: `1px solid ${isActive ? def.palette.accent : 'var(--border)'}`,
-                                            opacity: isActive ? 1 : (0.3 + proximity * 0.5),
-                                        }}
-                                    >
-                                        {/* Scale label */}
-                                        {isActive && (
+                                    {/* Nebula fog for active scale */}
+                                    {isActive && (
+                                        <div 
+                                            className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl animate-pulse"
+                                            style={{
+                                                width: '150px',
+                                                height: '150px',
+                                                background: `radial-gradient(circle, ${def.palette.accent}40, transparent)`,
+                                                animationDuration: '3s'
+                                            }}
+                                        />
+                                    )}
+
+                                    {/* Particle cluster */}
+                                    {Array.from({ length: particleCount }).map((_, i) => {
+                                        const angle = (i / particleCount) * Math.PI * 2;
+                                        const r = ((i % 3) + 1) * (clusterRadius / 3);
+                                        const px = Math.cos(angle) * r;
+                                        const py = Math.sin(angle) * r;
+                                        const pz = ((i * 7) % 10) - 5;
+                                        const size = isActive ? (2 + (i % 3)) : (1 + (i % 2));
+                                        
+                                        return (
+                                            <div
+                                                key={`cluster-${st}-${i}`}
+                                                className="absolute rounded-full"
+                                                style={{
+                                                    left: '50%',
+                                                    top: '50%',
+                                                    width: `${size}px`,
+                                                    height: `${size}px`,
+                                                    transform: `translate3d(${px}px, ${py}px, ${pz}px) translate(-50%, -50%)`,
+                                                    background: isActive ? def.palette.accent : 'var(--text-dim)',
+                                                    boxShadow: isActive 
+                                                        ? `0 0 ${8 + proximity * 12}px ${def.palette.accent}`
+                                                        : `0 0 ${proximity * 6}px var(--text-dim)`,
+                                                    opacity: isActive ? 0.9 : (0.3 + proximity * 0.4),
+                                                    transition: 'all 0.5s ease-out'
+                                                }}
+                                            />
+                                        );
+                                    })}
+                                    
+                                    {/* Scale label */}
+                                    {isActive && (
+                                        <div 
+                                            className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-8"
+                                            style={{
+                                                transform: 'translate(-50%, -100%)'
+                                            }}
+                                        >
                                             <span 
-                                                className="text-[10px] font-black tracking-wider uppercase"
+                                                className="text-[10px] font-black tracking-wider uppercase whitespace-nowrap px-2 py-1 rounded-md"
                                                 style={{ 
                                                     color: def.palette.accent,
-                                                    textShadow: `0 0 10px ${def.palette.accent}`
+                                                    textShadow: `0 0 10px ${def.palette.accent}`,
+                                                    background: `${def.palette.accent}15`,
+                                                    border: `1px solid ${def.palette.accent}40`
                                                 }}
                                             >
                                                 {st}
                                             </span>
-                                        )}
-                                    </div>
-                                    
-                                    {/* Orbital rings for active scale */}
-                                    {isActive && (
-                                        <>
-                                            <div 
-                                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border opacity-30 animate-spin"
-                                                style={{
-                                                    width: '120px',
-                                                    height: '120px',
-                                                    borderColor: def.palette.accent,
-                                                    animationDuration: '8s',
-                                                    transform: 'translate(-50%, -50%) rotateX(60deg)'
-                                                }}
-                                            />
-                                            <div 
-                                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border opacity-20 animate-spin"
-                                                style={{
-                                                    width: '160px',
-                                                    height: '160px',
-                                                    borderColor: def.palette.accent,
-                                                    animationDuration: '12s',
-                                                    animationDirection: 'reverse',
-                                                    transform: 'translate(-50%, -50%) rotateY(60deg)'
-                                                }}
-                                            />
-                                        </>
+                                        </div>
                                     )}
                                 </div>
                             );
                         })}
                     </div>
 
-                    {/* FLAT INTERACTION PLANE - Invisible but captures input */}
+                    {/* FLAT INTERACTION PLANE */}
                     <div className="absolute inset-0 z-10" />
 
-                    {/* Corner Labels - Subtle guides */}
+                    {/* Corner Labels */}
                     <div className="absolute inset-4 pointer-events-none z-20">
                         <span className="absolute top-0 right-0 text-[var(--text-dim)] text-[10px] font-bold opacity-20 tracking-widest uppercase">Energetic</span>
                         <span className="absolute bottom-0 right-0 text-[var(--text-dim)] text-[10px] font-bold opacity-20 tracking-widest uppercase">Calm</span>
@@ -365,7 +429,7 @@ export const MoodSelector = () => {
                         <span className="absolute bottom-0 left-0 text-[var(--text-dim)] text-[10px] font-bold opacity-20 tracking-widest uppercase">Melancholy</span>
                     </div>
 
-                    {/* CURSOR - Floats in 3D space */}
+                    {/* CURSOR - Floats in 3D with energy pulses */}
                     <div 
                         className="absolute w-12 h-12 -ml-6 -mt-6 rounded-full border-2 transition-all duration-75 pointer-events-none flex items-center justify-center z-50"
                         style={{ 
@@ -385,10 +449,12 @@ export const MoodSelector = () => {
                             filter: `blur(${mood.tension * 0.5}px)`
                         }}
                     >
+                        {/* Energy pulse rings */}
                         <div className="absolute inset-0 rounded-full border border-current opacity-30 animate-ping" style={{ animationDuration: '2s' }}/>
+                        <div className="absolute inset-[-50%] rounded-full border border-current opacity-10 animate-ping" style={{ animationDuration: '3s', animationDelay: '0.5s' }}/>
                         <div className="w-2 h-2 bg-current rounded-full shadow-[0_0_15px_currentColor]"/>
                         
-                        {/* Simplified Tooltip */}
+                        {/* Tooltip */}
                         {isDragging && (
                              <div className="absolute top-0 left-full ml-6 bg-[var(--bg-glass)] backdrop-blur-xl border border-[var(--border)] rounded-lg px-3 py-2 whitespace-nowrap flex items-center gap-3 pointer-events-none animate-in fade-in slide-in-from-left-2 z-[60] shadow-xl">
                                  <span className="text-sm font-black text-[var(--text-main)] uppercase tracking-wider">{currentScale}</span>

@@ -2,15 +2,13 @@ import React, { useState } from 'react';
 import { Trash2, Save, X, PenTool, FolderOpen, Music2 } from 'lucide-react';
 import { useStore } from '../../lib';
 
-interface ProjectLibraryProps {
-    onClose: () => void;
-}
+
 
     import { Button, IconButton } from '../ui';
 
     // ... imports
 
-    export const ProjectLibrary: React.FC<ProjectLibraryProps> = ({ onClose }) => {
+    export const ProjectLibrary: React.FC = () => {
         const { savedProjects, saveProject, loadProject, deleteProject } = useStore();
         const [name, setName] = useState('');
 
@@ -22,22 +20,18 @@ interface ProjectLibraryProps {
         };
 
         return (
-            <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                <div className="w-[420px] max-w-[90vw] max-h-[80vh] flex flex-col bg-[var(--bg-panel)] rounded-2xl shadow-2xl border border-[var(--border)] overflow-hidden relative">
-                    
-                    {/* Header */}
-                    <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)] bg-[var(--bg-surface)]">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 bg-[var(--accent)]/10 rounded-lg text-[var(--accent)]">
-                                <Save size={18} />
-                            </div>
-                            <div>
-                                <h2 className="text-lg font-bold text-[var(--text-main)]">Project Library</h2>
-                                <p className="text-[10px] text-[var(--text-muted)] font-medium uppercase tracking-wider">Save & Load</p>
-                            </div>
-                        </div>
-                        <IconButton onClick={onClose} icon={X} variant="ghost" className="rounded-full hover:bg-[var(--bg-element)]" />
-                    </div>
+        <div className="h-full w-full flex flex-col bg-[var(--bg-panel)] overflow-hidden">
+            
+            {/* Header */}
+            <div className="flex items-center gap-3 px-4 py-3 border-b border-[var(--border)] bg-[var(--bg-surface)] shrink-0">
+                <div className="p-1.5 bg-[var(--accent)]/10 rounded-lg text-[var(--accent)]">
+                    <Save size={16} />
+                </div>
+                <div>
+                    <h2 className="text-sm font-bold text-[var(--text-main)]">Project Library</h2>
+                    <p className="text-[9px] text-[var(--text-muted)] font-medium uppercase tracking-wider">Save & Load</p>
+                </div>
+            </div>
 
                     <div className="flex-1 overflow-hidden flex flex-col">
                         
@@ -56,14 +50,14 @@ interface ProjectLibraryProps {
                                     <PenTool size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
                                 </div>
                                 <Button 
-                                    type="submit" 
-                                    disabled={!name.trim()}
-                                    variant="primary"
-                                    icon={Save}
-                                    className="rounded-xl px-4 font-bold shadow-lg shadow-[var(--accent)]/20"
-                                >
-                                    Save
-                                </Button>
+                        type="submit" 
+                        disabled={!name.trim()}
+                        variant="primary"
+                        icon={Save}
+                        className="rounded-xl px-3 text-[10px] font-bold shadow-sm"
+                    >
+                        Save
+                    </Button>
                             </form>
                         </div>
 
@@ -96,13 +90,13 @@ interface ProjectLibraryProps {
 
                                         <div className="flex items-center gap-2 pl-2">
                                             <Button 
-                                                onClick={() => { loadProject(p.id); onClose(); }}
-                                                size="sm"
-                                                variant="secondary"
-                                                className="opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all rounded-lg text-[10px] font-bold uppercase shadow-sm"
-                                            >
-                                                Open
-                                            </Button>
+                                            onClick={() => loadProject(p.id)}
+                                            size="sm"
+                                            variant="secondary"
+                                            className="opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all rounded-lg text-[10px] font-bold uppercase shadow-sm"
+                                        >
+                                            Open
+                                        </Button>
                                             <IconButton 
                                                 onClick={(e: React.MouseEvent) => { e.stopPropagation(); deleteProject(p.id); }}
                                                 icon={Trash2}
@@ -115,7 +109,6 @@ interface ProjectLibraryProps {
                             )}
                         </div>
                     </div>
-                </div>
             </div>
-        );
+    );
     };

@@ -8,7 +8,7 @@ import {
     Play, Pause,
     ListMusic, Network, Keyboard, Zap,
     PanelLeftClose, PanelLeftOpen,
-    PenTool, LucideIcon, Save
+    PenTool, LucideIcon, Save, Settings
 } from 'lucide-react';
 import { SplitView } from './split-view';
 import { SongwritingBoard, MiniSongwritingBoard } from '../tools/SongwritingBoard';
@@ -17,6 +17,7 @@ import { HarmonicSpace, MiniHarmonicMap } from '../tools/HarmonicMap';
 import { ProgressionStrip, ChordPalette, MiniSequencer, MiniChordPalette } from '../tools/Sequencer';
 import { CircleOfFifths } from '../tools/CircleOfFifths';
 import { MoodSelector, MiniMoodSelector } from '../tools/MoodSelector';
+import { GlobalSettings, MiniGlobalSettings } from '../tools/GlobalSettings';
 
 
 const FloatingToggle = ({ isVisible, onClick }: { isVisible: boolean, onClick: () => void }) => {
@@ -93,10 +94,12 @@ export default function ControlPanel() {
         sequencer: true,
         palette: false,
         mood: false,
-        songwriting: false
+        songwriting: false,
+        settings: false,
+        library: false
     });
 
-    const [showLibrary, setShowLibrary] = useState(false);
+
 
     // Handlers
     const togglePanel = (key: keyof typeof visiblePanels) => {
@@ -110,9 +113,11 @@ export default function ControlPanel() {
     const PANEL_TOGGLES: { id: keyof typeof visiblePanels; icon: LucideIcon; label: string }[] = [
         { id: 'map', icon: Network, label: 'Harmonic Map' },
         { id: 'sequencer', icon: ListMusic, label: 'Sequencer' },
-        { id: 'palette', icon: PenTool, label: 'Chord Palette' },
-        { id: 'songwriting', icon: Keyboard, label: 'Songwriting' },
+        { id: 'palette', icon: Keyboard, label: 'Chord Palette' },
         { id: 'mood', icon: Zap, label: 'Mood Selector' },
+        { id: 'songwriting', icon: PenTool, label: 'Songwriting Board' },
+        { id: 'settings', icon: Settings, label: 'Global Settings' },
+        { id: 'library', icon: Save, label: 'Project Library' }
     ];
 
     const activePanels = [
@@ -180,12 +185,27 @@ export default function ControlPanel() {
             minSize: 15,
             // Example Accessory: Quick Settings on the handle
             miniOverlay: <MiniMoodSelector />
+        },
+        {
+            id: 'settings',
+            label: 'Global Settings',
+            content: <GlobalSettings />,
+            defaultSize: 20,
+            minSize: 15,
+            miniOverlay: <MiniGlobalSettings />
+        },
+        {
+            id: 'library',
+            label: 'Project Library',
+            content: <ProjectLibrary />,
+            defaultSize: 25,
+            minSize: 20,
+            miniOverlay: <div className="flex items-center justify-center w-full h-full"><Save size={14} className="text-[var(--accent)]" /></div>
         }
     ].filter(p => visiblePanels[p.id as keyof typeof visiblePanels]);
 
     return (
         <div className="h-full flex flex-col bg-[var(--bg-main)] text-[var(--text-main)] overflow-hidden font-sans transition-colors duration-500">
-            {showLibrary && <ProjectLibrary onClose={() => setShowLibrary(false)} />}
 
             {/* MAIN CONTENT AREA ROW */}
             <div className="flex-1 min-h-0 flex overflow-hidden relative">
@@ -221,17 +241,7 @@ export default function ControlPanel() {
 
                     <div className="flex-1" />
 
-                    {/* Bottom Controls */}
-                    
-
-                    <IconButton 
-                            onClick={() => setShowLibrary(true)}
-                            variant="ghost"
-                            icon={Save}
-                            title="Save / Load Project"
-                    />
-
-                    {/* Collapse Sidebar Button */}
+                    {/* Bottom Controls - Collapse Sidebar Button */}
                         <IconButton 
                         onClick={() => setIsSidebarCollapsed(true)}
                         variant="ghost"

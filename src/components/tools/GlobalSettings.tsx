@@ -1,54 +1,27 @@
 import React from 'react';
-import { Music2, X, Lock, Unlock } from 'lucide-react';
-import { cn, IconButton } from '../ui';
-import { ScaleType, CIRCLE_KEYS } from '../../lib';
+import { Lock, Unlock } from 'lucide-react';
+import { cn } from '../ui';
+import { useStore } from '../../lib';
+import { ScaleType } from '../../types';
 
-interface SettingsPopoverProps {
-    onClose: () => void;
-    currentKey: string;
-    setKey: (k: string) => void;
-    scale: string;
-    setScale: (s: string) => void;
-    bpm: number;
-    setBpm: (b: number) => void;
-    isScaleLocked: boolean;
-    toggleScaleLock: () => void;
-}
+export const GlobalSettings = () => {
+    const { key, setKey, scale, setScale, bpm, setBpm, isScaleLocked, toggleScaleLock } = useStore();
 
-export const SettingsPopover: React.FC<SettingsPopoverProps> = ({ 
-    onClose, 
-    currentKey, setKey, 
-    scale, setScale, 
-    bpm, setBpm, 
-    isScaleLocked, toggleScaleLock 
-}) => (
-    <div className="absolute left-14 bottom-4 z-50 w-72 bg-[var(--bg-panel)] rounded-2xl p-4 flex flex-col gap-5 border border-[var(--border)] shadow-2xl animate-in fade-in slide-in-from-bottom-2 duration-200 overflow-hidden">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between">
-             <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-[var(--text-main)] rounded-md text-[var(--bg-main)]">
-                    <Music2 size={12} strokeWidth={3} />
-                </div>
-                <h4 className="text-xs font-bold text-[var(--text-main)]">Global Settings</h4>
-            </div>
-            <IconButton onClick={onClose} icon={X} size="sm" variant="ghost" className="h-6 w-6 rounded-full hover:bg-[var(--bg-element)]" />
-        </div>
-
-        {/* Sections */}
-        <div className="flex flex-col gap-4">
+    return (
+        <div className="h-full w-full bg-[var(--bg-soft)] p-4 overflow-y-auto custom-scrollbar space-y-6">
+            <div className="text-sm font-bold text-[var(--text-main)] mb-4">Global Settings</div>
             
             {/* Key Selection */}
             <div className="space-y-2">
                 <label className="text-[10px] uppercase font-bold text-[var(--text-dim)] tracking-wider px-1">Root Key</label>
                 <div className="grid grid-cols-4 gap-1 p-1 bg-[var(--bg-surface)] rounded-xl border border-[var(--border)]">
-                    {CIRCLE_KEYS.map(k => (
+                    {['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'].map(k => (
                         <button 
                             key={k} 
                             onClick={() => setKey(k)}
                             className={cn(
                                 "h-7 text-[10px] font-bold rounded-lg transition-all",
-                                currentKey === k 
+                                key === k 
                                     ? "bg-[var(--bg-panel)] text-[var(--text-main)] shadow-sm border border-[var(--border)]" 
                                     : "text-[var(--text-muted)] hover:text-[var(--text-main)]"
                             )}
@@ -117,5 +90,30 @@ export const SettingsPopover: React.FC<SettingsPopoverProps> = ({
                 </div>
             </div>
         </div>
-    </div>
-);
+    );
+};
+
+export const MiniGlobalSettings = () => {
+    const { key, scale, bpm } = useStore();
+    
+    return (
+        <div className="w-full h-full flex flex-col items-center justify-center gap-1 px-3 py-2 bg-[var(--bg-soft)]">
+            {/* Key Display */}
+            <div className="flex items-center gap-1.5">
+                <div className="w-1 h-1 rounded-full bg-[var(--accent)] opacity-50" />
+                <span className="text-xs font-black tracking-wider text-[var(--accent)]">{key}</span>
+                <span className="text-[9px] font-medium text-[var(--text-dim)]">{scale}</span>
+            </div>
+            
+            {/* BPM Display */}
+            <div className="flex items-center gap-1">
+                <div className="flex gap-0.5">
+                    <div className="w-0.5 h-2 rounded-full bg-[var(--text-dim)] opacity-30" />
+                    <div className="w-0.5 h-2.5 rounded-full bg-[var(--text-dim)] opacity-50" />
+                    <div className="w-0.5 h-2 rounded-full bg-[var(--text-dim)] opacity-30" />
+                </div>
+                <span className="text-[9px] font-mono font-bold text-[var(--text-dim)]">{bpm}</span>
+            </div>
+        </div>
+    );
+};

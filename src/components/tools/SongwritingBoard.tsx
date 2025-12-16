@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useCallback, memo } from 'react';
 import { useStore } from '../../lib';
 import { Chord } from '../../types';
 import { cn } from '../ui';
@@ -9,10 +9,10 @@ interface LyricsBlockProps {
     index: number;
     isActive: boolean;
     isSelected: boolean;
-    onClick: () => void;
+    onClick: (index: number) => void;
     onChangeLyrics: (index: number, lyrics: string) => void;
 }
-const LyricsBlock = ({ chord, index, isActive, isSelected, onClick, onChangeLyrics }: LyricsBlockProps) => {
+const LyricsBlock = memo(({ chord, index, isActive, isSelected, onClick, onChangeLyrics }: LyricsBlockProps) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
     // Auto-resize textarea
@@ -35,7 +35,7 @@ const LyricsBlock = ({ chord, index, isActive, isSelected, onClick, onChangeLyri
 
     return (
         <div 
-            onClick={onClick}
+            onClick={() => onClick(index)}
             className={cn(
                 "flex flex-col gap-2 p-2 rounded-xl transition-all duration-200 group min-w-[120px] max-w-[200px] flex-1",
                 isActive ? "bg-[var(--bg-element)] ring-1 ring-[var(--accent)]" : "hover:bg-[var(--bg-surface)]",
@@ -62,7 +62,8 @@ const LyricsBlock = ({ chord, index, isActive, isSelected, onClick, onChangeLyri
             <div className="h-0.5 w-full bg-[var(--border)] rounded-full opacity-20 group-hover:opacity-50 transition-opacity" />
         </div>
     );
-};
+});
+LyricsBlock.displayName = 'LyricsBlock';
 
 export const SongwritingBoard = () => {
     const { 
@@ -74,11 +75,38 @@ export const SongwritingBoard = () => {
         handleProgression 
     } = useStore();
 
-    const handleLyricChange = (index: number, text: string) => {
-        const chord = progression[index];
-        const updated = { ...chord, lyrics: text };
-        handleProgression('update', { index, chord: updated });
-    };
+    const handleLyricChange = useCallback((index: number, text: string) => {
+        // We use functional update to avoid dependency on 'progression' if possible, 
+        // but since we need the specific chord at index, dependency on progression is tricky to avoid 
+        // without a more granular store selector or reducer. 
+        // Assuming handleProgression handles immutability correctly.
+        // Actually, better to pass chord object directly to handleProgression if supported, 
+        // but assuming we need to read it first.
+        // Let's use the stable store state if we can, or just accept the prop dependency.
+        // The progression prop changes on every edit, so useCallback dependent on 'progression' 
+        // doesn't help much UNLESS handleProgression supports partial updates or we read ref.
+        // HOWEVER, LyricsBlock checks 'chord' prop. If other chords didn't change, they are same ref?
+        // If progression is [A, B, C] and we update B -> [A, B', C]. A and C are same ref.
+        // So simple React.memo works IF callback is stable.
+        // But if 'handleLyricChange' depends on 'progression', it changes every render.
+        // SOLUTION: Use functional form of setState or store access if possible.
+        // But here we can just rely on the fact that we need the index.
+        // We can pass the index and text, and inside we can read the *latest* progression 
+        // via useStore.getState() if we want to be truly stable, OR rely on the fact 
+        // that mostly we care about other props stability.
+        
+        const currentChord = useStore.getState().progression[index];
+        if (currentChord) {
+             const updated = { ...currentChord, lyrics: text };
+             handleProgression('update', { index, chord: updated });
+        }
+    }, [handleProgression]);
+
+    const handleSelect = useCallback((index: number) => {
+        const c = useStore.getState().progression[index];
+        if (c) playOne(c);
+        setSelectedChordIndex(index);
+    }, [playOne, setSelectedChordIndex]);
 
     return (
         <div className="w-full h-full bg-[var(--bg-panel)] overflow-y-auto custom-scrollbar p-6 sm:p-12 relative">
@@ -110,7 +138,7 @@ export const SongwritingBoard = () => {
                                 chord={chord}
                                 isActive={playIndex === i}
                                 isSelected={selectedChordIndex === i}
-                                onClick={() => { playOne(chord); setSelectedChordIndex(i); }}
+                                onClick={handleSelect}
                                 onChangeLyrics={handleLyricChange}
                             />
                         ))}

@@ -506,7 +506,11 @@ export const HarmonicSpace = () => {
 };
 
 export const MiniHarmonicMap = () => {
-    const { key, scale } = useStore();
+    const { key, scale, progression } = useStore();
+    
+    const contextChord = useMemo(() => progression.slice().reverse().find(c => !c.isRest) || null, [progression]);
+    const suggestions = useMemo(() => getHarmonicSuggestions(contextChord), [contextChord]);
+    
     return (
         <div className="flex items-center gap-3 px-4 w-full h-full bg-[var(--bg-surface)] hover:bg-[var(--bg-element)] transition-colors cursor-pointer group">
             <div className="relative w-8 h-8 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] flex items-center justify-center overflow-hidden shrink-0 group-hover:border-[var(--accent)]">
@@ -517,9 +521,11 @@ export const MiniHarmonicMap = () => {
                 </div>
                 <div className="w-2 h-2 rounded-full bg-[var(--accent)] shadow-[0_0_8px_var(--accent)] animate-pulse" />
             </div>
-            <div className="flex flex-col">
-                 <span className="font-bold text-xs text-[var(--text-main)]">Harmonic Map</span>
-                 <span className="text-[10px] text-[var(--text-muted)] font-mono">{key} {scale}</span>
+            <div className="flex flex-col min-w-0">
+                 <span className="font-bold text-xs text-[var(--text-main)] truncate">Harmonic Map</span>
+                 <span className="text-[10px] text-[var(--text-muted)] font-mono truncate">
+                    {key} {scale} • {suggestions.length} Suggestions
+                 </span>
             </div>
         </div>
     );

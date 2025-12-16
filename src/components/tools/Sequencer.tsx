@@ -371,6 +371,9 @@ export const MiniSequencer = () => {
 };
 
 export const MiniChordPalette = () => {
+    const { chords } = useDerivedData();
+    const categories = Array.from(new Set(chords.map(c => c.quality))).slice(0, 3).join(', ');
+    
     return (
         <div className="flex items-center gap-3 px-4 w-full h-full bg-[var(--bg-surface)] hover:bg-[var(--bg-element)] transition-colors cursor-pointer group">
              <div className="w-8 h-8 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] shrink-0 group-hover:border-[var(--accent)] grid grid-cols-3 grid-rows-3 gap-[2px] p-1.5 opacity-80">
@@ -380,13 +383,13 @@ export const MiniChordPalette = () => {
                 <div className="bg-amber-500/50 rounded-[1px]" />
                 <div className="bg-[var(--text-muted)] rounded-[1px] opacity-20" />
                 <div className="bg-purple-500/50 rounded-[1px]" />
-                <div className="bg-[var(--accent)] rounded-[1px] opacity-20" />
+                <div className="bg-[var(--text-accent)] rounded-[1px]" />
                 <div className="bg-indigo-500/50 rounded-[1px]" />
                 <div className="bg-teal-500/50 rounded-[1px]" />
             </div>
-            <div className="flex flex-col">
-                 <span className="font-bold text-xs text-[var(--text-main)]">Chord Palette</span>
-                 <span className="text-[10px] text-[var(--text-muted)]">Library</span>
+            <div className="flex flex-col min-w-0">
+                 <span className="font-bold text-xs text-[var(--text-main)] truncate">Chord Palette</span>
+                 <span className="text-[10px] text-[var(--text-muted)] truncate">{chords.length} Available • {categories}</span>
             </div>
         </div>
     );

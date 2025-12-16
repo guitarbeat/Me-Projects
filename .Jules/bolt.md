@@ -1,3 +1,3 @@
-## 2025-12-15 - React.memo and Callback Stability
-**Learning:** When using `React.memo` on list items (`TimelineNode`), it is critical to ensure all callback props are stable (using `useCallback`). Inline arrow functions in the parent render method break memoization, rendering the optimization useless.
-**Action:** Always refactor inline handlers to `useCallback` when introducing `React.memo` to list components.
+## 2025-12-15 - Memoizing SongwritingBoard List Items
+**Learning:** `SongwritingBoard` was re-rendering every `LyricsBlock` (child component) on every keystroke because the parent `progression` state updated, and the `onChange` handler was an unstable inline function. This caused O(N) re-renders for every character typed.
+**Action:** Wrapped `LyricsBlock` in `React.memo` and stabilized `handleLyricChange` and `handleSelect` using `useCallback` (accessing state via `useStore.getState()` to avoid dependency on the changing `progression` array). This ensures only the modified chord block re-renders.

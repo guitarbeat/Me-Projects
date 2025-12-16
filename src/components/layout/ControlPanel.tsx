@@ -5,7 +5,7 @@ import { cn, IconButton } from '../ui';
 import { useStore } from '../../lib';
 import { 
     Play, Pause,
-    ListMusic, Network, Keyboard, Music2, Zap,
+    ListMusic, Network, Keyboard, Zap,
     PanelLeftClose, PanelLeftOpen,
     PenTool, LucideIcon, Save
 } from 'lucide-react';
@@ -22,14 +22,8 @@ export default function ControlPanel() {
     const { 
         key: currentKey, 
         scale, 
-        bpm, 
         isPlaying, 
-        setKey, 
-        setScale, 
-        setBpm, 
         togglePlay,
-        toggleScaleLock,
-        isScaleLocked,
 
         progression,
         selectedChordIndex,
@@ -231,8 +225,6 @@ export default function ControlPanel() {
                                             collapsedSize: 6,
                                             isCollapsed: !visiblePanels.mood,
                                             onCollapseChange: (c) => setVisiblePanels(prev => ({ ...prev, mood: !c })),
-                                            minSize: 15,
-                                            // Example Accessory: Quick Settings on the handle
                                             minSize: 15,
                                             // Example Accessory: Quick Settings on the handle
                                             miniOverlay: <MiniMoodSelector />

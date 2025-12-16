@@ -5,7 +5,7 @@ import { cn } from '../ui';
 
 // --- DATA ---
 // Position 0 = Top (C), going clockwise
-const ORDER_OF_FIFTHS = [
+export const ORDER_OF_FIFTHS = [
     { major: 'C', minor: 'Am', sharpCount: 0 },
     { major: 'G', minor: 'Em', sharpCount: 1 },
     { major: 'D', minor: 'Bm', sharpCount: 2 },
@@ -170,6 +170,15 @@ export const CircleOfFifths: React.FC<CircleOfFifthsProps> = ({
 
 export const MiniCircleOfFifths = () => {
     const { key, scale } = useStore();
+    
+    const keyInfo = useMemo(() => {
+        return ORDER_OF_FIFTHS.find(k => k.major === key || k.minor === key) || { sharpCount: 0 };
+    }, [key]);
+    
+    const sig = keyInfo.sharpCount === 0 ? 'Natural' : 
+                keyInfo.sharpCount > 0 ? `${keyInfo.sharpCount}♯` : 
+                `${Math.abs(keyInfo.sharpCount)}♭`;
+
     return (
         <div className="flex items-center gap-3 px-4 w-full h-full bg-[var(--bg-surface)] hover:bg-[var(--bg-element)] transition-colors cursor-pointer group">
             <div className="w-8 h-8 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] flex items-center justify-center shrink-0 group-hover:border-[var(--accent)] relative overflow-hidden">
@@ -188,9 +197,9 @@ export const MiniCircleOfFifths = () => {
                     <span className="text-[8px] font-bold text-[var(--text-main)]">{key.replace(/#/, '♯').replace(/b/, '♭')}</span>
                 </div>
             </div>
-            <div className="flex flex-col">
-                 <span className="font-bold text-xs text-[var(--text-main)]">Circle of Fifths</span>
-                 <span className="text-[10px] text-[var(--text-muted)]">{scale}</span>
+            <div className="flex flex-col min-w-0">
+                 <span className="font-bold text-xs text-[var(--text-main)] truncate">Circle of Fifths</span>
+                 <span className="text-[10px] text-[var(--text-muted)] truncate">{scale} • {sig}</span>
             </div>
         </div>
     );

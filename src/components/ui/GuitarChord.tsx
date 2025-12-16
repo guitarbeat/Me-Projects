@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
-import { Chord } from '../types';
-import { cn } from './UI';
+import { Chord } from '../../types';
+import { cn } from '.';
 
 // --- DATA ---
 // A simplified lookup for common open chords and movable shapes
@@ -111,22 +111,22 @@ export const GuitarChordDiagram = ({ chord, className }: { chord: Chord, classNa
     const visibleFrets = 5; 
 
     return (
-        <div className={cn("flex flex-col items-center select-none bg-white rounded-lg border border-stone-200 p-2 shadow-sm", className)}>
-            <div className="text-[10px] font-bold text-stone-900 mb-1">{chord.symbol}</div>
+        <div className={cn("flex flex-col items-center select-none bg-[var(--bg-element)] rounded-lg border border-[var(--border)] p-2 shadow-sm", className)}>
+            <div className="text-[10px] font-bold text-[var(--text-main)] mb-1">{chord.symbol}</div>
             <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
                 {/* Nut (only if startFret is 1) */}
-                {startFret === 1 && <line x1={paddingX} y1={paddingY} x2={width - paddingX} y2={paddingY} stroke="black" strokeWidth={3} />}
+                {startFret === 1 && <line x1={paddingX} y1={paddingY} x2={width - paddingX} y2={paddingY} stroke="var(--text-main)" strokeWidth={2} />}
                 
                 {/* Frets */}
                 {Array.from({ length: visibleFrets }).map((_, i) => {
                     const y = paddingY + i * fretGap;
-                    return <line key={`fret-${i}`} x1={paddingX} y1={y} x2={width - paddingX} y2={y} stroke="#d6d3d1" strokeWidth={1} />;
+                    return <line key={`fret-${i}`} x1={paddingX} y1={y} x2={width - paddingX} y2={y} stroke="var(--border-hover)" strokeWidth={1} />;
                 })}
 
                 {/* Strings */}
                 {Array.from({ length: 6 }).map((_, i) => {
                     const x = paddingX + i * stringGap;
-                    return <line key={`str-${i}`} x1={x} y1={paddingY} x2={x} y2={height - paddingY + 10} stroke="#78716c" strokeWidth={i > 2 ? 0.5 : 1} />;
+                    return <line key={`str-${i}`} x1={x} y1={paddingY} x2={x} y2={height - paddingY + 10} stroke="var(--text-muted)" strokeWidth={i > 2 ? 0.5 : 1} />;
                 })}
 
                 {/* Dots / Markers */}
@@ -134,7 +134,7 @@ export const GuitarChordDiagram = ({ chord, className }: { chord: Chord, classNa
                     if (fret === -1) {
                         // Mute (X)
                         const x = paddingX + stringIdx * stringGap;
-                        return <text key={stringIdx} x={x} y={paddingY - 5} textAnchor="middle" fontSize={8} fill="#ef4444" fontWeight="bold">X</text>;
+                        return <text key={stringIdx} x={x} y={paddingY - 5} textAnchor="middle" fontSize={8} fill="var(--color-error)" fontWeight="bold">X</text>;
                     }
                     
                     const relFret = fret - startFret + 1;
@@ -142,14 +142,14 @@ export const GuitarChordDiagram = ({ chord, className }: { chord: Chord, classNa
                     if (fret === 0 && startFret === 1) {
                         // Open String (O)
                         const x = paddingX + stringIdx * stringGap;
-                        return <circle key={stringIdx} cx={x} cy={paddingY - 8} r={2} stroke="#78716c" fill="none" strokeWidth={1}/>;
+                        return <circle key={stringIdx} cx={x} cy={paddingY - 8} r={2} stroke="var(--text-muted)" fill="none" strokeWidth={1}/>;
                     }
                     
                     if (relFret > 0 && relFret <= visibleFrets) {
                         // Finger position
                         const x = paddingX + stringIdx * stringGap;
                         const y = paddingY + (relFret - 1) * fretGap + (fretGap / 2);
-                        return <circle key={stringIdx} cx={x} cy={y} r={4} fill="#dc2626" />;
+                        return <circle key={stringIdx} cx={x} cy={y} r={4} fill="var(--accent)" />;
                     }
                     
                     return null;

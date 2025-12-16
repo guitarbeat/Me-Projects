@@ -1,8 +1,8 @@
 import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { Thermometer, Activity, Wind, Music2 } from 'lucide-react';
-import { SCALE_DEFS, EMOTIONAL_ZONES, getTempoFromArousal, ScaleDef } from '../lib';
-import { cn } from './UI';
-import { useStore } from '../store';
+import { Thermometer, Activity, Wind, Music2, Zap } from 'lucide-react';
+import { SCALE_DEFS, EMOTIONAL_ZONES, getTempoFromArousal, ScaleDef } from '../../lib';
+import { cn } from '../ui';
+import { useStore } from '../../lib';
 
 // --- HELPERS ---
 
@@ -320,6 +320,45 @@ export const MoodSelector = () => {
                         )
                      })}
                 </div>
+            </div>
+        </div>
+    );
+};
+
+export const MiniMoodSelector = () => {
+    const { mood } = useStore();
+    
+    // Find closest zone
+    const currentZone = useMemo(() => {
+        let minDist = Infinity;
+        let match = EMOTIONAL_ZONES[0];
+        
+        for (const zone of EMOTIONAL_ZONES) {
+            const dist = Math.hypot(mood.valence - zone.v, mood.arousal - zone.a);
+            if (dist < minDist) {
+                minDist = dist;
+                match = zone;
+            }
+        }
+        return match;
+    }, [mood.valence, mood.arousal]);
+
+    return (
+        <div className="flex items-center gap-3 px-4 w-full h-full bg-[var(--bg-surface)] hover:bg-[var(--bg-element)] transition-colors cursor-pointer group">
+            <div className="w-8 h-8 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] flex items-center justify-center shrink-0 group-hover:border-[var(--accent)] overflow-hidden relative">
+                 <div className="absolute inset-0" style={{
+                    background: `linear-gradient(135deg, 
+                        rgba(250, 204, 21, ${(mood.arousal + 1) * 0.4}) 0%, 
+                        rgba(59, 130, 246, ${(mood.valence + 1) * 0.4}) 100%)`, 
+                    opacity: 0.8
+                }}/>
+                <Zap size={14} className="text-[var(--text-main)] relative z-10 mix-blend-overlay" />
+            </div>
+             <div className="flex flex-col min-w-0">
+                 <span className="font-bold text-xs text-[var(--text-main)] truncate">Mood</span>
+                 <span className="text-[10px] text-[var(--text-muted)] truncate capitalize">
+                    {currentZone?.label.toLowerCase() || 'Neutral'} • Tension: {(mood.tension * 100).toFixed(0)}%
+                 </span>
             </div>
         </div>
     );

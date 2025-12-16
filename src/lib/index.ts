@@ -15,5 +15,5 @@ export * from '../types';
 export * from './constants';
 export * from './theory';
 export * from './audio';
-export * from '../hooks/hooks';
+export * from '../hooks';
 export * from '../store';

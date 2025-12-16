@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
-import { useStore } from '../store';
-import { Chord } from '../types';
-import { cn } from './UI';
+import { useStore } from '../../lib';
+import { Chord } from '../../types';
+import { cn } from '../ui';
 import { Mic2, Type, Music } from 'lucide-react';
 
 interface LyricsBlockProps {
@@ -81,7 +81,7 @@ export const SongwritingBoard = () => {
     };
 
     return (
-        <div className="w-full h-full bg-[var(--bg-main)] overflow-y-auto custom-scrollbar p-6 sm:p-12 relative">
+        <div className="w-full h-full bg-[var(--bg-panel)] overflow-y-auto custom-scrollbar p-6 sm:p-12 relative">
             <div className="max-w-4xl mx-auto flex flex-col gap-8 pb-32">
                 
                 {/* Header / Meta */}
@@ -132,6 +132,27 @@ export const SongwritingBoard = () => {
                     </div>
                 </div>
 
+            </div>
+        </div>
+    );
+};
+
+export const MiniSongwritingBoard = () => {
+    const { progression } = useStore();
+    const withLyrics = progression.filter(c => c.lyrics && c.lyrics.trim().length > 0).length;
+    
+    return (
+        <div className="flex items-center gap-3 px-4 w-full h-full bg-[var(--bg-surface)] hover:bg-[var(--bg-element)] transition-colors cursor-pointer group">
+            <div className="w-8 h-8 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] flex flex-col items-start justify-center shrink-0 group-hover:border-[var(--accent)] gap-1 p-1.5 opacity-80">
+                <div className="w-4/5 h-1 bg-[var(--text-main)] opacity-50 rounded-full" />
+                <div className="w-full h-0.5 bg-[var(--text-muted)] opacity-30 rounded-full" />
+                <div className="w-3/5 h-0.5 bg-[var(--text-muted)] opacity-30 rounded-full" />
+                <div className="w-full h-0.5 bg-[var(--text-muted)] opacity-30 rounded-full" />
+                <div className="w-2/5 h-0.5 bg-[var(--text-muted)] opacity-30 rounded-full" />
+            </div>
+             <div className="flex flex-col">
+                 <span className="font-bold text-xs text-[var(--text-main)]">Songwriting</span>
+                 <span className="text-[10px] text-[var(--text-muted)]">{withLyrics}/{progression.length} Lyrics</span>
             </div>
         </div>
     );

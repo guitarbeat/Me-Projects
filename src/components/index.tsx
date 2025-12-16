@@ -1,5 +1,4 @@
 
-
 /**
  * Component Barrel File
  * 
@@ -7,11 +6,15 @@
  * while enforcing separation of concerns and eliminating code duplication.
  */
 
-export * from './UI';
-export * from './ControlPanel';
-export { default as ControlPanel } from './ControlPanel';
-export * from './ResizablePanels';
-export * from './Sequencer';
-export * from './MoodSelector';
-export * from './GuitarChord';
-export * from './SongwritingBoard';
+export * from './ui';
+export * from './layout/ControlPanel';
+export { default as ControlPanel } from './layout/ControlPanel';
+
+export * from './tools/Sequencer';
+export * from './tools/MoodSelector';
+
+export * from './tools/SongwritingBoard';
+export * from './tools/HarmonicMap';
+export * from './overlays/SettingsPopover';
+export * from './overlays/ProjectLibrary';
+export * from './tools/ChordEditor';

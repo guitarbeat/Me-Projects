@@ -11,6 +11,12 @@ export const SPLIT_CONSTANTS = {
   snapThreshold: 0.15
 };
 
+export const IOS_LAYOUT_METRICS = {
+  radius: 22,    // iOS "Island" radius
+  padding: 0,    // Flush with container edges
+  gap: 24        // Large black gap for controls
+};
+
 // --- MUSIC DATA ---
 
 export const CHROMATIC_SHARPS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];

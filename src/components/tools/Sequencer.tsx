@@ -1,8 +1,9 @@
 
-import React, { useState, useRef, useMemo, useEffect } from 'react';
-import { Plus, X, GripHorizontal, Filter, Search } from 'lucide-react';
-import { cn } from './UI';
-import { Chord, useStore, useDerivedData } from '../lib';
+import React, { useState, useRef, useMemo, useEffect, useCallback } from 'react';
+import { Plus, X, GripHorizontal, Search } from 'lucide-react';
+import { cn } from '../ui';
+import { Chord, useStore, useDerivedData } from '../../lib';
+import { CircleOfFifths } from './CircleOfFifths';
 
 const PIXELS_PER_BEAT = 40;
 
@@ -18,25 +19,25 @@ const getChordColorClass = (roman: string) => {
     // Explicit return of full class strings for Tailwind scanner
     switch(color) {
         case 'emerald': return { 
-            border: 'border-border', bg: 'bg-emerald-500/10', hover: 'hover:bg-emerald-500/20', 
-            text: 'text-emerald-900 dark:text-emerald-100', icon: 'text-emerald-600 dark:text-emerald-400',
-            borderHover: 'border-border'
+            border: 'border-emerald-500/30', bg: 'bg-emerald-500/25', hover: 'hover:bg-emerald-500/35', 
+            text: 'text-emerald-900 dark:text-emerald-50', icon: 'text-emerald-600 dark:text-emerald-300',
+            borderHover: 'border-emerald-400/50'
         };
         case 'sky': return { 
-            border: 'border-border', bg: 'bg-sky-500/10', hover: 'hover:bg-sky-500/20', 
-            text: 'text-sky-900 dark:text-sky-100', icon: 'text-sky-600 dark:text-sky-400',
-            borderHover: 'border-border'
+            border: 'border-sky-500/30', bg: 'bg-sky-500/25', hover: 'hover:bg-sky-500/35', 
+            text: 'text-sky-900 dark:text-sky-50', icon: 'text-sky-600 dark:text-sky-300',
+            borderHover: 'border-sky-400/50'
         };
         case 'rose': return { 
-            border: 'border-border', bg: 'bg-rose-500/10', hover: 'hover:bg-rose-500/20', 
-            text: 'text-rose-900 dark:text-rose-100', icon: 'text-rose-600 dark:text-rose-400',
-            borderHover: 'border-border'
+            border: 'border-rose-500/30', bg: 'bg-rose-500/25', hover: 'hover:bg-rose-500/35', 
+            text: 'text-rose-900 dark:text-rose-50', icon: 'text-rose-600 dark:text-rose-300',
+            borderHover: 'border-rose-400/50'
         };
         case 'stone': 
         default: return { 
-            border: 'border-border', bg: 'bg-stone-500/10', hover: 'hover:bg-stone-500/20', 
-            text: 'text-stone-900 dark:text-stone-100', icon: 'text-stone-600 dark:text-stone-400',
-            borderHover: 'border-border'
+            border: 'border-stone-500/30', bg: 'bg-stone-500/25', hover: 'hover:bg-stone-500/35', 
+            text: 'text-stone-900 dark:text-stone-50', icon: 'text-stone-600 dark:text-stone-300',
+            borderHover: 'border-stone-400/50'
         };
     }
 };
@@ -67,45 +68,28 @@ export const DraggableChord: React.FC<{ chord: Chord, className?: string, onClic
 export const ChordPalette = ({ className }: { className?: string }) => {
     const { playOne } = useStore();
     const { chords: availableChords } = useDerivedData();
-    const [filter, setFilter] = useState<string>('All');
     const [searchTerm, setSearchTerm] = useState('');
 
     const filteredChords = useMemo(() => {
         return availableChords.filter(c => {
-             const matchesFilter = filter === 'All' ? true : 
-                                   filter === 'Other' ? !['Major', 'Minor', 'Dominant'].includes(c.quality) : 
-                                   c.quality === filter;
-             const matchesSearch = c.symbol.toLowerCase().includes(searchTerm.toLowerCase());
-             return matchesFilter && matchesSearch;
+             return c.symbol.toLowerCase().includes(searchTerm.toLowerCase());
         });
-    }, [availableChords, filter, searchTerm]);
+    }, [availableChords, searchTerm]);
 
     return (
         <div className={cn("flex flex-col h-full gap-2", className)}>
+             {/* Removed embedded Circle from within ChordPalette since it's now parent-managed */}
+
             {/* Controls */}
-            <div className="flex items-center gap-2 shrink-0">
-                <div className="flex items-center gap-1.5 bg-[var(--bg-element)] rounded-md border border-[var(--border)] px-1.5 h-6">
-                    <Filter size={10} className="text-[var(--text-dim)]" />
-                    <select 
-                        value={filter} 
-                        onChange={(e) => setFilter(e.target.value)}
-                        className="bg-transparent text-[10px] font-medium text-[var(--text-muted)] border-none outline-none cursor-pointer hover:text-[var(--text-main)] appearance-none pr-2"
-                    >
-                        <option value="All">All Types</option>
-                        <option value="Major">Major</option>
-                        <option value="Minor">Minor</option>
-                        <option value="Dominant">Dominant</option>
-                        <option value="Other">Other</option>
-                    </select>
-                </div>
-                
-                <div className="flex items-center gap-1.5 bg-[var(--bg-element)] rounded-md border border-[var(--border)] px-1.5 h-6 w-24 focus-within:w-32 focus-within:border-[var(--accent)] transition-all">
-                    <Search size={10} className="text-[var(--text-dim)]"/>
+            <div className="flex items-center gap-2 shrink-0 px-1">
+                {/* Search Bar (kept as utility) */}
+                <div className="flex flex-1 items-center gap-1.5 bg-[var(--bg-element)] rounded-md border border-[var(--border)] px-1.5 h-7 focus-within:border-[var(--accent)] transition-all">
+                    <Search size={12} className="text-[var(--text-dim)]"/>
                     <input 
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
-                        placeholder="Search..."
-                        className="bg-transparent border-none outline-none text-[10px] w-full text-[var(--text-main)] placeholder:text-[var(--text-dim)]"
+                        placeholder="Search chords..."
+                        className="bg-transparent border-none outline-none text-xs w-full text-[var(--text-main)] placeholder:text-[var(--text-dim)]"
                     />
                 </div>
             </div>
@@ -122,7 +106,7 @@ export const ChordPalette = ({ className }: { className?: string }) => {
                 ))}
                 {filteredChords.length === 0 && (
                     <div className="w-full h-full flex items-center justify-center text-[10px] text-[var(--text-dim)] italic">
-                        No chords found matching filter
+                        No chords found matching search
                     </div>
                 )}
             </div>
@@ -137,18 +121,18 @@ interface TimelineNodeProps {
     isSelected: boolean;
     onRemove: (index: number) => void;
     onResize: (index: number, duration: number) => void;
-    onDragStart: (e: React.DragEvent) => void;
-    onDragEnter: (e: React.DragEvent) => void;
-    onDrop: (e: React.DragEvent) => void;
+    onDragStart: (e: React.DragEvent, index: number) => void;
+    onDragEnter: (e: React.DragEvent, index: number) => void;
+    onDrop: (e: React.DragEvent, index: number) => void;
     onSelect: (index: number) => void;
     isDropTarget: boolean;
     isDragging: boolean;
 }
-const TimelineNode = ({ 
+const TimelineNode = React.memo(function TimelineNode({  
     chord, index, isActive, isSelected, 
     onRemove, onResize, onDragStart, onDragEnter, onDrop, onSelect, 
     isDropTarget, isDragging 
-}: TimelineNodeProps) => {
+}: TimelineNodeProps) {
     const [resizeState, setResizeState] = useState<{px: number, dur: number} | null>(null);
     const classes = useMemo(() => getChordColorClass(chord.romanNumeral), [chord.romanNumeral]);
 
@@ -192,9 +176,10 @@ const TimelineNode = ({
 
     const dragHandlers = {
         draggable: !chord.isRest && !resizeState,
-        onDragStart: (e: React.DragEvent) => { e.dataTransfer.setData('reorder_index', index.toString()); onDragStart(e); },
+        onDragStart: (e: React.DragEvent) => { e.dataTransfer.setData('reorder_index', index.toString()); onDragStart(e, index); },
         onDragOver: (e: React.DragEvent) => { e.preventDefault(); e.dataTransfer.dropEffect = e.dataTransfer.types.includes('reorder_index') ? 'move' : 'copy'; },
-        onDragEnter, onDrop
+        onDragEnter: (e: React.DragEvent) => onDragEnter(e, index),
+        onDrop: (e: React.DragEvent) => onDrop(e, index)
     };
 
     return (
@@ -234,7 +219,7 @@ const TimelineNode = ({
             </div>
         </div>
     );
-};
+});
 
 export const ProgressionStrip = ({ showPalette = false }: { showPalette?: boolean }) => {
     const { 
@@ -256,13 +241,20 @@ export const ProgressionStrip = ({ showPalette = false }: { showPalette?: boolea
         }
     }, [activeIndex]);
 
-    const onDropChord = (chord: Chord, index: number) => {
+    // Stable Handlers for Memoized TimelineNode
+    const handleSelect = useCallback((idx: number) => { setSelectedChordIndex(idx); if (progression[idx]) playOne(progression[idx]); }, [setSelectedChordIndex, playOne, progression]);
+    const handleRemove = useCallback((idx: number) => handleProgression('remove', idx), [handleProgression]);
+    const handleResize = useCallback((idx: number, dur: number) => handleProgression('resize', { index: idx, duration: dur }), [handleProgression]);
+    const handleDragStartNode = useCallback((_e: React.DragEvent, idx: number) => setDragState(s => ({...s, dragging:idx})), []);
+    const handleDragEnterNode = useCallback((_e: React.DragEvent, idx: number) => setDragState(s => ({...s, target:idx})), []);
+
+    const onDropChord = useCallback((chord: Chord, index: number) => {
         playOne(chord);
         handleProgression('add', { chord, index });
         setSelectedChordIndex(index);
-    };
+    }, [playOne, handleProgression, setSelectedChordIndex]);
 
-    const handleDrop = (e: React.DragEvent, index: number) => {
+    const handleDrop = useCallback((e: React.DragEvent, index: number) => {
         e.preventDefault(); e.stopPropagation();
         setDragState({dragging:null, target:null});
         const ri = e.dataTransfer.getData('reorder_index');
@@ -276,16 +268,34 @@ export const ProgressionStrip = ({ showPalette = false }: { showPalette?: boolea
         } else { 
             try { const d = JSON.parse(e.dataTransfer.getData('application/json')); if (d.root) onDropChord(d, index); } catch { /* Ignore parse errors */ } 
         }
-    };
+    }, [handleProgression, setSelectedChordIndex, onDropChord]); // Note: onDropChord needs to be memoized or this useCallback will reset if onDropChord resets. 
+    // onDropChord is defined inside component above, let's fix that.
+
+    // ... Fixing inline functions ...
 
     return (
       <div 
-        className="w-full h-full flex flex-col bg-[var(--bg-main)] overflow-hidden relative"
+        className="w-full h-full flex flex-col bg-[var(--bg-panel)] overflow-hidden relative"
         onClick={() => setSelectedChordIndex(null)} // Click background to deselect
       >
         {showPalette && (
-            <div className="shrink-0 h-40 border-b border-[var(--border)] bg-[var(--bg-soft)] overflow-hidden">
-                <ChordPalette className="p-2" />
+            <div className="shrink-0 h-[220px] border-b border-[var(--border)] bg-[var(--bg-element)] overflow-hidden flex flex-row">
+                 {/* Left: Circle Visualization */}
+                <div className="w-[220px] h-full shrink-0 border-r border-[var(--border)] flex items-center justify-center p-2 relative">
+                     <CircleOfFifths 
+                        currentKey={`${useStore.getState().key} ${useStore.getState().scale === 'Major' ? '' : 'm'}`.trim()} 
+                        onChordClick={(symbol) => {
+                             const match = availableChords.find(c => c.symbol === symbol || c.symbol === symbol + 'm');
+                             if (match) playOne(match);
+                        }}
+                        className="w-full h-full"
+                    />
+                </div>
+
+                {/* Right: Scrollable Chord List */}
+                <div className="flex-1 min-w-0 h-full overflow-hidden">
+                    <ChordPalette className="p-2 h-full" />
+                </div>
             </div>
         )}
 
@@ -302,12 +312,12 @@ export const ProgressionStrip = ({ showPalette = false }: { showPalette?: boolea
                                 index={i} 
                                 isActive={i===activeIndex} 
                                 isSelected={i===selectedChordIndex}
-                                onSelect={(idx: number) => { setSelectedChordIndex(idx); playOne(c); }}
-                                onRemove={(idx: number) => handleProgression('remove', idx)} 
-                                onResize={(idx: number, dur: number) => handleProgression('resize', { index: idx, duration: dur })}
-                                onDragStart={() => setDragState(s => ({...s, dragging:i}))} 
-                                onDragEnter={() => setDragState(s => ({...s, target:i}))}
-                                onDrop={(e: React.DragEvent) => handleDrop(e, i)} 
+                                onSelect={handleSelect}
+                                onRemove={handleRemove} 
+                                onResize={handleResize}
+                                onDragStart={handleDragStartNode} 
+                                onDragEnter={handleDragEnterNode}
+                                onDrop={handleDrop} 
                                 isDropTarget={dragState.target===i} 
                                 isDragging={dragState.dragging===i} 
                             />
@@ -332,5 +342,52 @@ export const ProgressionStrip = ({ showPalette = false }: { showPalette?: boolea
             </div>
         </div>
       </div>
+    );
+};
+// ... existing code ...
+
+export const MiniSequencer = () => {
+    const { progression, isPlaying, playIndex } = useStore();
+    return (
+        <div className="flex items-center gap-3 px-4 w-full h-full bg-[var(--bg-surface)] hover:bg-[var(--bg-element)] transition-colors cursor-pointer group">
+            <div className="h-8 w-24 shrink-0 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] flex items-center px-1 gap-0.5 overflow-hidden group-hover:border-[var(--accent)] relative">
+                {progression.length === 0 ? (
+                    <div className="w-full text-center text-[8px] text-[var(--text-dim)]">Empty</div>
+                ) : (
+                    progression.slice(0, 8).map((c, i) => (
+                        <div key={i} className={cn("h-4 w-1.5 rounded-full transition-all", 
+                            i === playIndex && isPlaying ? "bg-[var(--accent)] h-5" : "bg-[var(--text-muted)] opacity-40")} 
+                        />
+                    ))
+                )}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[var(--bg-panel)]" />
+            </div>
+            <div className="flex flex-col min-w-0">
+                 <span className="font-bold text-xs text-[var(--text-main)] truncate">Sequencer</span>
+                 <span className="text-[10px] text-[var(--text-muted)] truncate">{progression.length} Chords • {Math.round(progression.reduce((a,b)=>a+b.duration,0))} Beats</span>
+            </div>
+        </div>
+    );
+};
+
+export const MiniChordPalette = () => {
+    return (
+        <div className="flex items-center gap-3 px-4 w-full h-full bg-[var(--bg-surface)] hover:bg-[var(--bg-element)] transition-colors cursor-pointer group">
+             <div className="w-8 h-8 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] shrink-0 group-hover:border-[var(--accent)] grid grid-cols-3 grid-rows-3 gap-[2px] p-1.5 opacity-80">
+                <div className="bg-emerald-500/50 rounded-[1px]" />
+                <div className="bg-sky-500/50 rounded-[1px]" />
+                <div className="bg-rose-500/50 rounded-[1px]" />
+                <div className="bg-amber-500/50 rounded-[1px]" />
+                <div className="bg-[var(--text-muted)] rounded-[1px] opacity-20" />
+                <div className="bg-purple-500/50 rounded-[1px]" />
+                <div className="bg-[var(--accent)] rounded-[1px] opacity-20" />
+                <div className="bg-indigo-500/50 rounded-[1px]" />
+                <div className="bg-teal-500/50 rounded-[1px]" />
+            </div>
+            <div className="flex flex-col">
+                 <span className="font-bold text-xs text-[var(--text-main)]">Chord Palette</span>
+                 <span className="text-[10px] text-[var(--text-muted)]">Library</span>
+            </div>
+        </div>
     );
 };

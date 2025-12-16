@@ -13,6 +13,7 @@ export class AudioEngine {
             oscillator: { type: "triangle" },
             envelope: { attack: 0.05, decay: 0.2, sustain: 0.4, release: 1 },
             maxPolyphony: 6,
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } as any);
 
         // Professional Signal Chain:

@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import { Plus, Minus, Maximize2 } from 'lucide-react';
-import { buildChord, generateSecondaryDominants, getHarmonicSuggestions, getScaleNotes, estimateChordSentiment, ChordComplexity, Note, ScaleType, Chord, useStore, useDerivedData } from '../lib';
-import { cn } from './UI';
+import { buildChord, generateSecondaryDominants, getHarmonicSuggestions, getScaleNotes, estimateChordSentiment, ChordComplexity, Note, ScaleType, Chord, useStore, useDerivedData } from '../../lib';
+import { cn } from '../ui';
 
 // --- HELPERS ---
 const GRID_SIZE = 6, SPACING = 80, X_VEC = { x: SPACING, y: 0 }, Y_VEC = { x: SPACING * 0.5, y: SPACING * 0.866 };
@@ -473,11 +473,11 @@ export const HarmonicSpace = () => {
     }, [complexity, playOne, handleProgression]);
 
     return (
-        <div className="w-full h-full relative overflow-hidden bg-[var(--bg-main)] touch-none select-none flex items-center justify-center cursor-move"
+        <div className="w-full h-full relative overflow-hidden bg-[var(--bg-panel)] touch-none select-none flex items-center justify-center cursor-move"
              onWheel={(e) => setView(v => ({ ...v, k: Math.max(0.5, Math.min(4, v.k * (1 - e.deltaY * 0.001))) }))}
              onPointerDown={handlePointerDown} onPointerMove={handlePointerMove} onPointerUp={handlePointerUp} onPointerLeave={handlePointerUp} onPointerCancel={handlePointerUp}>
             
-            <div className="absolute inset-0 opacity-80 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 50%, var(--bg-surface) 0%, var(--bg-main) 100%)' }} />
+            <div className="absolute inset-0 opacity-80 pointer-events-none" style={{ background: 'radial-gradient(circle at 50% 50%, var(--bg-surface) 0%, var(--bg-panel) 100%)' }} />
             
             <svg className="w-full h-full relative z-10" viewBox="-400 -300 800 600" preserveAspectRatio="xMidYMid slice">
                 <defs>
@@ -501,6 +501,26 @@ export const HarmonicSpace = () => {
             <div className="absolute bottom-6 right-6 flex flex-col gap-2 z-20">
                  {[ {i:Plus, a:()=>setView(v=>({...v,k:Math.min(4,v.k*1.2)}))}, {i:Minus, a:()=>setView(v=>({...v,k:Math.max(0.5,v.k*0.8)}))}, {i:Maximize2, a:()=>setView({x:0,y:0,k:1})} ].map((b,i)=><button key={i} onClick={b.a} className="w-8 h-8 rounded-full bg-[var(--bg-element)] border border-[var(--border)] flex items-center justify-center text-[var(--text-main)] hover:scale-110 transition-transform"><b.i size={16}/></button>)}
              </div>
+        </div>
+    );
+};
+
+export const MiniHarmonicMap = () => {
+    const { key, scale } = useStore();
+    return (
+        <div className="flex items-center gap-3 px-4 w-full h-full bg-[var(--bg-surface)] hover:bg-[var(--bg-element)] transition-colors cursor-pointer group">
+            <div className="relative w-8 h-8 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] flex items-center justify-center overflow-hidden shrink-0 group-hover:border-[var(--accent)]">
+                <div className="absolute inset-0 opacity-20 grid grid-cols-2 grid-rows-2">
+                    <div className="border-r border-b border-[var(--text-muted)]"/>
+                    <div className="border-b border-[var(--text-muted)]"/>
+                    <div className="border-r border-[var(--text-muted)]"/>
+                </div>
+                <div className="w-2 h-2 rounded-full bg-[var(--accent)] shadow-[0_0_8px_var(--accent)] animate-pulse" />
+            </div>
+            <div className="flex flex-col">
+                 <span className="font-bold text-xs text-[var(--text-main)]">Harmonic Map</span>
+                 <span className="text-[10px] text-[var(--text-muted)] font-mono">{key} {scale}</span>
+            </div>
         </div>
     );
 };

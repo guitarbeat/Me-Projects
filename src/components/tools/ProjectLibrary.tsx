@@ -24,12 +24,15 @@ export const ProjectLibrary: React.FC = () => {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         placeholder="Save as..."
+                        aria-label="Project name"
                         className="flex-1 h-7 px-2 bg-[var(--bg-surface)] border border-[var(--border)] rounded text-[10px] text-[var(--text-main)] placeholder:text-[var(--text-dim)] focus:outline-none focus:border-[var(--accent)]"
                         autoFocus
                     />
                     <button 
                         type="submit" 
                         disabled={!name.trim()}
+                        aria-label="Save project"
+                        title="Save project"
                         className={cn(
                             "w-7 h-7 flex items-center justify-center rounded transition-all",
                             name.trim() 
@@ -58,13 +61,17 @@ export const ProjectLibrary: React.FC = () => {
                             </div>
                             <button 
                                 onClick={() => loadProject(p.id)}
-                                className="opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded bg-[var(--accent)] text-white text-[8px] font-bold transition-all"
+                                aria-label={`Load project ${p.name}`}
+                                title="Load project"
+                                className="opacity-0 group-hover:opacity-100 focus:opacity-100 w-6 h-6 flex items-center justify-center rounded bg-[var(--accent)] text-white text-[8px] font-bold transition-all"
                             >
                                 ▶
                             </button>
                             <button 
                                 onClick={(e) => { e.stopPropagation(); deleteProject(p.id); }}
-                                className="opacity-0 group-hover:opacity-100 w-6 h-6 flex items-center justify-center rounded hover:bg-red-500/10 text-[var(--text-dim)] hover:text-red-500 transition-all"
+                                aria-label={`Delete project ${p.name}`}
+                                title="Delete project"
+                                className="opacity-0 group-hover:opacity-100 focus:opacity-100 w-6 h-6 flex items-center justify-center rounded hover:bg-red-500/10 text-[var(--text-dim)] hover:text-red-500 transition-all"
                             >
                                 <Trash2 size={10} />
                             </button>

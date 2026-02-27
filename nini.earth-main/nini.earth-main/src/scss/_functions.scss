@@ -1,0 +1,134 @@
+@function str-replace($string, $search, $replace: '') {
+  $index: str-index($string, $search);
+
+  @if $index {
+    @return str-slice($string, 1, $index - 1) + $replace + str-replace(str-slice($string, $index + str-length($search)), $search, $replace);
+  }
+
+  @return $string;
+}
+// Size
+@mixin size($width : auto, $height : auto) {
+    height: $height;
+    width: $width;
+}
+@mixin square($size) {
+    @include size($size, $size);
+}
+
+@mixin circle($size) {
+    @include border-radius($size);
+    @include size($size, $size);
+}
+
+// Sprite
+@mixin sprite($left : 0, $top : 0 , $color : transparent) {
+	background: $color url(img/sprite.png) $left $top no-repeat;
+	display: block;
+}
+
+@mixin background($path, $size: auto auto, $pos: left top, $repeat: no-repeat) {
+  $at1x_path: "#{$path}";
+  $at2x_path: str-replace(#{$path}, '.png', '@2x.png');
+  $at2x_path: str-replace(#{$at2x_path}, '.jpg', '@2x.jpg');
+  $at2x_path: str-replace(#{$at2x_path}, '.jepg', '@2x.jepg');
+  // $at3x_path: str-replace(#{$path}, '.', '@3x.');
+
+  background-image: url("#{$at1x_path}");
+  background-size: $size;
+  background-position: $pos;
+  background-repeat: $repeat;
+
+  /* @2x Images (Pixel Ratio of 1.25+) */
+  @media only screen and (-o-min-device-pixel-ratio: 5/4),
+  only screen and (-webkit-min-device-pixel-ratio: 1.25),
+  only screen and (min-device-pixel-ratio: 1.25),
+  only screen and (min-resolution: 1.25dppx) {
+    background-image: url("#{$at2x_path}");
+  }
+
+  /* @3x Images (Pixel Ratio of 2.25+) */
+  // @media only screen and (-o-min-device-pixel-ratio: 9/4),
+  // only screen and (-webkit-min-device-pixel-ratio: 2.25),
+  // only screen and (min-device-pixel-ratio: 2.25),
+  // only screen and (min-resolution: 2.25dppx) {
+  //   background-image: url("#{$at3x_path}");
+  // }
+}
+
+// Font Stacks
+@mixin font($weight: null, $size: null, $lineHeight: null) {
+    @if($size) { font-size: $size; }
+    @if($weight) { font-weight: $weight; }
+    @if($lineHeight) { line-height: $lineHeight; }
+}
+@mixin font-chicago($weight: null, $size: null, $lineHeight: null) {
+    font-family: 'Chicago', sans-serif;
+    @if($size) { font-size: $size; }
+    @if($weight) { font-weight: $weight; }
+    @if($lineHeight) { line-height: $lineHeight; }
+}
+
+@mixin absolute-center($axis: "both"){
+	position:absolute;
+  	@if $axis == "y" {
+    	top: 50%;
+    	transform: translateY(-50%);
+  	}
+  	@if $axis == "x" {
+    	left: 50%;
+    	transform: translateX(-50%);
+  	}
+  	@if $axis == "both" {
+    	top:50%;
+    	left:50%;
+    	transform: translate(-50%, -50%);
+	}
+}
+
+//letter-spacing
+@mixin letter-spacing($font-size, $letterspacing) {
+    letter-spacing: (($font-size * $letterspacing) /1000) + px;
+}
+
+@mixin button-reset {
+  padding: 0;
+  border: none;
+  font: inherit;
+  color: inherit;
+  background-color: transparent;
+  cursor: pointer;
+}
+
+
+// Input placeholder text
+@mixin placeholder($color: $grayLight) {
+  :-ms-input-placeholder { /* Internet Explorer 10+ */
+    color: $color;
+  }
+  :-moz-placeholder { /* Mozilla Firefox 4 to 18 */
+    color: $color;
+  }
+  ::-moz-placeholder { /* Mozilla Firefox 19+ */
+    color: $color;
+  }
+  ::-webkit-input-placeholder { /* WebKit browsers */
+    color: $color;
+  }
+  ::placeholder { /* Recent browsers */
+    color: $color;
+  }
+}
+
+@mixin svgicon($image, $w: 0, $h: 0){
+    background-color: transparent;
+    @if $image == null{
+        background-image: none;
+    } @else {
+        background-image: url(#{$image});
+    }
+    background-position: 0 0;
+    background-repeat: no-repeat;
+    background-size: $w $h;
+    @include size($w, $h);
+}

@@ -1,0 +1,40 @@
+@mixin declare-font-face($font-family, $font-filename, $font-weight : normal, $font-style :normal, $font-stretch : normal){
+	@font-face{
+		font-family: '#{$font-family}';
+        src: url(#{$font-filename}.woff2) format('woff2'),
+             url(#{$font-filename}.woff) format('woff');
+		// src: url(#{$font-filename}.eot);
+		// src: url(#{$font-filename}.eot?#iefix) format('embedded-opentype'),
+		// url(#{$font-filename}.woff) format('woff'),
+		// url(#{$font-filename}.ttf) format('truetype'),
+		// url(#{$font-filename}.svg##{$font-family}) format('svg');
+		font-display: swap;
+		font-weight: $font-weight;
+		font-style: $font-style;
+		font-stretch: $font-stretch;
+	}
+}
+@include declare-font-face('Chicago', 'fonts/ChicagoFLF', 400);
+
+// REM variables
+$rem-baseline: 16px;
+$rem-fallback: false;
+$rem-px-only: false;
+
+// Custom variables
+$basecolor: #fff;
+$border: #ccc;
+$blacktext: #333;
+$placeholder: #666;
+$error: #FF4D4D;
+
+// Form Elements
+$fe_border: $border;
+$fe_background: #eee;
+$fe_primary: $blacktext;
+$fe_placeholder: $placeholder;
+$fe_error: $error;
+$fe_borderradius: rem(4px);
+
+$fe_fontsize: rem(14px);
+$fe_lineheight: rem(36px);

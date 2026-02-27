@@ -1,0 +1,1 @@
+UPDATE user_credentials SET password_hash = simple_hash('1234asdf') WHERE username = 'aaron';

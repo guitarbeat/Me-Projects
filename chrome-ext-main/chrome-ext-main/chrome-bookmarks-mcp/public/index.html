@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chrome Bookmark Organizer</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header role="banner">
+      <h1>Chrome Bookmark Organizer</h1>
+      <nav role="navigation" aria-label="Main Toolbar">
+        <button id="refresh-btn" aria-label="Refresh workspace">Refresh</button>
+        <button id="generate-btn" aria-label="Generate output JSON">Generate Output</button>
+        <button id="create-folder-btn" aria-label="Create new folder">New Folder</button>
+        <span id="status-message" role="status" aria-live="polite"></span>
+      </nav>
+    </header>
+
+    <main role="main">
+      <section id="workspace-section" aria-labelledby="workspace-heading">
+        <h2 id="workspace-heading">Workspace</h2>
+        <div id="file-tree" role="tree" aria-label="Bookmark File System">
+          <!-- Tree items will be injected here by JavaScript -->
+          <div class="loading" aria-label="Loading content">Loading...</div>
+        </div>
+      </section>
+    </main>
+
+    <dialog id="action-dialog" aria-labelledby="dialog-title" aria-modal="true">
+      <form method="dialog">
+        <h2 id="dialog-title">Action</h2>
+        <div id="dialog-content"></div>
+        <div class="dialog-buttons">
+          <button value="cancel">Cancel</button>
+          <button id="dialog-confirm-btn" value="confirm">Confirm</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>

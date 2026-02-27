@@ -1,0 +1,14 @@
+# OS
+.DS_Store
+
+# UTM VM large artifacts
+**/Data/**
+*.qcow2
+*.vmdk
+**/screenshot.png
+
+# Archives
+*.zip
+*.7z
+*.tar
+*.tar.gz

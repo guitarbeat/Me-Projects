@@ -1,0 +1,16 @@
+{
+  "name": "Tampana - Emotional Calendar",
+  "short_name": "Tampana",
+  "description": "Track your emotions and visualize patterns in your emotional journey",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#4ECDC4",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

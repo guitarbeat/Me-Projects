@@ -1,0 +1,51 @@
+{% macro section_card(section_id, title, extra_classes="") %}
+<div class="bg-zinc-900/50 backdrop-blur-xs border border-zinc-700 p-4 md:p-6 rounded-lg shadow-sm mb-6 collapsible-section{% if extra_classes %} {{ extra_classes }}{% endif %}" id="{{ section_id }}">
+    <h3 class="text-lg font-bold mb-4 text-slate-200" id="{{ section_id }}-header">
+        <button type="button"
+                aria-expanded="true"
+                aria-controls="{{ section_id }}-content"
+                class="w-full flex items-center justify-between text-left focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded p-1 -m-1 cursor-pointer hover:text-emerald-400 transition-colors">
+             <span>{{ title }}</span>
+             <span class="material-icons transition-transform duration-200 ml-2 rotate-180" aria-hidden="true">expand_more</span>
+        </button>
+    </h3>
+    <div id="{{ section_id }}-content" role="region" aria-labelledby="{{ section_id }}-header">
+        {{ caller() }}
+    </div>
+</div>
+{% endmacro %}
+
+{% macro icon_button(button_id, icon_name, title, extra_classes="", icon_extra_classes="", text="", button_type="button") %}
+<button id="{{ button_id }}"
+        class="bg-zinc-700 hover:bg-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-colors duration-200 text-white text-sm py-1 px-2 rounded flex gap-1.5 items-center cursor-pointer{% if extra_classes %} {{ extra_classes }}{% endif %}"
+        title="{{ title }}"
+        aria-label="{{ title }}"
+        type="{{ button_type }}">
+    <span class="material-icons{% if icon_extra_classes %} {{ icon_extra_classes }}{% endif %}" aria-hidden="true">{{ icon_name }}</span>
+    {% if text %}{{ text }}{% endif %}
+</button>
+{% endmacro %}
+
+{% macro label_with_help(label_text, tooltip_content, for_id=None) %}
+{% set tooltip_id = "tooltip-" + label_text|replace(" ", "-")|replace("(", "")|replace(")", "")|lower %}
+<div class="flex justify-between items-center mb-1">
+    {% if for_id %}
+    <label for="{{ for_id }}" class="font-semibold text-sm text-slate-300">{{ label_text }}</label>
+    {% else %}
+    <span class="font-semibold text-sm text-slate-300">{{ label_text }}</span>
+    {% endif %}
+    <button type="button" class="text-slate-300 hover:text-cyan-400 cursor-pointer ml-1 focus:outline-none focus:ring-2 focus:ring-emerald-500 rounded-full p-0.5"
+            onclick="toggleTooltip(this)"
+            aria-label="Show help for {{ label_text }}"
+            aria-expanded="false"
+            aria-controls="{{ tooltip_id }}">
+        <span class="material-icons align-middle font-normal text-lg" aria-hidden="true">help_outline</span>
+    </button>
+</div>
+<div class="relative">
+    <div id="{{ tooltip_id }}" role="tooltip" data-tooltip>
+        {{ tooltip_content | safe }}
+    </div>
+    {{ caller() }}
+</div>
+{% endmacro %}

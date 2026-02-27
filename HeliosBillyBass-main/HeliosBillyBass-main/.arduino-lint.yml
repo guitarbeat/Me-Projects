@@ -1,0 +1,82 @@
+---
+# Arduino Lint Configuration for HeliosBillyBass
+# https://arduino.github.io/arduino-lint/latest/configuration/
+
+# Global configuration for all projects
+global:
+  # Enable all checks by default
+  enabled: true
+  
+  # Common exclusions
+  exclude:
+    - "**/libraries/**"
+    - "**/shared/libraries/**"
+    - "**/memory-bank/**"
+    - "**/docs/**"
+    - "**/examples/**"
+    - "**/tests/**"
+    - "**/.git/**"
+    - "**/node_modules/**"
+
+# Project-specific configuration
+project:
+  # Directories to exclude from linting
+  exclude:
+    - "libraries"
+    - "shared"
+    - "memory-bank"
+    - "docs"
+    - "examples"
+    - "tests"
+    - "ignore"
+
+# Library specific configuration
+library:
+  # Disable library checks for shared libraries
+  enabled: false
+
+# Sketch specific configuration
+sketch:
+  # Enable sketch checks
+  enabled: true
+  # Disable specific sketch checks that may be too strict
+  checks:
+    # Allow include paths to shared libraries
+    IncludePaths: false
+    # Allow some naming variations
+    FunctionName: false
+    # Allow some variable naming patterns
+    VariableName: false
+
+# Board manager configuration
+board_manager:
+  additional_urls: []
+
+# Compiler configuration
+compiler:
+  # Use C++17 standard
+  cpp_standard: "c++17"
+  
+# Linting rules
+rules:
+  # Enforce consistent indentation
+  indentation:
+    enabled: true
+    style: "spaces"
+    size: 2
+  
+  # Enforce line length
+  line_length:
+    enabled: true
+    max_length: 100
+  
+  # Enforce brace style
+  braces:
+    enabled: true
+    style: "allman"
+  
+  # Enforce comment style
+  comments:
+    enabled: true
+    require_header: false
+    require_function_docs: true

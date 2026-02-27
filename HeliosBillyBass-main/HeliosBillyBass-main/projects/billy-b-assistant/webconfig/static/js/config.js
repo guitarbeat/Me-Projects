@@ -1,0 +1,1517 @@
+// ===================== Header Secondary Actions =====================
+
+const LogPanel = (() => {
+    let autoScrollEnabled = false;
+    let isLogHidden = true;
+    let isEnvHidden = true;
+
+    // Reboot Billy
+    const rebootBilly = async () => {
+        if (!confirm("Are you sure you want to reboot Billy? This will reboot the whole system.")) return;
+
+        const btn = elements.rebootBillyBtn;
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span class="material-icons animate-spin">restart_alt</span>`;
+        btn.title = "Rebooting...";
+
+        try {
+            const res = await fetch('/reboot', {method: 'POST'});
+            const data = await res.json();
+            if (data.status === "ok") {
+                showNotification("Billy is rebooting!", "success");
+                setTimeout(() => {
+                    location.reload();
+                }, 15000);
+            }
+            else {
+                showNotification(data.error || "Reboot failed", "error");
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+                btn.title = "Reboot Billy";
+            }
+        } catch (err) {
+            console.error("Failed to reboot Billy:", err);
+            showNotification("Failed to reboot Billy", "error");
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            btn.title = "Reboot Billy";
+        }
+    };
+
+    // Shutdown Billy
+    const shutdownBilly = async () => {
+        if (!confirm("Are you sure you want to shutdown Billy?\n\nThis will power off the Raspberry Pi but one or more of the motors may remain engaged.\n" +
+            "To fully power down, make sure to also switch off or unplug the power supply after shutdown.")) return;
+
+        const btn = elements.shutdownBillyBtn;
+        const originalHTML = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = `<span class="material-icons animate-spin">power_settings_new</span>`;
+        btn.title = "Shutting down...";
+
+        try {
+            const res = await fetch('/shutdown', {method: 'POST'});
+            const data = await res.json();
+            if (data.status === "ok") {
+                showNotification("Billy is shutting down!", "success");
+                setTimeout(() => {
+                    location.reload();
+                }, 3000);
+            }
+            else {
+                showNotification(data.error || "Shutdown failed", "error");
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+                btn.title = "Shutdown Billy";
+            }
+        } catch (err) {
+            console.error("Failed to shutdown Billy:", err);
+            showNotification("Failed to shutdown Billy", "error");
+            btn.disabled = false;
+            btn.innerHTML = originalHTML;
+            btn.title = "Shutdown Billy";
+        }
+    };
+
+    // Fetch logs and update UI
+    const fetchLogs = async () => {
+        const res = await fetch("/logs");
+        const data = await res.json();
+        const logOutput = document.getElementById("log-output");
+        const logContainer = document.getElementById("log-container");
+
+        logOutput.textContent = data.logs || "No logs found.";
+
+        if (autoScrollEnabled) {
+            requestAnimationFrame(() => {
+                logContainer.scrollTop = logContainer.scrollHeight;
+            });
+        }
+    };
+
+    // Toggle log panel visibility
+    const toggleLogPanel = () => {
+        isLogHidden = !isLogHidden;
+        elements.logPanel.classList.toggle("hidden", isLogHidden);
+        elements.toggleBtn.classList.toggle("bg-cyan-500", !isLogHidden);
+        elements.toggleBtn.classList.toggle("bg-zinc-700", isLogHidden);
+    };
+
+    // Toggle .env editor visibility and fetch content if showing
+    const toggleEnvPanel = () => {
+        isEnvHidden = !isEnvHidden;
+        elements.envPanel.classList.toggle("hidden", isEnvHidden);
+        elements.toggleEnvBtn.classList.toggle("bg-amber-500", !isEnvHidden);
+        elements.toggleEnvBtn.classList.toggle("bg-zinc-700", isEnvHidden);
+
+        if (!isEnvHidden) {
+            fetch('/get-env')
+                .then(res => res.text())
+                .then(text => elements.envTextarea.value = text.trim())
+                .catch(() => showNotification("An error occurred while loading .env", "error"));
+        }
+    };
+
+    const toggleMotion = () => {
+        const btn = elements.toggleMotionBtn;
+        const icon = btn.querySelector(".material-icons");
+
+        btn.classList.toggle("bg-zinc-700");
+        document.documentElement.classList.toggle("reduce-motion");
+
+        const isReduced = document.documentElement.classList.contains("reduce-motion");
+        localStorage.setItem("reduceMotion", isReduced ? "1" : "0");
+
+        // Toggle icon
+        if (icon) {
+            icon.textContent = isReduced ? "blur_off" : "blur_on";
+        }
+    };
+
+    // Fullscreen toggle
+    const toggleFullscreenLog = () => {
+        const icon = document.getElementById("fullscreen-icon");
+        const isFullscreen = elements.logContainer.classList.toggle("log-fullscreen");
+        icon.textContent = isFullscreen ? "fullscreen_exit" : "fullscreen";
+    };
+
+    // Toggle auto-scroll to bottom of log
+    const toggleAutoScroll = () => {
+        autoScrollEnabled = !autoScrollEnabled;
+        elements.scrollBtn.classList.toggle("bg-cyan-500", autoScrollEnabled);
+        elements.scrollBtn.classList.toggle("bg-zinc-800", !autoScrollEnabled);
+        elements.scrollBtn.title = autoScrollEnabled ? "Auto-scroll ON" : "Auto-scroll OFF";
+
+        if (autoScrollEnabled) {
+            elements.logOutput.scrollTop = elements.logOutput.scrollHeight;
+        }
+    };
+
+    // Save .env file and optionally restart service
+    const saveEnv = async () => {
+        if (!confirm("Are you sure you want to overwrite the .env file? This may affect how Billy runs.")) return;
+
+        const btn = elements.saveEnvBtn;
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = "Saving...";
+
+        try {
+            const res = await fetch('/save-env', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({content: elements.envTextarea.value})
+            });
+            const data = await res.json();
+
+            if (data.status === "ok") {
+                fetch('/restart', {method: 'POST'})
+                    .then(res => res.json())
+                    .then(data => {
+                        if (data.status === "ok") {
+                            showNotification(".env saved. Restarting", "success");
+                            setTimeout(() => location.reload(), 3000);
+                        } else {
+                            showNotification(data.error || "Restart failed", "error");
+                            btn.disabled = false;
+                            btn.textContent = originalText;
+                        }
+                    })
+                    .catch(err => {
+                        showNotification(err.message, "error");
+                        btn.disabled = false;
+                        btn.textContent = originalText;
+                    });
+            } else {
+                showNotification(data.error || "Unknown error", "error");
+                btn.disabled = false;
+                btn.textContent = originalText;
+            }
+        } catch (err) {
+            showNotification(err.message, "error");
+            btn.disabled = false;
+            btn.textContent = originalText;
+        }
+    };
+
+    // Cache DOM references after DOMContentLoaded
+    let elements = {};
+    const bindUI = () => {
+        elements = {
+            logOutput: document.getElementById("log-output"),
+            logContainer: document.getElementById("log-container"),
+            toggleFullscreenBtn: document.getElementById("toggle-fullscreen-btn"),
+            scrollBtn: document.getElementById("scroll-bottom-btn"),
+            toggleBtn: document.getElementById("toggle-log-btn"),
+            logPanel: document.getElementById("log-panel"),
+            toggleEnvBtn: document.getElementById("toggle-env-btn"),
+            envPanel: document.getElementById("env-panel"),
+            envTextarea: document.getElementById("env-textarea"),
+            saveEnvBtn: document.getElementById("save-env-btn"),
+            toggleMotionBtn: document.getElementById("toggle-motion-btn"),
+            rebootBillyBtn: document.getElementById("reboot-billy-btn"),
+            shutdownBillyBtn: document.getElementById("shutdown-billy-btn"),
+        };
+
+        elements.toggleBtn.addEventListener("click", toggleLogPanel);
+        elements.toggleFullscreenBtn.addEventListener("click", toggleFullscreenLog);
+        elements.scrollBtn.addEventListener("click", toggleAutoScroll);
+        elements.toggleEnvBtn.addEventListener("click", toggleEnvPanel);
+        elements.toggleMotionBtn.addEventListener("click", toggleMotion);
+        elements.saveEnvBtn.addEventListener("click", saveEnv);
+        elements.rebootBillyBtn.addEventListener("click", rebootBilly);
+        elements.shutdownBillyBtn.addEventListener("click", shutdownBilly);
+
+        if (localStorage.getItem("reduceMotion") === "1") {
+            document.documentElement.classList.add("reduce-motion");
+
+            const btn = elements.toggleMotionBtn;
+            const icon = btn.querySelector(".material-icons");
+            btn.classList.remove("bg-zinc-700");
+
+            if (icon) {
+                icon.textContent = "blur_off";
+            }
+        }
+    };
+
+    return {fetchLogs, bindUI};
+})();
+
+// ===================== SERVICE STATUS =====================
+
+const ServiceStatus = (() => {
+    const fetchStatus = async () => {
+        const res = await fetch("/service/status");
+        const data = await res.json();
+        updateServiceStatusUI(data.status);
+    };
+
+    const updateServiceStatusUI = (status) => {
+        const statusEl = document.getElementById("service-status");
+        const controlsEl = document.getElementById("service-controls");
+        statusEl.textContent = `(${status})`;
+        statusEl.classList.remove("text-emerald-500", "text-amber-500", "text-rose-500");
+
+        if (status === "active") {
+            statusEl.classList.add("text-emerald-500");
+        } else if (status === "inactive") {
+            statusEl.classList.add("text-amber-500");
+        } else if (status === "failed") {
+            statusEl.classList.add("text-rose-500");
+        }
+
+        controlsEl.innerHTML = "";
+        const createButton = (label, action, color, iconName) => {
+            const btn = document.createElement("button");
+            btn.setAttribute("aria-label", label);
+            btn.className = `flex items-center gap-1 bg-${color}-500 hover:bg-${color}-400 text-zinc-800 font-semibold py-1 px-2 rounded`;
+            btn.setAttribute("aria-label", label);
+
+            const icon = document.createElement("i");
+            icon.className = "material-icons";
+            icon.setAttribute("aria-hidden", "true");
+            icon.textContent = iconName;
+            btn.appendChild(icon);
+
+            const labelSpan = document.createElement("span");
+            labelSpan.className = "hidden md:inline";
+            labelSpan.textContent = label;
+            btn.appendChild(labelSpan);
+
+            btn.onclick = () => handleServiceAction(action);
+            return btn;
+        };
+        if (status === "inactive" || status === "failed") {
+            controlsEl.appendChild(createButton("Start", "start", "emerald", "play_arrow"));
+        } else if (status === "active") {
+            controlsEl.appendChild(createButton("Restart", "restart", "amber", "restart_alt"));
+            controlsEl.appendChild(createButton("Stop", "stop", "rose", "stop"));
+        } else {
+            controlsEl.textContent = "Unknown status.";
+        }
+    };
+
+    const handleServiceAction = async (action) => {
+        const statusEl = document.getElementById("service-status");
+        const statusMap = {
+            restart: {text: "restarting", color: "text-amber-500"},
+            stop: {text: "stopping", color: "text-rose-500"},
+            start: {text: "starting", color: "text-emerald-500"}
+        };
+
+        if (statusMap[action]) {
+            const {text, color} = statusMap[action];
+            statusEl.textContent = text;
+            statusEl.classList.remove("text-emerald-500", "text-amber-500", "text-rose-500");
+            statusEl.classList.add(color);
+        }
+        try {
+            await fetch(`/service/${action}`);
+        } catch (err) {
+            console.error(`Failed to ${action} service:`, err);
+        }
+        fetchStatus();
+        LogPanel.fetchLogs();
+    };
+
+    return {fetchStatus, updateServiceStatusUI};
+})();
+
+// ===================== SETTINGS FORM =====================
+
+const SettingsForm = (() => {
+    const handleSettingsSave = () => {
+        document.getElementById("config-form").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            const btn = document.getElementById("save-btn");
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<span class="material-icons animate-spin">sync</span> Saving...`;
+
+            try {
+                const resStatus = await fetch("/service/status");
+                const {status: wasActive} = await resStatus.json();
+
+                const formData = new FormData(this);
+                const payload = Object.fromEntries(formData.entries());
+
+                const flaskPortInput = document.getElementById("FLASK_PORT");
+                const oldPort = parseInt(flaskPortInput.getAttribute("data-original")) || 80;
+                const newPort = parseInt(payload["FLASK_PORT"] || "80");
+
+                const hostnameInput = document.getElementById("hostname");
+                const oldHostname = (hostnameInput.getAttribute("data-original") || hostnameInput.defaultValue || "").trim();
+                const newHostname = (formData.get("hostname") || "").trim();
+
+                let hostnameChanged = false;
+
+                // Save config (.env)
+                const saveResponse = await fetch("/save", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify(payload),
+                });
+                const saveResult = await saveResponse.json();
+                let portChanged = saveResult.port_changed || (oldPort !== newPort);
+
+                // Only update hostname if it actually changed
+                if (newHostname && newHostname !== oldHostname) {
+                    const hostResponse = await fetch("/hostname", {
+                        method: "POST",
+                        headers: {"Content-Type": "application/json"},
+                        body: JSON.stringify({hostname: newHostname})
+                    });
+                    const hostResult = await hostResponse.json();
+                    if (hostResult.hostname) {
+                        hostnameChanged = true;
+                        showNotification(`Hostname updated to ${hostResult.hostname}.local`, "success", 5000);
+                    }
+                }
+
+                if (wasActive === "active") {
+                    await fetch("/service/restart");
+                    showNotification("Settings saved – Billy restarted", "success");
+                } else {
+                    showNotification("Settings saved", "success");
+                }
+
+                if (portChanged || hostnameChanged) {
+                    const targetHost = hostnameChanged ? `${newHostname}.local` : window.location.hostname;
+                    const targetPort = portChanged ? newPort : (window.location.port || 80);
+
+                    showNotification(`Redirecting to http://${targetHost}:${targetPort}/...`, "warning", 5000);
+                    setTimeout(() => {
+                        window.location.href = `http://${targetHost}:${targetPort}/`;
+                    }, 3000);
+                } else {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                }
+            } catch (err) {
+                console.error("Save settings failed", err);
+                showNotification("Failed to save settings: " + err, "error");
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+        });
+    };
+
+    // Set hostname field from server
+    fetch('/hostname')
+        .then(res => res.json())
+        .then(data => {
+            if (data.hostname) {
+                const input = document.getElementById('hostname');
+                input.value = data.hostname;
+                input.setAttribute('data-original', data.hostname);
+            }
+        });
+
+    // Set original port attribute for change detection
+    const flaskPortInput = document.getElementById("FLASK_PORT");
+    if (flaskPortInput) {
+        flaskPortInput.setAttribute("data-original", flaskPortInput.value);
+    }
+
+    return {handleSettingsSave};
+})();
+
+// ===================== PERSONA FORM =====================
+
+const PersonaForm = (() => {
+    const updateBackstoryEmptyState = () => {
+        const container = document.getElementById("backstory-fields");
+        const hasFields = container.querySelectorAll("[data-backstory-field]").length > 0;
+        let msg = container.querySelector(".backstory-empty-msg");
+
+        if (!hasFields) {
+            if (!msg) {
+                msg = document.createElement("div");
+                msg.className = "backstory-empty-msg text-sm text-zinc-400 italic py-2";
+                msg.textContent = "No backstory items yet. Add keys like 'origin', 'hobby', or 'secret' to give Billy more personality.";
+                container.appendChild(msg);
+            }
+        } else {
+            if (msg) msg.remove();
+        }
+    };
+
+    const addBackstoryField = (key = "", value = "") => {
+        const wrapper = document.createElement("div");
+        wrapper.className = "flex items-center space-x-2";
+        wrapper.setAttribute("data-backstory-field", "");
+
+        const keyInput = Object.assign(document.createElement("input"), {
+            type: "text",
+            value: key,
+            placeholder: "Key",
+            className: "w-1/3 p-1 bg-zinc-800 text-white rounded"
+        });
+        keyInput.setAttribute("aria-label", "Backstory Key");
+
+        const valInput = Object.assign(document.createElement("input"), {
+            type: "text",
+            value: value,
+            placeholder: "Value",
+            className: "flex-1 p-1 bg-zinc-800 text-white rounded"
+        });
+        valInput.setAttribute("aria-label", "Backstory Value");
+
+        const removeBtn = document.createElement("button");
+        removeBtn.type = "button";
+        removeBtn.className = "text-rose-500 hover:text-rose-400 cursor-pointer";
+        removeBtn.setAttribute("aria-label", "Remove backstory item");
+        const icon = document.createElement("span");
+        icon.className = "material-icons align-middle";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = "remove_circle_outline";
+        removeBtn.appendChild(icon);
+        removeBtn.onclick = () => {
+            wrapper.remove();
+            updateBackstoryEmptyState();
+        };
+
+        wrapper.append(keyInput, valInput, removeBtn);
+        document.getElementById("backstory-fields").appendChild(wrapper);
+        updateBackstoryEmptyState();
+    };
+
+    const renderPersonalitySliders = (personality) => {
+        const container = document.getElementById("personality-sliders");
+        container.innerHTML = "";
+
+        for (const [key, value] of Object.entries(personality)) {
+            const wrapper = document.createElement("div");
+            wrapper.className = "flex gap-2 items-center mb-2";
+
+            // Label column
+            const label = document.createElement("label");
+            label.className = "w-36 text-sm text-slate-300 font-semibold cursor-pointer";
+            label.textContent = key;
+            label.htmlFor = `slider-${key}`;
+
+            // Slider container
+            const sliderWrapper = document.createElement("div");
+            sliderWrapper.className = "relative w-full h-4 flex items-center";
+
+            // Native input (hidden visually but accessible)
+            const input = document.createElement("input");
+            input.type = "range";
+            input.id = `slider-${key}`;
+            input.min = "0";
+            input.max = "100";
+            input.value = value;
+            input.className = "sr-only peer";
+            input.setAttribute("aria-label", key);
+
+            // Visual track
+            const track = document.createElement("div");
+            track.className = "relative w-full h-4 rounded-full bg-zinc-700 overflow-hidden cursor-pointer peer-focus:ring-2 peer-focus:ring-emerald-500 peer-focus:outline-none";
+
+            // Fill bar
+            const fillBar = document.createElement("div");
+            fillBar.className = "absolute left-0 top-0 h-full bg-emerald-500 transition-all duration-100";
+            fillBar.style.width = `${value}%`;
+
+            track.appendChild(fillBar);
+            sliderWrapper.appendChild(input);
+            sliderWrapper.appendChild(track);
+
+            // Output value
+            const valueLabel = document.createElement("span");
+            valueLabel.id = `${key}-value`;
+            valueLabel.className = "text-zinc-400 w-8 text-right font-mono text-sm";
+            valueLabel.textContent = value;
+
+            // Interaction logic
+            const updateUI = (val) => {
+                fillBar.style.width = `${val}%`;
+                valueLabel.textContent = val;
+            };
+
+            // Input change updates UI
+            input.addEventListener("input", () => updateUI(input.value));
+
+            // Mouse interaction on track updates input
+            let isDragging = false;
+            const updateFromMouse = (e) => {
+                const rect = track.getBoundingClientRect();
+                const percent = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+                const val = Math.round(percent * 100);
+                input.value = val;
+                updateUI(val);
+            };
+
+            track.addEventListener("mousedown", (e) => {
+                isDragging = true;
+                updateFromMouse(e);
+            });
+
+            document.addEventListener("mousemove", (e) => {
+                if (isDragging) updateFromMouse(e);
+            });
+
+            document.addEventListener("mouseup", () => {
+                isDragging = false;
+            });
+
+            wrapper.appendChild(label);
+            wrapper.appendChild(sliderWrapper);
+            wrapper.appendChild(valueLabel);
+
+            container.appendChild(wrapper);
+        }
+    };
+
+    function setupSlider(barId, fillId, inputId, min, max) {
+        const bar = document.getElementById(barId);
+        const fill = document.getElementById(fillId);
+        const input = document.getElementById(inputId);
+
+        let isDragging = false;
+
+        const updateUI = (val) => {
+            const percent = ((val - min) / (max - min)) * 100;
+            fill.style.width = `${percent}%`;
+            fill.dataset.value = val;
+        };
+
+        const updateFromMouse = (e) => {
+            const rect = bar.getBoundingClientRect();
+            const percent = Math.min(Math.max((e.clientX - rect.left) / rect.width, 0), 1);
+            const val = Math.round(min + percent * (max - min));
+            input.value = val;
+            input.dispatchEvent(new Event("input", {bubbles: true}));
+            updateUI(val);
+        };
+
+        // Allow dragging
+        bar.addEventListener("mousedown", (e) => {
+            e.preventDefault(); // Prevent focus loss on click
+            isDragging = true;
+            input.focus();
+            updateFromMouse(e);
+        });
+
+        document.addEventListener("mousemove", (e) => {
+            if (isDragging) updateFromMouse(e);
+        });
+
+        document.addEventListener("mouseup", () => {
+            isDragging = false;
+        });
+
+        // Sync with input on load/change (just in case)
+        input.addEventListener("input", () => updateUI(Number(input.value)));
+        updateUI(Number(input.value));
+    }
+
+    setupSlider("mic-gain-bar", "mic-gain-fill", "mic-gain", 0, 16);
+    setupSlider("speaker-volume-bar", "speaker-volume-fill",  "speaker-volume", 0, 100);
+
+    const renderBackstoryFields = (backstory) => {
+        const container = document.getElementById("backstory-fields");
+        container.innerHTML = "";
+        Object.entries(backstory).forEach(([k, v]) => addBackstoryField(k, v));
+        updateBackstoryEmptyState();
+    };
+
+    const loadPersona = async () => {
+        const res = await fetch("/persona");
+        const data = await res.json();
+        renderPersonalitySliders(data.PERSONALITY);
+        renderBackstoryFields(data.BACKSTORY);
+        document.getElementById("meta-text").value = data.META || "";
+
+        await loadWakeupClips();
+    };
+
+    const handlePersonaSave = () => {
+        document.getElementById("persona-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const btn = document.getElementById("save-persona-btn");
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<span class="material-icons animate-spin">sync</span> Saving...`;
+
+            try {
+                const res = await fetch("/service/status");
+                const {status: wasActive} = await res.json();
+
+                const personality = {};
+                document.querySelectorAll("#personality-sliders input[type='range']").forEach((input) => {
+                    const trait = input.id.replace('slider-', '');
+                    personality[trait] = parseInt(input.value);
+                });
+
+                const backstory = {};
+                document.querySelectorAll("#backstory-fields [data-backstory-field]").forEach((row) => {
+                    const [keyInput, valInput] = row.querySelectorAll("input");
+                    if (keyInput.value.trim() !== "") {
+                        backstory[keyInput.value.trim()] = valInput.value.trim();
+                    }
+                });
+
+                const meta = document.getElementById("meta-text").value.trim();
+
+                const wakeup = {};
+                const rows = document.querySelectorAll("#wakeup-sound-list .flex[data-index]");
+                let currentIndex = 1;
+                rows.forEach((row) => {
+                    const phrase = row.querySelector("input[type='text']")?.value?.trim();
+                    if (phrase) {
+                        wakeup[currentIndex++] = phrase;
+                    }
+                });
+
+                await fetch("/persona", {
+                    method: "POST",
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({PERSONALITY: personality, BACKSTORY: backstory, META: meta, WAKEUP: wakeup })
+                });
+
+                showNotification("Persona saved", "success");
+
+                if (wasActive === "active") {
+                    await fetch("/service/restart");
+                    showNotification("Persona saved – service restarted", "success");
+                    ServiceStatus.fetchStatus();
+                }
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            } catch (err) {
+                console.error("Failed to save persona:", err);
+                showNotification("Failed to save persona", "error");
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+        });
+    };
+
+    return {addBackstoryField, loadPersona, handlePersonaSave};
+})();
+
+
+// ===================== WAKEUP CLIPS =====================
+
+async function loadWakeupClips() {
+    const container = document.getElementById("wakeup-sound-list");
+    container.innerHTML = ""; // clear previous rows
+
+    try {
+        const res = await fetch("/wakeup");
+        const { clips } = await res.json();
+
+        if (clips.length === 0) {
+            const message = document.createElement("div");
+            message.className = "text-sm text-zinc-400 italic py-2";
+            message.textContent = "No custom wake-up clips added. Using the default sounds.";
+            container.appendChild(message);
+            return;
+        }
+        else {
+            const label = document.createElement("label");
+            label.className = "flex items-center justify-between font-semibold text-sm text-slate-300 mb-1"
+            label.innerHtml = `Words or phrases that Billy will randomly say on activation:`;
+            container.appendChild(label);
+        }
+
+        clips.sort((a, b) => a.index - b.index).forEach(({ index, phrase, has_audio }) => {
+            const row = createWakeupRow(index, phrase, has_audio);
+            container.appendChild(row);
+        });
+    } catch (err) {
+        console.error("Failed to load wakeup clips:", err);
+        showNotification("Failed to load wakeup clips", "error");
+    }
+}
+
+function createWakeupRow(index, phrase = "", hasAudio = false) {
+    const row = document.createElement("div");
+    row.className = "flex items-center space-x-2";
+    row.dataset.index = index;
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "text-input w-full rounded bg-zinc-800 border border-zinc-700 px-2 py-1";
+    input.value = phrase;
+    input.setAttribute("aria-label", "Wake-up phrase");
+    if (!phrase) input.placeholder = "word or phrase";
+    row.appendChild(input);
+
+    const createBtn = (cls, title, iconName, hidden = false) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = `${cls} ${hidden ? 'invisible' : ''}`;
+        btn.title = title;
+        btn.setAttribute("aria-label", title);
+
+        const icon = document.createElement("i");
+        icon.className = "material-icons align-middle";
+        icon.setAttribute("aria-hidden", "true");
+        icon.textContent = iconName;
+        btn.appendChild(icon);
+
+        return btn;
+    };
+
+    row.appendChild(createBtn("wakeup-generate-btn text-white hover:text-amber-400", "Generate .wav", "auto_fix_high"));
+    row.appendChild(createBtn("wakeup-play-btn text-white hover:text-emerald-400", "Play .wav", "play_arrow", !hasAudio));
+    row.appendChild(createBtn("remove-wakeup-row text-rose-500 hover:text-rose-400", "Remove", "remove_circle_outline"));
+
+    return row;
+}
+
+function addWakeupSound(index = null, phrase = "", hasAudio = false) {
+    const container = document.getElementById("wakeup-sound-list");
+    const rows = container.querySelectorAll("div[data-index]");
+    const usedIndices = Array.from(rows).map(row => parseInt(row.dataset.index));
+    const nextIndex = index ?? (usedIndices.length > 0 ? Math.max(...usedIndices) + 1 : 1);
+
+    const row = createWakeupRow(nextIndex, phrase, hasAudio);
+    container.appendChild(row);
+}
+
+document.getElementById("wakeup-sound-list").addEventListener("click", async (e) => {
+    const row = e.target.closest(".flex");
+    if (!row) return;
+
+    const clipIndex = row.dataset.index;
+    const input = row.querySelector("input[type='text']");
+    const phrase = input?.value?.trim();
+
+    // === Play button ===
+    if (e.target.closest(".wakeup-play-btn")) {
+        const clipIndex = e.target.closest("div[data-index]")?.dataset.index;
+        if (!clipIndex) return;
+
+        const tryPlay = async () => {
+            const res = await fetch("/wakeup/play", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ index: parseInt(clipIndex) }),
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to play audio");
+
+            showNotification(data.status, "success");
+        };
+
+        try {
+            await tryPlay();
+        } catch (err) {
+            console.warn("Initial play failed, trying to stop service and retry:", err.message);
+            try {
+                await fetch("/service/stop");
+                await ServiceStatus.fetchStatus();
+                await tryPlay(); // retry after stopping
+                showNotification("Billy was active. Stopped and retried clip.", "warning");
+            } catch (retryErr) {
+                console.error("Retry failed:", retryErr);
+                showNotification("Play failed after retry: " + retryErr.message, "error");
+            }
+        }
+
+        return;
+    }
+
+    // === Generate button ===
+    if (e.target.closest(".wakeup-generate-btn")) {
+        const generateBtn = e.target.closest("button");
+        generateBtn.disabled = true;
+        generateBtn.classList.add("opacity-50");
+        generateBtn.querySelector("i").textContent = "hourglass_empty";
+
+        if (!phrase) {
+            showNotification("Please enter a phrase", "warning");
+            return;
+        }
+
+        try {
+            const res = await fetch("/wakeup/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: phrase, index: parseInt(clipIndex) }),
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.error || "Failed to generate audio");
+            }
+
+            const resPersona = await fetch("/persona/wakeup", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ index: clipIndex, phrase: phrase }),
+            });
+
+            if (!resPersona.ok) {
+                const err = await resPersona.json();
+                throw new Error(err.error || "Failed to update persona");
+            }
+
+            showNotification(`Clip ${clipIndex} generated and saved!`, "success");
+
+            await loadWakeupClips();
+
+        } catch (err) {
+            console.error("Generate error:", err);
+            showNotification("Generate failed: " + err.message, "error");
+        } finally {
+            generateBtn.disabled = false;
+            generateBtn.classList.remove("opacity-50");
+            generateBtn.querySelector("i").textContent = "auto_fix_high";
+        }
+        return;
+    }
+
+    if (e.target.closest(".remove-wakeup-row")) {
+        const row = e.target.closest("div[data-index]");
+        const clipIndex = row?.dataset.index;
+
+        if (!clipIndex) return;
+
+        if (!confirm("Are you sure you want to delete this wake-up clip?")) return;
+
+        try {
+            const res = await fetch("/wakeup/remove", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ index: parseInt(clipIndex) }),
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Failed to remove clip");
+
+            showNotification(`Clip ${clipIndex} removed`, "success");
+
+            await loadWakeupClips();
+        } catch (err) {
+            console.error("Remove error:", err);
+            showNotification("Remove failed: " + err.message, "error");
+        }
+    }
+});
+
+// ===================== UI HELPERS =====================
+
+function showNotification(message, type = "info", duration = 2500) {
+    const bar = document.getElementById("notification");
+    bar.textContent = message;
+    bar.classList.remove("hidden", "opacity-0", "bg-cyan-500/80", "bg-emerald-500/80", "bg-amber-500/80", "bg-rose-500/80");
+    const typeClass = {
+        info: "bg-cyan-500/80",
+        success: "bg-emerald-500/80",
+        warning: "bg-amber-500/80",
+        error: "bg-rose-500/80",
+    }[type] || "bg-cyan-500/80";
+    bar.classList.add(typeClass, "opacity-100");
+    setTimeout(() => {
+        bar.classList.remove("opacity-100");
+        bar.classList.add("opacity-0");
+        setTimeout(() => bar.classList.add("hidden"), 300);
+    }, duration);
+}
+
+// Toggle password input visibility
+function toggleInputVisibility(inputId) {
+    const input = document.getElementById(inputId);
+    const icon = document.getElementById(`${inputId}_icon`);
+    const isHidden = input.type === "password";
+    input.type = isHidden ? "text" : "password";
+    icon.textContent = isHidden ? "visibility_off" : "visibility";
+}
+
+function toggleDropdown(btn) {
+    // Close all other dropdowns first
+    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        // Only close menus not related to this button
+        if (!menu.classList.contains('hidden') && !menu.parentElement.contains(btn)) {
+            menu.classList.add('hidden');
+            const arrow = menu.parentElement.querySelector('.dropdown-toggle .material-icons');
+            if (arrow) arrow.classList.remove('rotate-180');
+            const toggleBtn = menu.parentElement.querySelector('.dropdown-toggle');
+            if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+        }
+    });
+
+    // Find this button's dropdown menu (assumes menu is sibling or child)
+    let dropdown = btn.closest('.relative').querySelector('.dropdown-menu');
+    if (!dropdown) return;
+
+    const isHidden = dropdown.classList.toggle('hidden');
+    btn.setAttribute('aria-expanded', !isHidden);
+
+    // Toggle arrow rotation
+    const arrow = btn.querySelector('.material-icons');
+    if (arrow) arrow.classList.toggle('rotate-180');
+}
+
+function toggleTooltip(el) {
+    el.classList.toggle("text-cyan-400");
+    const isExpanded = el.getAttribute("aria-expanded") === "true";
+    el.setAttribute("aria-expanded", !isExpanded);
+
+    let tooltip;
+    const controlsId = el.getAttribute("aria-controls");
+    if (controlsId) {
+        tooltip = document.getElementById(controlsId);
+    }
+
+    // Fallback support for any legacy structures
+    if (!tooltip) {
+        const container = el.closest("label")?.parentElement || el.parentElement?.parentElement;
+        if (container) {
+            tooltip = container.querySelector("[data-tooltip]");
+        }
+    }
+
+    if (tooltip) {
+        const visible = tooltip.getAttribute("data-visible") === "true";
+        tooltip.setAttribute("data-visible", visible ? "false" : "true");
+    }
+}
+
+
+// Close on click outside
+document.addEventListener('click', (e) => {
+    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+        // If the click is outside the .relative container
+        if (!menu.classList.contains('hidden') && !menu.closest('.relative').contains(e.target)) {
+            menu.classList.add('hidden');
+            const arrow = menu.parentElement.querySelector('.dropdown-toggle .material-icons');
+            if (arrow) arrow.classList.remove('rotate-180');
+            const toggleBtn = menu.parentElement.querySelector('.dropdown-toggle');
+            if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+        }
+    });
+});
+
+// Handle keyboard activation for file upload labels
+document.addEventListener('keydown', (e) => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target.classList.contains('file-upload-label')) {
+        e.preventDefault();
+        const input = e.target.querySelector('input[type="file"]');
+        if (input) input.click();
+    }
+});
+
+// ===================== VERSION & UPDATE =====================
+
+(() => {
+    fetch("/version")
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById("current-version").textContent = `${data.current}`;
+            if (data.update_available) {
+                const latestSpan = document.getElementById("latest-version");
+                const updateBtn = document.getElementById("update-btn");
+                latestSpan.textContent = `Update to: ${data.latest}`;
+                latestSpan.classList.remove("hidden");
+                updateBtn.classList.add('flex');
+                updateBtn.classList.remove("hidden");
+            }
+        })
+        .catch(err => {
+            console.error("Failed to load version info", err);
+        });
+
+    document.getElementById("update-btn").addEventListener("click", () => {
+        if (!confirm("Are you sure you want to update Billy to the latest version?")) return;
+        showNotification("Update started");
+        fetch("/update", {method: "POST"})
+            .then(res => res.json())
+            .then(data => {
+                if (data.message) {
+                    showNotification(data.message);
+                }
+                let attempts = 0, maxAttempts = 24;
+                const checkForUpdate = async () => {
+                    try {
+                        const res = await fetch("/version");
+                        const data = await res.json();
+                        if (data.update_available === false) {
+                            showNotification("Update complete. Reloading...", "info");
+                            setTimeout(() => location.reload(), 1500);
+                            return;
+                        }
+                    } catch (err) {
+                        console.error("Version check failed:", err);
+                    }
+                    attempts++;
+                    if (attempts < maxAttempts) {
+                        setTimeout(checkForUpdate, 5000);
+                    } else {
+                        showNotification("Update timed out after 2 minutes. Reloading");
+                        setTimeout(() => location.reload(), 1500);
+                    }
+                };
+                setTimeout(checkForUpdate, 5000);
+            })
+            .catch(err => {
+                console.error("Failed to update:", err);
+                showNotification("Failed to update", "error");
+            });
+    });
+})();
+
+// ===================== AUDIO =====================
+
+const AudioPanel = (() => {
+    let micCheckSource = null;
+
+    const micCheckBtn = document.getElementById("mic-check-btn");
+    micCheckBtn.addEventListener("click", toggleMicCheck);
+
+    document.getElementById("speaker-check-btn").addEventListener("click", async () => {
+        try {
+            const res = await fetch("/service/status");
+            const {status} = await res.json();
+            if (status === "active") {
+                showNotification("⚠️ Please stop the Billy service before running speaker test.", "warning");
+                return;
+            }
+            await fetch("/speaker-test", {method: "POST"});
+            showNotification("Speaker test triggered");
+        } catch (err) {
+            console.error("Failed to trigger speaker test:", err);
+            showNotification("Failed to trigger speaker test", "error");
+        }
+    });
+
+    async function toggleMicCheck() {
+        const btn = micCheckBtn;
+        const isActive = btn.classList.contains("bg-emerald-600");
+        if (isActive) {
+            stopMicCheck();
+            btn.classList.remove("bg-emerald-600");
+            btn.classList.add("bg-zinc-800");
+            showNotification("Mic check stopped");
+        } else {
+            try {
+                const res = await fetch("/service/status");
+                const {status} = await res.json();
+                if (status === "active") {
+                    await fetch("/service/stop");
+                    showNotification("Billy was stopped for mic check. You’ll need to start it again afterwards.", "warning");
+                }
+                startMicCheck();
+                btn.classList.remove("bg-zinc-800");
+                btn.classList.add("bg-emerald-600");
+                if (status !== "active") {
+                    showNotification("Mic check started");
+                }
+            } catch (err) {
+                console.error("Failed to toggle mic check:", err);
+                showNotification("Mic check failed", "error");
+            }
+        }
+    }
+
+    function stopMicCheck() {
+        micCheckSource?.close();
+        fetch("/mic-check/stop");
+        micCheckSource = null;
+        updateMicBar(0);
+    }
+
+    function startMicCheck() {
+        let maxRms = 0;
+        const SCALING_FACTOR = 32768;
+        micCheckSource = new EventSource("/mic-check");
+        micCheckSource.onmessage = (e) => {
+            let data;
+            try {
+                data = JSON.parse(e.data);
+            } catch (err) {
+                console.error("Invalid JSON from /mic-check:", e.data);
+                return;
+            }
+            if (data.error) {
+                console.error("Mic check error:", data.error);
+                return;
+            }
+            const rms = data.rms * SCALING_FACTOR;
+            const threshold = data.threshold;
+            maxRms = Math.max(maxRms, rms);
+            const percent = Math.min((rms / threshold) * 100, 100);
+            const thresholdPercent = Math.min((threshold / SCALING_FACTOR) * 100, 100);
+            updateMicBar(percent, thresholdPercent);
+        };
+        micCheckSource.onerror = () => {
+            console.error("Mic check connection error.");
+            stopMicCheck();
+        };
+    }
+
+    function updateMicBar(percentage, thresholdPercent = 0) {
+        const bar = document.getElementById("mic-level-bar");
+        bar.style.width = `${percentage}%`;
+        bar.classList.toggle("bg-zinc-500", percentage < thresholdPercent);
+        bar.classList.toggle("bg-emerald-500", percentage < 70);
+        bar.classList.toggle("bg-amber-500", percentage >= 70 && percentage < 90);
+        bar.classList.toggle("bg-red-500", percentage >= 90);
+    }
+
+    // Mic gain UI
+    async function loadMicGain() {
+        const label = document.getElementById("mic-gain-value");
+        const slider = document.getElementById("mic-gain");
+        const fill = document.getElementById("mic-gain-fill");
+
+        try {
+            const res = await fetch("/mic-gain");
+            const data = await res.json();
+            if (data.gain !== undefined) {
+                slider.value = data.gain;
+                label.textContent = data.gain;
+
+                const percent = (data.gain / 16) * 100;
+                fill.style.width = `${percent}%`;
+                fill.dataset.value = data.gain;
+            } else {
+                label.textContent = "Unavailable";
+            }
+        } catch (err) {
+            label.textContent = "Error";
+        }
+    }
+
+    document.getElementById("mic-gain").addEventListener("input", async () => {
+        const value = parseInt(document.getElementById("mic-gain").value, 10);
+        await fetch("/mic-gain", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({value})
+        });
+        document.getElementById("mic-gain-value").textContent = value;
+    });
+
+    // Silence threshold drag interaction
+    let micBar = document.getElementById("mic-bar-container");
+    let thresholdLine = document.getElementById("threshold-line");
+    let silenceThresholdInput = document.getElementById("SILENCE_THRESHOLD");
+    let dragging = false;
+
+    thresholdLine.addEventListener("mousedown", (e) => {
+        dragging = true;
+        e.preventDefault();
+    });
+
+    document.addEventListener("mousemove", (e) => {
+        if (!dragging) return;
+        const rect = micBar.getBoundingClientRect();
+        if (rect.width === 0) return;
+        let offsetX = e.clientX - rect.left;
+        offsetX = Math.max(0, Math.min(offsetX, rect.width));
+        const percent = offsetX / rect.width;
+        const scaledThreshold = Math.round(percent * 32768);
+        thresholdLine.style.left = `${percent * 100}%`;
+        silenceThresholdInput.value = scaledThreshold;
+    });
+
+    document.addEventListener("mouseup", () => {
+        dragging = false;
+    });
+
+    window.addEventListener("load", () => {
+        const threshold = parseInt(silenceThresholdInput.value || "1000", 10);
+        thresholdLine.style.left = `${(threshold / 32768) * 100}%`;
+    });
+
+    // Speaker volume
+    const speakerSlider = document.getElementById("speaker-volume");
+    fetch("/volume")
+        .then(res => res.json())
+        .then(data => {
+            if (data.volume !== undefined) {
+                speakerSlider.value = data.volume;
+                const fill = document.getElementById("speaker-volume-fill");
+                const percent = (data.volume / 100) * 100;
+                fill.style.width = `${percent}%`;
+                fill.dataset.value = data.volume;
+            }
+        });
+    let volumeDebounceTimeout;
+
+    speakerSlider.addEventListener("input", () => {
+        clearTimeout(volumeDebounceTimeout);
+        volumeDebounceTimeout = setTimeout(() => {
+            fetch("/volume", {
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({volume: parseInt(speakerSlider.value)})
+            }).catch(err => console.error("Failed to set speaker volume:", err));
+        }, 500);
+    });
+
+    // Device labels
+    async function updateDeviceLabels() {
+        try {
+            const res = await fetch("/device-info");
+            const data = await res.json();
+            const updateParentClass = (id, value) => {
+                const el = document.getElementById(id);
+                if (el && el.parentElement) {
+                    el.textContent = value;
+                    el.parentElement.classList.add("text-emerald-500");
+                }
+            };
+            updateParentClass("mic-label", data.mic);
+            updateParentClass("speaker-label", data.speaker);
+        } catch (error) {
+            console.error("Failed to fetch device info:", error);
+        }
+    }
+
+    return {loadMicGain, updateDeviceLabels};
+})();
+
+// ===================== MOTOR TEST PANEL =====================
+
+const MotorPanel = (() => {
+    function sendMotorTest(motor) {
+        fetch("/test-motor", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({motor})
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.error) {
+                    showNotification("Motor error: " + data.error, "error", 4000);
+                } else {
+                    showNotification(`Tested ${motor}`, "success", 1500);
+                    if (data.service_was_active) {
+                        showNotification(
+                            "Billy was stopped for hardware test. Please restart Billy again when done.",
+                            "warning",
+                            7000
+                        );
+                        ServiceStatus.fetchStatus();
+                    }
+                }
+            })
+            .catch(err => showNotification("Motor test failed: " + err, "error"));
+    }
+
+    // Attach events after DOM loaded
+    function bindUI() {
+        ["mouth", "head", "tail"].forEach(motor => {
+            const btn = document.getElementById(`test-${motor}-btn`);
+            if (btn) {
+                btn.addEventListener("click", function () {
+                    sendMotorTest(motor);
+                });
+            }
+        });
+    }
+
+    return {bindUI};
+})();
+
+// ===================== COLLAPSIBLE SECTIONS =====================
+
+const Sections = (() => {
+    function collapsible() {
+        document.querySelectorAll('.collapsible-section').forEach(section => {
+            // Attempt to find the new accessible button
+            let toggleEl = section.querySelector('button[aria-controls]');
+            let isLegacy = false;
+
+            // Fallback for legacy markup if button not found
+            if (!toggleEl) {
+                toggleEl = section.querySelector('h3');
+                isLegacy = true;
+            }
+
+            if (!toggleEl) return;
+
+            const header = section.querySelector('h3');
+            const icon = toggleEl.querySelector('.material-icons') || (header ? header.querySelector('.material-icons') : null);
+
+            // Restore state from localStorage
+            const id = section.id;
+            const isClosed = localStorage.getItem('collapse_' + id) === 'closed';
+
+            // Initial State
+            if (isClosed) {
+                section.classList.add('collapsed');
+                if (icon) {
+                    icon.classList.remove('rotate-180');
+                    icon.classList.add('rotate-0');
+                }
+                if (header) header.classList.remove('mb-4');
+                if (!isLegacy) toggleEl.setAttribute('aria-expanded', 'false');
+            } else {
+                section.classList.remove('collapsed');
+                if (icon) {
+                    icon.classList.add('rotate-180');
+                    icon.classList.remove('rotate-0');
+                }
+                if (header) header.classList.add('mb-4');
+                if (!isLegacy) toggleEl.setAttribute('aria-expanded', 'true');
+            }
+
+            // Hide/Show content based on initial state
+            if (isLegacy) {
+                [...section.children].forEach(child => {
+                    if (child !== header) child.classList.toggle('hidden', isClosed);
+                });
+            } else {
+                const contentId = toggleEl.getAttribute('aria-controls');
+                const content = document.getElementById(contentId);
+                if (content) content.classList.toggle('hidden', isClosed);
+            }
+
+            // Click Handler
+            toggleEl.addEventListener('click', (e) => {
+                // For legacy, prevent text selection double clicks
+                if (isLegacy) e.preventDefault();
+
+                const wasClosed = section.classList.contains('collapsed');
+                const nowClosed = !wasClosed;
+
+                section.classList.toggle('collapsed', nowClosed);
+
+                // Update content visibility
+                if (isLegacy) {
+                    [...section.children].forEach(child => {
+                        if (child !== header) child.classList.toggle('hidden', nowClosed);
+                    });
+                } else {
+                    const contentId = toggleEl.getAttribute('aria-controls');
+                    const content = document.getElementById(contentId);
+                    if (content) content.classList.toggle('hidden', nowClosed);
+                    toggleEl.setAttribute('aria-expanded', !nowClosed);
+                }
+
+                // Rotate icon
+                if (icon) {
+                    icon.classList.toggle('rotate-180', !nowClosed);
+                    icon.classList.toggle('rotate-0', nowClosed);
+                }
+
+                // Toggle header margin
+                if (header) header.classList.toggle('mb-4', !nowClosed);
+
+                localStorage.setItem('collapse_' + id, nowClosed ? 'closed' : 'open');
+            });
+        });
+    }
+
+    return {collapsible};
+})();
+
+// ===================== IMPORT / EXPORT =====================
+
+function exportSettings() {
+    fetch('/get-env').then(res => res.text()).then(text => {
+        const blob = new Blob([text], {type: "application/octet-stream"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "billy.env";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
+}
+
+function importSettings(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (!file.name.endsWith('.env')) {
+        showNotification("Only .env files are allowed.", "error");
+        return;
+    }
+
+    const label = input.closest('label');
+    const span = label.querySelector('span:nth-of-type(2)');
+    const originalText = span.textContent;
+    span.textContent = "Importing...";
+    label.classList.add('opacity-50', 'pointer-events-none');
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        fetch('/save-env', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({content: e.target.result})
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "ok") {
+                    showNotification("Settings imported. Restarting...", "success");
+                    setTimeout(() => location.reload(), 2000);
+                } else {
+                    showNotification(data.error || "Failed to import settings.", "error");
+                    span.textContent = originalText;
+                    label.classList.remove('opacity-50', 'pointer-events-none');
+                }
+            })
+            .catch(err => {
+                showNotification("Import failed: " + err, "error");
+                span.textContent = originalText;
+                label.classList.remove('opacity-50', 'pointer-events-none');
+            });
+    };
+    reader.readAsText(file);
+}
+
+function exportPersona() {
+    const a = document.createElement('a');
+    a.href = '/persona/export';
+    a.download = 'persona.ini';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
+function importPersona(input) {
+    const file = input.files[0];
+    if (!file) return;
+    if (!file.name.endsWith('.ini')) {
+        showNotification("Only .ini files are allowed.", "error");
+        return;
+    }
+    const formData = new FormData();
+    formData.append('file', file);
+    fetch('/persona/import', {
+        method: 'POST',
+        body: formData
+    })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === "ok") {
+                showNotification("Persona imported. Restarting...", "success");
+                setTimeout(() => location.reload(), 2000);
+            } else {
+                showNotification(data.error || "Failed to import persona.", "error");
+            }
+        });
+}
+
+// ===================== INITIALIZE =====================
+
+document.addEventListener("DOMContentLoaded", () => {
+    LogPanel.bindUI();
+    LogPanel.fetchLogs();
+    ServiceStatus.fetchStatus();
+    setInterval(LogPanel.fetchLogs, 5000);
+    setInterval(ServiceStatus.fetchStatus, 10000);
+    AudioPanel.updateDeviceLabels();
+    PersonaForm.loadPersona();
+    AudioPanel.loadMicGain();
+    SettingsForm.handleSettingsSave();
+    PersonaForm.handlePersonaSave();
+    window.addBackstoryField = PersonaForm.addBackstoryField;
+    MotorPanel.bindUI();
+    Sections.collapsible();
+});

@@ -1,0 +1,92 @@
+import { Calendar, FileText, User, Hash, ToggleLeft } from 'lucide-react';
+import { FieldConfig, FieldKey } from '../types';
+
+export const FIELD_CONFIG: Record<FieldKey, FieldConfig> = {
+  date: {
+    label: 'Date',
+    icon: Calendar,
+    description: 'Transaction date',
+    required: true,
+    color: 'text-blue-500',
+    detectionPatterns: ['date', 'time', 'timestamp', 'day', 'when'],
+    dataType: 'date',
+  },
+  name: {
+    label: 'Name',
+    icon: FileText,
+    description: 'Transaction description',
+    required: true,
+    color: 'text-purple-500',
+    detectionPatterns: [
+      'name',
+      'description',
+      'desc',
+      'title',
+      'transaction',
+      'memo',
+      'details',
+    ],
+    dataType: 'text',
+  },
+  person: {
+    label: 'Person',
+    icon: User,
+    description: 'Person or entity',
+    required: true,
+    color: 'text-green-500',
+    detectionPatterns: [
+      'person',
+      'user',
+      'client',
+      'customer',
+      'vendor',
+      'payee',
+      'entity',
+      'account',
+    ],
+    dataType: 'text',
+  },
+  inflow: {
+    label: 'Inflow',
+    icon: Hash,
+    description: 'Money received',
+    required: false,
+    color: 'text-emerald-500',
+    detectionPatterns: [
+      'inflow',
+      'income',
+      'credit',
+      'deposit',
+      'received',
+      'payment in',
+    ],
+    dataType: 'number',
+  },
+  outflow: {
+    label: 'Outflow',
+    icon: Hash,
+    description: 'Money spent',
+    required: false,
+    color: 'text-red-500',
+    detectionPatterns: [
+      'outflow',
+      'expense',
+      'debit',
+      'withdrawal',
+      'spent',
+      'payment out',
+    ],
+    dataType: 'number',
+  },
+  enabled: {
+    label: 'Enabled',
+    icon: ToggleLeft,
+    description: 'Active status',
+    required: false,
+    color: 'text-gray-500',
+    detectionPatterns: ['enabled', 'active', 'status', 'visible'],
+    dataType: 'boolean',
+  },
+};
+
+export const REQUIRED_FIELDS: FieldKey[] = ['date', 'name', 'person'];

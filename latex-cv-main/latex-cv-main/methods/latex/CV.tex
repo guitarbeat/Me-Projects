@@ -1,0 +1,378 @@
+\documentclass[12pt]{article}
+
+% Page geometry and margins
+\usepackage[top=1in,bottom=1in,left=0.75in,right=0.75in]{geometry}
+\usepackage{fancyhdr}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage{lmodern}
+  \usepackage{microtype} % * Better typography: character protrusion, font expansion, kerning
+\else
+  \usepackage{fontspec}
+  \defaultfontfeatures{Ligatures=TeX, Numbers=Lining} % * Modern typography: lining numbers for CV dates/numbers
+  \usepackage{microtype} % * Better typography: character protrusion, font expansion, kerning
+  % Prefer Calibri body; fall back to Arial, then TeX Gyre Heros (Helvetica-like)
+  \IfFontExistsTF{Calibri}{\setmainfont{Calibri}[Scale=MatchLowercase, Numbers=Lining]}{%
+    \IfFontExistsTF{Helvetica}{\setmainfont{Helvetica}[Scale=MatchLowercase, Numbers=Lining]}{%
+      \IfFontExistsTF{Arial}{\setmainfont{Arial}[Scale=MatchLowercase, Numbers=Lining]}{\setmainfont{TeX Gyre Heros}[Scale=MatchLowercase]}%
+    }%
+  }
+  % Headings and UI use Helvetica (fallback Arial, then TeX Gyre Heros)
+  \IfFontExistsTF{Helvetica}{\newfontfamily\SansHead{Helvetica}[BoldFont=Helvetica-Bold, ItalicFont=Helvetica-Oblique, Numbers=Lining]}{%
+    \IfFontExistsTF{Arial}{\newfontfamily\SansHead{Arial}[BoldFont=Arial-BoldMT, ItalicFont=Arial-ItalicMT, Numbers=Lining]}{\newfontfamily\SansHead{TeX Gyre Heros}}%
+  }
+\fi
+% * Modern table package (replaces tabular/tabular*) - 2021+
+\usepackage{tabularray} % * Modern, flexible table system with better width handling
+\usepackage{tabularx}
+\usepackage{environ}
+% * Modern URL handling - better line breaking
+\usepackage{xurl} % * Improved URL breaking for long hyperlinks
+\usepackage{hyperref}
+% * Modern list customization
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{setspace}
+\usepackage{newunicodechar}
+\usepackage{ragged2e} % * Better ragged text formatting (arXiv-style)
+
+% Map hard hyphen (U+2010) to ASCII hyphen to avoid missing glyphs
+\newunicodechar{‐}{-}
+
+% 
+
+% * Configure hyperlinks with modern settings
+\hypersetup{
+  colorlinks=true,
+  urlcolor=black,
+  linkcolor=black,
+  pdfpagemode=UseOutlines,
+  unicode=true, % * Better Unicode support
+  pdftitle={Curriculum Vitae - Aaron Lorenzo Woods}, % * Metadata
+  pdfauthor={Aaron Lorenzo Woods},
+  pdfsubject={Biomedical Engineering CV},
+  pdfkeywords={Biomedical Engineering, Imaging Science, PhD Candidate},
+  pdflang={en-US},
+  pdfdisplaydoctitle=true, % * Show document title instead of filename in viewer title bar
+  pdfcreator={LaTeX},
+  pdfproducer={XeLaTeX},
+  pdfdisplaydoctitle=true, % * Accessibility: Display title in window/tab instead of filename
+  pdfstartview=FitH % * UX: Open PDF with page width fitted to window
+}
+
+% * Improve hyphenation and line breaking (arXiv-style)
+\sloppy % * Allow LaTeX to be less strict about spacing to reduce overfull boxes
+\tolerance=2000 % * Increase tolerance for line breaking
+\emergencystretch=4em % * Allow extra stretch to prevent overfull boxes
+\hbadness=10000 % * Suppress underfull hbox warnings for better readability
+\hfuzz=2pt % * Allow slight overfull without warning
+
+% Header and footer configuration
+\pagestyle{fancy}
+\fancyhf{}
+\renewcommand{\headrulewidth}{0pt}
+% Footer: show combined name and page number on right to mirror original
+\fancyfoot{} % clear
+\fancyfoot[R]{\small A.L. Woods, \thepage}
+
+% Section heading formatting
+\setstretch{1.15} % Word-like line spacing
+\ifPDFTeX
+  \newcommand{\sectionheading}[1]{%
+    \phantomsection % Create anchor for hyperref
+    \addcontentsline{toc}{section}{#1} % Add to PDF outline
+    \vspace{1.2ex}%
+    {\large\bfseries\MakeUppercase{#1}}\par\vspace{0.3ex}%
+    {\color[gray]{0.6}\rule{0.98\linewidth}{0.3pt}}\vspace{0.6ex}%
+  }
+\else
+  \newcommand{\sectionheading}[1]{%
+    \phantomsection % Create anchor for hyperref
+    \addcontentsline{toc}{section}{#1} % Add to PDF outline
+    \vspace{1.2ex}%
+    {\large\bfseries{\SansHead \MakeUppercase{#1}}}\par\vspace{0.3ex}%
+    {\color[gray]{0.6}\rule{0.98\linewidth}{0.3pt}}\vspace{0.6ex}%
+  }
+\fi
+
+% Bullet point configuration
+\setlist[itemize]{noitemsep, topsep=0.5ex, itemsep=0pt, leftmargin=1.25em, labelsep=0.5em}
+
+% Performance optimization: Use tabularx instead of tabularray for simple lists to speed up compilation.
+% Tabularray is feature-rich but slow. Replacing it with tabularx in key sections
+% reduced build time by ~13% (0.7s).
+\NewEnviron{cvblock}{%
+  \noindent
+  \begin{tabularx}{\textwidth}{%
+    >{\hsize=1.5\hsize\raggedright\arraybackslash}X
+    >{\hsize=0.5\hsize\raggedleft\arraybackslash}X @{}
+  }%
+    \BODY
+  \end{tabularx}
+}
+
+% Begin document
+\begin{document}
+
+%-----------------------
+% Header
+\phantomsection
+\addcontentsline{toc}{section}{Contact Information}
+% Name (left) and contact (right) on a single line, then address block
+\noindent\begin{tblr}{
+  width=\textwidth,
+  colspec={X[1,l] X[1,r]},
+  column{2}={rightsep=0pt}
+}
+  {\textbf{Aaron Lorenzo Woods}} & \raggedleft \href{mailto:alwoods@utexas.edu?subject=Inquiry\%20from\%20CV}{alwoods@utexas.edu} \;|\; \href{https://aaronwoods.info}{aaronwoods.info} \\
+\end{tblr}
+\vspace{1.3ex}
+\noindent Department of Biomedical Engineering\\
+\noindent Cockrell School of Engineering\\
+\noindent The University of Texas at Austin\\
+\noindent Austin, TX 78712
+
+%-----------------------
+\sectionheading{Education}
+
+% PhD entry
+\begin{cvblock}
+  \textbf{Ph.D. Biomedical Engineering} & \textit{June 2026 (expected)}\\
+  University of Texas at Austin & \textit{GPA: 4.0}\\
+  Portfolio in Imaging Science & \\
+\end{cvblock}
+
+\vspace{0.6ex}
+
+% BS entry
+\begin{cvblock}
+  \textbf{B.S. Engineering Leadership} & \textit{December 2020}\\
+  University of Texas at El Paso (UTEP) & \textit{GPA: 3.46}\\
+  Minor in Commercial Music and Recording & \\
+\end{cvblock}
+
+%-----------------------
+\sectionheading{Publications and Patents}
+
+{\small
+\begingroup
+\raggedright % * Allow better line breaking for long citations
+Niemeier, R., N. Schnoor, \textbf{A.L. Woods}, and J.D. Rogers, ``Calibration of liquid crystal variable retarders using a common-path interferometer and fit of a closed-form expression for the retardance curve,'' published to \textit{Applied Optics}, October 2020.\\[0.8ex]
+``Theranostic Delivery System,'' \textbf{Provisional Patent} Application, No.~63/442436, filed January~31,~2023. Inventors: B.~Malady, \textbf{A.L. Woods}, M.~Pogue, H.~Purani.
+\endgroup
+}
+
+%-----------------------
+\sectionheading{Research Experience}
+
+% Graduate Student Researcher
+\begin{cvblock}
+\textbf{Graduate Student Researcher}, University of Texas at Austin & 2021 -- Present\\
+\end{cvblock}
+\vspace{0.6ex}
+\textit{Department of Biomedical Engineering \;|\; Advisor: Dr. Andrew Dunn}
+\begin{itemize}
+  \item Developing microvasculature optical imaging techniques
+  \item Investigating digital image processing and quantification
+  \item Training on surgical craniotomies for neurovascular imaging
+  \item Conducted experiments, simulations, and data analysis
+\end{itemize}
+
+% Graduate Rotation Student (Mia Markey)
+\begin{cvblock}
+\textbf{Graduate Rotation Student}, University of Texas at Austin & Summer~2021\\
+\end{cvblock}
+\vspace{0.6ex}
+\textit{Department of Biomedical Engineering \;|\; Advisor: Dr. Mia Markey}
+\begin{itemize}
+  \item Design of decision support system for breast cancer patients
+  \item Collaborated with researchers and clinicians
+  \item Investigated the role of emotions, biases, and heuristics in decision making
+\end{itemize}
+
+% Graduate Rotation Student (Evan Wang)
+\begin{cvblock}
+\textbf{Graduate Rotation Student}, University of Texas at Austin & Fall~2021\\
+\end{cvblock}
+\vspace{0.6ex}
+\textit{Department of Biomedical Engineering \;|\; Advisor: Dr. Evan Wang}
+\begin{itemize}
+  \item Conducted EEG data acquisition and analysis
+  \item Created SOP for fabricating dry electrodes for long recordings
+  \item Assisted with the design and testing of novel electrode materials
+\end{itemize}
+
+% Undergraduate Student Researcher (UTEP)
+\begin{cvblock}
+\textbf{Undergraduate Student Researcher}, University of Texas at El Paso & 2019 -- 2020\\
+\end{cvblock}
+\vspace{0.6ex}
+\textit{CREaTE Lab \;|\; Advisor: Dr. Peter Golding}
+\begin{itemize}
+  \item Innovated on engineering education regarding ethics and leadership
+  \item Programmed advising software to assist with course recommendation
+  \item Optimized the advising process to better facilitate faculty and student
+\end{itemize}
+
+% Undergraduate Student Researcher (UW-Madison ketogenic clinic)
+\begin{cvblock}
+\textbf{Undergraduate Student Researcher}, University of Wisconsin--Madison & Summer~2019\\
+\end{cvblock}
+\vspace{0.6ex}
+\textit{Adult Neurology Ketogenic Diet Therapy Clinic \;|\; Advisor: Dr. Elizabeth Felton}
+\begin{itemize}
+  \item Data visualization of patient data for clinical and dietary analysis
+  \item Managed HIPAA compliance, safety, and ethics for patient research
+  \item Shadowed doctor-patient relationship and treatment of epilepsy
+\end{itemize}
+
+% Undergraduate Student Researcher (UW-Madison Biomedical Optics Lab)
+\begin{cvblock}
+\textbf{Undergraduate Student Researcher}, University of Wisconsin--Madison & Summer~2018\\
+\end{cvblock}
+\vspace{0.6ex}
+\textit{Biomedical Optics Lab \;|\; Advisor: Dr. Jeremy Rogers}
+\begin{itemize}
+  \item Constructed an interferometer to measure phase delay
+  \item Programmed an automated calibration software for optical equipment
+  \item Inspected laboratory standards and practices for maintaining lab
+\end{itemize}
+
+%-----------------------
+\sectionheading{Research Funding}
+
+% Use modern tabularray to align funding and dates
+\begin{tblr}{
+  width=\textwidth,
+  colspec={X[3,l] X[1,r]},
+  column{2}={rightsep=0pt},
+  row{1,3,5,7,9}={belowsep=0.4ex}
+}
+  \textbf{Ruth Kirschstein Imaging Science Fellowship}, National Institutes of Health & 2021 -- 2022\\
+  \SetCell[c=2]{l} {\;\$27,591 awarded over 1 year}\\
+  \textbf{West Texas Fellowship}, The University of Texas at Austin & 2022 -- 2024\\
+  \SetCell[c=2]{l} {\;\$32,000 awarded over 1 year}\\
+  \textbf{Cockrell School Fellowship}, The University of Texas at Austin & 2024 -- 2025\\
+  \SetCell[c=2]{l} {\;\$20,000 awarded over one year}\\
+  \textbf{Thrust Fellowship Supplement}, The University of Texas at Austin & 2021 -- 2025\\
+  \SetCell[c=2]{l} {\;\$36,000 awarded over four years}\\
+  \textbf{Dean's Fellowship Supplement}, The University of Texas at Austin & 2021\\
+  \SetCell[c=2]{l} {\;\$1,000 awarded over one year}\\
+\end{tblr}
+
+%-----------------------
+\sectionheading{Academic Appointments}
+
+\begin{cvblock}
+  \textbf{Graduate Student Researcher}\newline University of Texas at Austin, Department of Biomedical Engineering & Summer~2021 -- Present\\[0.6ex]
+  \textbf{Undergraduate Student Researcher}\newline UTEP, Department of Engineering Education and Leadership & Fall~2019 -- Spring~2020\\[0.6ex]
+  \textbf{Undergraduate Student Researcher}\newline University of Wisconsin-Madison, Department of Biomedical Engineering & Summer~2018, 2019\\[0.6ex]
+  \textbf{Undergraduate Teaching Assistant}\newline UTEP, Department of Engineering Education and Leadership & Spring~2018\\
+\end{cvblock}
+
+%-----------------------
+\sectionheading{Teaching Experience}
+
+\textbf{Undergraduate Teaching Assistant}, University of Texas at El Paso\\
+\textit{Department of Engineering Education and Leadership \;|\; Design Nature} \hfill Spring~2018
+\begin{itemize}
+  \item Coordinated the trainings of students to use a fabrication laboratory
+  \item Taught procedures on computer-aided design and simulation
+  \item Directed the development process to build working prototypes
+\end{itemize}
+
+%-----------------------
+\sectionheading{Honors \& Awards}
+
+\begin{tblr}{
+  width=\textwidth,
+  colspec={X[3,l] X[1,r]},
+  column{2}={rightsep=0pt},
+  row{2,4,5,6,7,8,9}={belowsep=0.4ex}
+}
+  \textbf{Marvin \& Ellie Selig Entrepreneurship Award}, Texas Innovation Center & 2022\\
+  \SetCell[c=2]{l} {\;Awarded \$2,500 to advance an entrepreneur effort by developing prototypes.}\\
+  \textbf{Imaging Science Best Poster Award}, The University of Texas at Austin & 2022\\
+  \textbf{Engineering Leadership Character Award}, University of Texas at El Paso & 2020\\
+  \SetCell[c=2]{l} {\;Awarded by staff, teachers, and the department chair to one graduating student who exhibits exceptional character.}\\
+  \textbf{Hunt Startup Sponsorship}, Arrowhead Center & 2020\\
+  \textbf{Bob \& Diane Malone Leadership Scholarship}, University of Texas at El Paso & 2016 -- 2020\\
+  \textbf{Theta Delta Lambda Education Scholarship}, University of Texas at El Paso & 2016\\
+  \textbf{Robert G Neill, Jr Scholarship}, University of Texas at El Paso & 2016\\
+  \textbf{College of Engineering Dean's List}, University of Texas at El Paso & 2016 -- 2018\\
+\end{tblr}
+
+%-----------------------
+\sectionheading{Poster Presentations}
+
+\begin{itemize}
+  \item \textbf{Aaron L. Woods}; Andrew K. Dunn. \textit{Investigating Neurovascular Angiogenesis through Optical Imaging}. University of Texas at Austin T32 Retreat, Austin, TX, USA, May~10,~2022
+  \item \textbf{Aaron L. Woods}; Daniel Y. Chu; Michele N. Ravelli; Kelly Faltersack; Elizabeth Felton. \textit{Carnitine Deficiencies: Clinical Insights for Ketogenic Diet Therapies}. UW- Madison SURE Poster Session, Madison, WI, USA, July~31,~2019
+  \item \textbf{Aaron L. Woods}; Jeremy D. Rogers. \textit{Automated Calibration of Liquid Crystal Variable Retarder}. UW- Madison SURE Poster Session, Madison, WI, USA, July~31,~2018
+  \item ESW-UTEP. Project Mine-Recycler: \textit{Producing filament and 3D printed consumer goods from plastic waste}. Engineers for a Sustainable World 2019 Annual Conference Poster Session, El Paso, TX, USA, April~5,~2019
+\end{itemize}
+
+%-----------------------
+\sectionheading{Academic Service}
+
+\textbf{Chairman of the Board of Directors}, ICC Austin \hfill 2022 -- Present\\
+\textit{501(c)(3) Non-Profit \;|\; ED: Ashleigh R. Lassiter}
+\begin{itemize}
+  \item Facilitated meetings to align groups with the strategic vision and mission.
+  \item Guided discussions with various stakeholders on property management.
+  \item Directed the board’s initial strategic plan to improve staff retention and housing.
+\end{itemize}
+
+\textbf{Black Graduate Student Agency Director}, Graduate Student Assembly \hfill 2022 -- Present\\
+\textit{The University of Texas at Austin}
+\begin{itemize}
+  \item Built relationships with underrepresented groups committed to equality
+  \item Plan professional development, advocacy, and social events
+  \item Promote the interests of the graduate student population
+\end{itemize}
+
+\textbf{Community Organizer}, Sunrise Movement El Paso \hfill 2020 -- 2021
+\begin{itemize}
+  \item Strategized solidarity and trust building with local allies
+  \item Plan and organize with other organizations for joint efforts
+  \item Established weekly virtual meetings for safe discussions
+\end{itemize}
+
+% Additional roles without bullet details
+\begin{cvblock}
+  \textbf{Social Chair}, Green Team (UTEP) & 2020\\[0.4ex]
+  \textbf{Webmaster}, Engineers for a Sustainable World (UTEP) & 2017 -- 2019\\[0.4ex]
+  \textbf{College Recruiter}, University of Texas at El Paso & 2018\\[0.4ex]
+  \textbf{Volunteer Leader}, Young Life College (UTEP) & 2016 -- 2018\\
+\end{cvblock}
+
+%-----------------------
+\sectionheading{Professional Experience}
+
+\textbf{Co-founder}, Therosafe (Startup) \hfill 2021 -- Present\\
+As co-founder of a startup in the field of theranostics, I play a multifaceted role with a focus on operations. I contributed to the development of the company's concept, deliverables, and presentations, created visualizations to showcase the product, and applied to various competitions to clearly articulate the need we are solving.\\[0.8ex]
+
+\textbf{Community Outreach Specialist}, University of Texas at El Paso \hfill 2020\\
+Experienced in developing and implementing marketing programs for outreach/recruitment. Assisted in curriculum and materials development. Evaluated program success and adjusted. Conducted program education and exhibit presentations.\\[0.8ex]
+
+% List of positions without descriptions
+\begin{cvblock}
+  \textbf{Community Outreach Specialist}, University of Texas at El Paso & 2020\\[0.4ex]
+  \textbf{Project Analyst}, University of Texas at El Paso & 2018 -- 2019\\[0.4ex]
+  \textbf{Sound Engineer}, Beacon Hill Recording Studios, LLC & 2018 -- 2019\\[0.4ex]
+  \textbf{Student Ambassador}, Amazon \textbar{} Riddle and Bloom & 2018 -- 2019\\[0.4ex]
+  \textbf{Project Engineer}, Sonora Bank & 2017\\
+\end{cvblock}
+
+%-----------------------
+\sectionheading{Conference Participation}
+
+\begin{itemize}
+  \item Latinx Student Leadership Community Summit, Google \hfill 2020
+  \item Neuroscience Initiative to Enhance Diversity Program, UC Davis \hfill 2020
+  \item Social Change Leadership Summit, UTEP \hfill 2019 -- 2020
+  \item Opportunities in Engineering Conference, UW-Madison \hfill 2018
+\end{itemize}
+
+\end{document}

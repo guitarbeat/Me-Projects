@@ -1,0 +1,31 @@
+---
+# Arduino Lint Configuration
+# https://arduino.github.io/arduino-lint/latest/configuration/
+
+# Project specific configuration
+project:
+  # Directories to exclude from linting
+  exclude:
+    - "libraries"
+    - "ignore"
+
+# Library specific configuration
+library:
+  # Disable library checks
+  enabled: false
+
+# Sketch specific configuration
+sketch:
+  # Enable sketch checks
+  enabled: true
+  # Disable specific sketch checks
+  checks:
+    # Disable include path checks
+    IncludePaths: false 
+
+# arduino-lint configuration
+# This project now lives under projects/btbillybass/BTBillyBass in a monorepo.
+# Adjust CI to run arduino-lint from this directory.
+
+board_manager:
+  additional_urls: [] 

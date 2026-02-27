@@ -1,0 +1,5 @@
+{
+  "name": "ScanForge - Document Editor",
+  "description": "Upload scanned forms or documents and edit the text while preserving the original vintage scanned look and typography using Gemini AI.",
+  "requestFramePermissions": []
+}

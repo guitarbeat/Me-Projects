@@ -1,0 +1,5 @@
+{
+  "name": "Year Grid Generator",
+  "description": "A customizable year-long contribution graph generator. visualized as a grid. Adjust layouts, colors, and styles to create aesthetic calendar visualizations.",
+  "requestFramePermissions": []
+}

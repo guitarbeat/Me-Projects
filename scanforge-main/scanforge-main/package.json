@@ -1,0 +1,32 @@
+{
+  "name": "scanforge---document-editor",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@google/genai": "^1.31.0",
+    "clsx": "^2.1.1",
+    "immer": "^11.1.4",
+    "lucide-react": "^0.556.0",
+    "lz-string": "^1.5.0",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.1",
+    "react-dropzone": "^14.3.8",
+    "react-konva": "^19.2.1",
+    "react-use-measure": "^2.1.7",
+    "tailwind-merge": "^3.4.0",
+    "use-image": "^1.1.4",
+    "zustand": "^5.0.9"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.0"
+  }
+}

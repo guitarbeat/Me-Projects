@@ -1,0 +1,16 @@
+# Build artifacts
+build/
+compare/
+.context-tmp/
+
+# LaTeX auxiliary files
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.pdf
+
+# System files
+.DS_Store
+.enforcer/

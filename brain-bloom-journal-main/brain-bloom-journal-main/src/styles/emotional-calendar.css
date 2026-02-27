@@ -1,0 +1,666 @@
+.vuecal {
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+
+  background: #000000;
+  color: #fff;
+  font-size: var(--text-sm);
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+
+  --vuecal-border-color: rgba(255, 255, 255, 0.08) !important;
+  font-family: var(--font-sans);
+  /* New v5.0.0 styles */
+  --vuecal-event-bg-color: transparent;
+  --vuecal-event-border-color: transparent;
+  --vuecal-event-text-color: #fff;
+  --vuecal-event-height: 32px;
+  --vuecal-event-margin: 3px;
+  --vuecal-cell-color: transparent;
+  --vuecal-cell-text-color: #fff;
+  --vuecal-header-color: transparent;
+  --vuecal-header-text-color: #fff;
+}
+
+.vuecal::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.vuecal::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+}
+
+.vuecal::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.vuecal::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+/* Modern dark theme with black background */
+.vuecal--dark-theme {
+  --vuecal-bg-color: #000000;
+  --vuecal-header-color: rgba(255, 255, 255, 0.05);
+  --vuecal-header-text-color: rgba(255, 255, 255, 0.95);
+  --vuecal-cell-color: transparent;
+  --vuecal-cell-text-color: rgba(255, 255, 255, 0.85);
+  --vuecal-cell-today-bg-color: rgba(78, 205, 196, 0.1);
+  --vuecal-cell-current-bg-color: rgba(255, 255, 255, 0.06);
+  --vuecal-cell-selected-bg-color: rgba(78, 205, 196, 0.15);
+  --vuecal-cell-selected-text-color: #fff;
+  --vuecal-cell-hover-bg-color: rgba(255, 255, 255, 0.04);
+  --vuecal-event-bg-color: transparent;
+  --vuecal-event-border-color: transparent;
+  --vuecal-event-text-color: #fff;
+  --vuecal-event-height: 32px;
+  --vuecal-event-margin: 3px;
+  --vuecal-event-border-radius: 10px;
+  --vuecal-event-padding: 8px 12px;
+  --vuecal-event-font-size: var(--text-sm);
+  --vuecal-event-line-height: var(--leading-normal);
+  --vuecal-event-font-weight: var(--font-medium);
+  --vuecal-event-letter-spacing: var(--tracking-wide);
+  --vuecal-event-text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --vuecal-event-box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15), 0 2px 4px rgba(0, 0, 0, 0.1);
+  --vuecal-event-transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Enhanced navigation with modern styling */
+.vuecal__arrow {
+  color: #ffffff !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 12px !important;
+  padding: 12px !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.vuecal__arrow:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  transform: scale(1.05) !important;
+  border-color: rgba(255, 255, 255, 0.4) !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+.vuecal__arrow:active {
+  transform: scale(0.95) !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+}
+
+/* Sophisticated today button */
+.vuecal__today-btn {
+  background: linear-gradient(135deg, rgba(78, 205, 196, 0.9), rgba(78, 205, 196, 0.7)) !important;
+  color: #fff !important;
+  border: 1px solid rgba(78, 205, 196, 0.6) !important;
+  border-radius: 12px !important;
+  padding: 8px 16px !important;
+  font-weight: var(--font-semibold) !important;
+  font-size: var(--text-sm) !important;
+  letter-spacing: var(--tracking-wide) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  backdrop-filter: blur(12px) !important;
+  box-shadow: 0 4px 12px rgba(78, 205, 196, 0.25), 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+.vuecal__today-btn:hover {
+  background: linear-gradient(135deg, rgba(78, 205, 196, 1), rgba(78, 205, 196, 0.85)) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 6px 20px rgba(78, 205, 196, 0.35), 0 4px 8px rgba(0, 0, 0, 0.15) !important;
+  border-color: rgba(78, 205, 196, 0.8) !important;
+}
+
+/* Simplified and cleaner cell styling */
+.vuecal__cell {
+  border: none !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  transition: all 0.2s ease !important;
+  position: relative !important;
+  min-height: 60px !important;
+  background: transparent !important;
+}
+
+.vuecal__cell:hover {
+  background: rgba(78, 205, 196, 0.05) !important;
+}
+
+/* Enhanced time cells - simplified and cleaner */
+.vuecal__time-cell {
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  color: rgba(255, 255, 255, 0.7) !important;
+  font-size: var(--text-sm) !important;
+  font-weight: var(--font-semibold) !important;
+  letter-spacing: var(--tracking-normal) !important;
+  backdrop-filter: blur(8px) !important;
+  padding: 12px 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-height: 60px !important;
+}
+
+.vuecal__time-cell:hover {
+  background: rgba(255, 255, 255, 0.05) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Modern all-day events section */
+.vuecal__all-day {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 8px 8px 0 0 !important;
+}
+
+/* Simplified header styling - minimal and clean */
+.vuecal__header {
+  border: none !important;
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-radius: 16px 16px 0 0 !important;
+  box-shadow: none !important;
+  min-height: auto !important;
+}
+
+.vuecal__title-bar {
+  background: transparent !important;
+  border: none !important;
+  padding: 20px !important;
+  border-radius: 16px 16px 0 0 !important;
+  display: none !important; /* Hide title bar for cleaner look */
+}
+
+.vuecal__title {
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-weight: var(--font-bold) !important;
+  font-size: var(--text-lg) !important;
+  letter-spacing: var(--tracking-normal) !important;
+  text-shadow: none !important;
+}
+
+/* Hide weekdays header for minimal design */
+.vuecal__weekdays-headings {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  min-height: auto !important;
+}
+
+/* Simplify weekday headers */
+.vuecal__heading {
+  background: transparent !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-weight: var(--font-medium) !important;
+  font-size: var(--text-sm) !important;
+  padding: 8px !important;
+  border: none !important;
+  text-align: center !important;
+}
+
+/* Enhanced menu styling */
+.vuecal__menu {
+  background: rgba(20, 20, 20, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 16px !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+  padding: 8px !important;
+}
+
+.vuecal__menu-item {
+  color: rgba(255, 255, 255, 0.8) !important;
+  padding: 12px 16px !important;
+  transition: all 0.2s ease !important;
+  border-radius: 10px !important;
+  font-weight: 500 !important;
+  font-size: 0.875rem !important;
+}
+
+.vuecal__menu-item:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  transform: translateX(2px) !important;
+}
+
+.vuecal__body {
+  border-radius: 0 0 12px 12px !important;
+  overflow: hidden !important;
+}
+
+/* Modern weekdays header */
+.vuecal__weekdays-headings {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.vuecal__heading {
+  color: rgba(255, 255, 255, 0.8) !important;
+  font-weight: 700 !important;
+  font-size: 0.8rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.1em !important;
+  padding: 16px 12px !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Enhanced month view */
+.vuecal__cell--month {
+  min-height: 90px !important;
+  border: 1px solid rgba(255, 255, 255, 0.03) !important;
+  transition: all 0.2s ease !important;
+}
+
+.vuecal__cell--month:hover {
+  background: rgba(255, 255, 255, 0.02) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.vuecal__cell-date {
+  color: rgba(255, 255, 255, 0.75) !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  transition: all 0.2s ease !important;
+}
+
+.vuecal__cell--today .vuecal__cell-date {
+  background: linear-gradient(135deg, rgba(78, 205, 196, 0.9), rgba(78, 205, 196, 0.7)) !important;
+  color: #fff !important;
+  border-radius: 50% !important;
+  width: 32px !important;
+  height: 32px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 6px !important;
+  font-weight: 700 !important;
+  box-shadow: 0 4px 12px rgba(78, 205, 196, 0.3) !important;
+}
+
+.vuecal__cell--selected {
+  background: rgba(78, 205, 196, 0.08) !important;
+  border: 1px solid rgba(78, 205, 196, 0.25) !important;
+  box-shadow: inset 0 1px 3px rgba(78, 205, 196, 0.1) !important;
+}
+
+/* Week and day view enhancements */
+.vuecal__cell--week {
+  border-right: 1px solid rgba(255, 255, 255, 0.03) !important;
+}
+
+.vuecal__cell--day {
+  border-right: 1px solid rgba(255, 255, 255, 0.04) !important;
+}
+
+/* Modern event creation overlay */
+.vuecal__event-creation-overlay {
+  background: rgba(0, 0, 0, 0.8) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.vuecal__event-creation-form {
+  background: rgba(20, 20, 20, 0.98) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 20px !important;
+  backdrop-filter: blur(20px) !important;
+  box-shadow: 0 16px 64px rgba(0, 0, 0, 0.6), 0 8px 32px rgba(0, 0, 0, 0.4) !important;
+  padding: 24px !important;
+}
+
+/* Responsive design improvements */
+@media (max-width: 768px) {
+  .vuecal {
+    font-size: 13px;
+  }
+  
+  .vuecal--dark-theme {
+    --vuecal-event-font-size: 0.8rem;
+    --vuecal-event-height: 28px;
+    --vuecal-event-padding: 6px 10px;
+  }
+  
+  .vuecal__heading {
+    font-size: 0.75rem !important;
+    padding: 12px 8px !important;
+  }
+  
+  .vuecal__cell--month {
+    min-height: 70px !important;
+  }
+  
+  .vuecal__title {
+    font-size: 1.1rem !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .vuecal__title {
+    font-size: 1rem !important;
+  }
+  
+  .vuecal__heading {
+    font-size: 0.7rem !important;
+    letter-spacing: 0.05em !important;
+    padding: 10px 6px !important;
+  }
+  
+  .vuecal__cell--month {
+    min-height: 60px !important;
+  }
+  
+  .vuecal__cell--today .vuecal__cell-date {
+    width: 28px !important;
+    height: 28px !important;
+  }
+}
+
+/* Premium emotional event styling */
+.emotional-event {
+  border-radius: 12px;
+  padding: 10px 14px;
+  margin: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 32px;
+  position: relative;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+  font-weight: 600;
+  font-size: 0.875rem;
+  letter-spacing: 0.025em;
+  border: 1px solid transparent;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.emotional-event::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.emotional-event:hover::before {
+  opacity: 1;
+}
+
+.emotional-event:hover {
+  transform: scale(1.02) translateY(-1px);
+  z-index: 10;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2), 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.emotional-event:active {
+  transform: scale(0.98);
+}
+
+.emotional-event .emoji {
+  font-size: 1.2em;
+  opacity: 1;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.emotional-event:hover .emoji {
+  transform: scale(1.15) rotate(5deg);
+}
+
+.emotional-event .title {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  line-height: 1.3;
+}
+
+/* Sophisticated emotion-specific gradients */
+.emotional-event.happy { 
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.3), rgba(255, 193, 7, 0.2));
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  color: #FFF8DC;
+}
+
+.emotional-event.happy:hover {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.4), rgba(255, 193, 7, 0.3));
+  border-color: rgba(255, 215, 0, 0.7);
+  box-shadow: 0 8px 32px rgba(255, 215, 0, 0.25), 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.emotional-event.sad { 
+  background: linear-gradient(135deg, rgba(100, 181, 246, 0.3), rgba(135, 206, 235, 0.2));
+  border: 1px solid rgba(100, 181, 246, 0.5);
+  color: #E3F2FD;
+}
+
+.emotional-event.sad:hover {
+  background: linear-gradient(135deg, rgba(100, 181, 246, 0.4), rgba(135, 206, 235, 0.3));
+  border-color: rgba(100, 181, 246, 0.7);
+  box-shadow: 0 8px 32px rgba(100, 181, 246, 0.25), 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.emotional-event.angry { 
+  background: linear-gradient(135deg, rgba(244, 67, 54, 0.3), rgba(255, 107, 107, 0.2));
+  border: 1px solid rgba(244, 67, 54, 0.5);
+  color: #FFEBEE;
+}
+
+.emotional-event.angry:hover {
+  background: linear-gradient(135deg, rgba(244, 67, 54, 0.4), rgba(255, 107, 107, 0.3));
+  border-color: rgba(244, 67, 54, 0.7);
+  box-shadow: 0 8px 32px rgba(244, 67, 54, 0.25), 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.emotional-event.calm { 
+  background: linear-gradient(135deg, rgba(129, 199, 132, 0.3), rgba(152, 251, 152, 0.2));
+  border: 1px solid rgba(129, 199, 132, 0.5);
+  color: #E8F5E8;
+}
+
+.emotional-event.calm:hover {
+  background: linear-gradient(135deg, rgba(129, 199, 132, 0.4), rgba(152, 251, 152, 0.3));
+  border-color: rgba(129, 199, 132, 0.7);
+  box-shadow: 0 8px 32px rgba(129, 199, 132, 0.25), 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.emotional-event.neutral {
+  background: linear-gradient(135deg, rgba(158, 158, 158, 0.3), rgba(189, 189, 189, 0.2));
+  border: 1px solid rgba(158, 158, 158, 0.5);
+  color: #F5F5F5;
+}
+
+.emotional-event.neutral:hover {
+  background: linear-gradient(135deg, rgba(158, 158, 158, 0.4), rgba(189, 189, 189, 0.3));
+  border-color: rgba(158, 158, 158, 0.7);
+  box-shadow: 0 8px 32px rgba(158, 158, 158, 0.25), 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Enhanced interaction states */
+.emotional-event.selected {
+  border: 2px solid rgba(78, 205, 196, 0.9) !important;
+  box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.2), 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+  transform: scale(1.02) !important;
+}
+
+.emotional-event.dragging {
+  opacity: 0.8;
+  transform: scale(1.05) rotate(3deg);
+  z-index: 1000;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4), 0 6px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Refined resize handles */
+.emotional-event .resize-handle {
+  position: absolute;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
+  border-radius: 3px;
+  opacity: 0;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.emotional-event:hover .resize-handle {
+  opacity: 1;
+}
+
+.emotional-event .resize-handle.top,
+.emotional-event .resize-handle.bottom {
+  left: 50%;
+  transform: translateX(-50%);
+  width: 24px;
+  height: 4px;
+}
+
+.emotional-event .resize-handle.top {
+  top: -2px;
+  cursor: n-resize;
+}
+
+.emotional-event .resize-handle.bottom {
+  bottom: -2px;
+  cursor: s-resize;
+}
+
+/* Premium animations */
+@keyframes emotionTagged {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3), 0 6px 16px rgba(0, 0, 0, 0.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.emotional-event.tagged {
+  animation: emotionTagged 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes eventPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(78, 205, 196, 0.8);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(78, 205, 196, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(78, 205, 196, 0);
+  }
+}
+
+.emotional-event.new {
+  animation: eventPulse 2.5s infinite;
+}
+
+/* Enhanced current time line */
+.vuecal__now-line {
+  background: linear-gradient(90deg, #FF6B6B, #FF8E8E) !important;
+  box-shadow: 0 0 8px rgba(255, 107, 107, 0.6), 0 2px 4px rgba(0, 0, 0, 0.2) !important;
+  height: 3px !important;
+  z-index: 15 !important;
+  border-radius: 2px !important;
+}
+
+.vuecal__now-line::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(255, 107, 107, 0.8), 0 2px 4px rgba(0, 0, 0, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.9);
+}
+
+/* Enhanced time markers */
+.vuecal__time-cell::after {
+  content: '';
+  position: absolute;
+  right: -3px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.2));
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Premium scrollbar */
+.vuecal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.vuecal::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+  margin: 4px;
+}
+
+.vuecal::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15));
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.vuecal::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.25));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Enhanced loading state */
+.vuecal.loading {
+  opacity: 0.6;
+  pointer-events: none;
+  position: relative;
+}
+
+.vuecal.loading::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 48px;
+  height: 48px;
+  border: 4px solid rgba(255, 255, 255, 0.1);
+  border-top: 4px solid #4ECDC4;
+  border-radius: 50%;
+  animation: spin 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  z-index: 1000;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes spin {
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+} 

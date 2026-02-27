@@ -1,0 +1,158 @@
+# Project Rules: BTBillyBass
+
+## Code Structure
+
+- Maintain modular code organization with clear separation of concerns
+- Keep all module implementations in the `src/` directory
+- Use header files with proper include guards for all modules
+- Follow the established file naming convention: `ModuleName.h` and `ModuleName.cpp`
+- Main sketch file (`BTBillyBass.ino`) should only contain setup, loop, and global variables
+- Use `Config.h` for all configuration parameters and pin definitions
+
+## Code Style
+
+- Use camelCase for variable and function names
+- Use PascalCase for class names
+- Use UPPER_CASE for constants and #define directives
+- Indent with 2 spaces (Arduino standard)
+- Use braces for all control structures, even single-line blocks
+- Keep lines under 100 characters when possible
+- Add comments for complex logic and function descriptions
+- Use consistent naming conventions across all files
+
+## Memory Management
+
+- Minimize global variables where possible
+- Use const for read-only values to save RAM
+- Use #ifdef DEBUG for conditional compilation of debug code
+- Be mindful of Arduino's limited memory (2KB SRAM on Uno)
+- Avoid dynamic memory allocation (no new/malloc)
+- Use static const for read-only arrays
+
+## Serial Communication
+
+- Maintain 9600 baud rate for all serial communication
+- Use single-character commands for efficiency
+- Document all available commands in comments
+- Include helpful debug messages when DEBUG is enabled
+- Format serial output for readability
+
+## Motor Control
+
+- Use the BillyBassMotor class for all motor operations
+- Respect minimum and maximum speed limits (MIN_SPEED and MAX_SPEED)
+- Include appropriate delays between motor operations
+- Use ramping for smoother motor movements
+- Track motor positions to prevent redundant movements
+
+## State Machine
+
+- Follow the state machine pattern for managing fish behavior
+- Use clear state names and transitions
+- Document state transitions with debug messages
+- Ensure all states have proper entry and exit conditions
+- Use appropriate timing constants for state transitions
+
+## Audio Reactivity
+
+- Use appropriate thresholds for sound detection
+- Include debouncing for sound input to prevent rapid state changes
+- Calibrate sound thresholds based on the specific microphone/sensor used
+- Provide manual override capability for testing
+
+## Command System
+
+- Use function pointers for command mapping
+- Document all commands in comments
+- Provide helpful feedback for invalid commands
+- Include a help command to list available commands
+- Keep command processing efficient
+
+## Debugging
+
+- Use the DEBUG flag in Config.h to enable/disable debug messages
+- Include meaningful debug messages for important state changes
+- Format debug output for readability
+- Use consistent debug message formatting
+
+## Documentation
+
+- Update Memory Bank files after significant changes
+- Document all functions with clear descriptions
+- Include parameter descriptions for complex functions
+- Document pin assignments and hardware connections
+- Keep file references up to date
+
+## Testing
+
+- Test all commands and features before committing changes
+- Verify memory usage regularly
+- Test with both manual and audio-reactive modes
+- Validate behavior across different Arduino boards (Uno, Nano, Pro Mini)
+
+## Hardware Considerations
+
+- Support standard Arduino boards (Uno, Nano, Pro Mini)
+- Use MX1508 motor drivers for motor control
+- Support analog sound input (microphone or sound sensor)
+- Document power requirements (5V recommended)
+- Include pin assignments in Config.h
+
+## Workflow Preferences
+
+- Commit after each significant feature implementation or bug fix
+- Test all motor movements after code changes
+- Update memory bank documentation after significant changes
+- Use Arduino linting for code quality checks
+- Keep serial output concise and informative
+- Maintain backward compatibility with existing command interface
+
+## Implementation Patterns
+
+- Command Pattern: Use function pointers for command mapping instead of switch-case
+- State Management: Track motor positions using bit flags
+- Speed Control: Use ramping for smooth acceleration/deceleration
+- Error Handling: Validate inputs and handle edge cases gracefully
+- Memory Optimization: Minimize variable usage and prefer direct member access
+- Standardized Settings: Use consistent movement parameters across functions
+
+## Known Challenges
+
+- Arduino Memory Limitations: SRAM is limited to 2KB on typical Arduino boards
+- Motor Control Precision: DC motors have variable response characteristics
+- Power Management: Ensure adequate power supply for simultaneous motor operation
+- Mechanical Stress: Limit rapid direction changes to prevent mechanical wear
+- Timing Constraints: Balance between smooth movement and responsive control
+
+## Tool Usage
+
+- Arduino IDE: Primary development environment
+- Git: Version control for code and documentation
+- Arduino Linting: Code quality validation via .arduino-lint.yml
+- Serial Monitor: 9600 baud for command interface and debugging
+
+## Hardware Configuration
+
+- Motor Drivers: MX1508 H-bridge modules
+- Motors: Original DC motors from Billy Bass toy
+- Controller: Arduino Uno/Nano
+- Power Supply: 5V DC adapter (minimum 1A recommended)
+- Pin Assignments:
+  - Mouth Motor: D3, D5
+  - Body/Tail Motor: D6, D9
+
+## Testing Procedures
+
+- Verify all basic movements (open/close mouth, flap tail, body forward)
+- Test complex sequences (singing motion)
+- Validate speed adjustment functionality
+- Check reset and home position accuracy
+- Verify serial command interface responsiveness
+
+## Documentation Standards
+
+- Update memory bank after significant changes
+- Document all public functions with clear descriptions
+- Include hardware setup information in comments
+- Maintain accurate pin assignments in documentation
+- Keep command reference up to date 

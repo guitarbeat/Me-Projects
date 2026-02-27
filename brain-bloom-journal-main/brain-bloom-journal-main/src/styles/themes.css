@@ -1,0 +1,42 @@
+/* Tampana App - Theme Variables */
+/* Note: Import after main tailwind base directive */
+
+:root {
+  /* Override shadcn defaults with Tampana theme */
+  --background: 0 0% 94%;
+  --foreground: 0 0% 18%;
+  --card: 0 0% 96%;
+  --card-foreground: 0 0% 18%;
+  --primary: 210 8% 45%;
+  --primary-foreground: 0 0% 96%;
+
+  /* Journal palette */
+  --journal-primary: 210 8% 45%;
+  --journal-text: 0 0% 15%;
+  --journal-bg: 0 0% 94%;
+
+  /* Newsprint Design System */
+  --newsprint-bg: 45 30% 97%;
+  --newsprint-foreground: 30 10% 8%;
+  --newsprint-muted: 40 15% 90%;
+  --newsprint-accent: 0 85% 42%;
+  --newsprint-border: 30 10% 8%;
+  --newsprint-neutral-100: 45 20% 96%;
+  --newsprint-neutral-200: 40 15% 90%;
+  --newsprint-neutral-400: 35 8% 62%;
+  --newsprint-neutral-500: 30 6% 45%;
+}
+
+.sepia {
+  --background: 38 35% 92%;
+  --foreground: 25 30% 18%;
+  --newsprint-bg: 40 45% 94%;
+  --newsprint-foreground: 28 35% 12%;
+}
+
+.dark {
+  --background: 220 15% 7%;
+  --foreground: 45 10% 92%;
+  --newsprint-bg: 35 20% 8%;
+  --newsprint-foreground: 40 25% 88%;
+}

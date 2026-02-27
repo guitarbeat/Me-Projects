@@ -1,0 +1,19 @@
+{
+  "name": "Tampana",
+  "short_name": "Tampana",
+  "description": "Your personal journey in mindful journaling and reflection",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "16x16 32x32",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["productivity", "lifestyle", "health"],
+  "screenshots": []
+}

@@ -1,0 +1,53 @@
+{
+  "id": "flo-and-tell-pwa",
+  "name": "Flo and Tell",
+  "short_name": "Flo & Tell",
+  "description": "Period tracking made cute and simple",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#faf9f8",
+  "theme_color": "#FFB6C1",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["health", "lifestyle", "medical"],
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false,
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Open Calendar",
+      "short_name": "Calendar",
+      "description": "View your period calendar",
+      "url": "/",
+      "icons": [{ "src": "/flo.png", "sizes": "192x192" }]
+    }
+  ]
+}

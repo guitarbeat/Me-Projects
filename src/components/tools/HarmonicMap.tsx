@@ -375,7 +375,17 @@ const generateGridData = (key: Note, scale: ScaleType, chords: Chord[], secondar
 
 // --- MAIN COMPONENT ---
 export const HarmonicSpace = () => {
-    const { key: currentKey, scale: scaleType, mood, complexity, targetMood, handleProgression, playOne, setHoveredChord, progression, setKey } = useStore();
+    const currentKey = useStore(s => s.key);
+    const scaleType = useStore(s => s.scale);
+    const mood = useStore(s => s.mood);
+    const complexity = useStore(s => s.complexity);
+    const targetMood = useStore(s => s.targetMood);
+    const handleProgression = useStore(s => s.handleProgression);
+    const playOne = useStore(s => s.playOne);
+    const setHoveredChord = useStore(s => s.setHoveredChord);
+    const progression = useStore(s => s.progression);
+    const setKey = useStore(s => s.setKey);
+
     const { chords, tensionChords } = useDerivedData();
 
     const contextChord = useMemo(() => progression.slice().reverse().find(c => !c.isRest) || null, [progression]);
@@ -506,7 +516,9 @@ export const HarmonicSpace = () => {
 };
 
 export const MiniHarmonicMap = () => {
-    const { key, scale, progression } = useStore();
+    const key = useStore(s => s.key);
+    const scale = useStore(s => s.scale);
+    const progression = useStore(s => s.progression);
     
     // Derived state for the active context
     const contextChord = useMemo(() => progression.slice().reverse().find(c => !c.isRest) || null, [progression]);

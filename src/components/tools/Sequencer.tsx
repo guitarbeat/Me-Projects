@@ -68,7 +68,12 @@ export const DraggableChord: React.FC<{ chord: Chord, className?: string, onClic
 };
 
 export const ChordPalette = ({ className }: { className?: string }) => {
-    const { playOne, selectedChordIndex, setSelectedChordIndex, progression, handleProgression } = useStore();
+    const playOne = useStore(s => s.playOne);
+    const selectedChordIndex = useStore(s => s.selectedChordIndex);
+    const setSelectedChordIndex = useStore(s => s.setSelectedChordIndex);
+    const progression = useStore(s => s.progression);
+    const handleProgression = useStore(s => s.handleProgression);
+
     const { chords: availableChords, tensionChords } = useDerivedData();
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -300,14 +305,12 @@ const TimelineNode = React.memo(function TimelineNode({
 });
 
 export const ProgressionStrip = ({ showPalette = false }: { showPalette?: boolean }) => {
-    const { 
-        progression, 
-        playIndex: activeIndex, 
-        selectedChordIndex,
-        handleProgression, 
-        playOne,
-        setSelectedChordIndex
-    } = useStore();
+    const progression = useStore(s => s.progression);
+    const activeIndex = useStore(s => s.playIndex);
+    const selectedChordIndex = useStore(s => s.selectedChordIndex);
+    const handleProgression = useStore(s => s.handleProgression);
+    const playOne = useStore(s => s.playOne);
+    const setSelectedChordIndex = useStore(s => s.setSelectedChordIndex);
     
     const { chords: availableChords } = useDerivedData();
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -443,7 +446,10 @@ export const ProgressionStrip = ({ showPalette = false }: { showPalette?: boolea
 // ... existing code ...
 
 export const MiniSequencer = () => {
-    const { progression, isPlaying, playIndex } = useStore();
+    const progression = useStore(s => s.progression);
+    const isPlaying = useStore(s => s.isPlaying);
+    const playIndex = useStore(s => s.playIndex);
+
     return (
         <div className="flex items-center gap-3 px-4 w-full h-full bg-[var(--bg-surface)] hover:bg-[var(--bg-element)] transition-colors cursor-pointer group">
             <div className="h-8 w-24 shrink-0 rounded-lg border border-[var(--border)] bg-[var(--bg-panel)] flex items-center px-1 gap-0.5 overflow-hidden group-hover:border-[var(--accent)] relative">
@@ -487,7 +493,8 @@ export const MiniSequencer = () => {
 
 export const MiniChordPalette = () => {
     const { chords } = useDerivedData();
-    const { key, scale } = useStore();
+    const key = useStore(s => s.key);
+    const scale = useStore(s => s.scale);
     
     // Calculate Diatonic Count (Integration with Key/Scale store)
     // Removed unused diatonicCount

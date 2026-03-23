@@ -7,7 +7,11 @@ import { Chord, ScaleType, InstrumentType } from '../types';
 
 // --- URL SYNC HOOK ---
 export const useUrlSync = () => {
-    const store = useStore();
+    const key = useStore(s => s.key);
+    const scale = useStore(s => s.scale);
+    const bpm = useStore(s => s.bpm);
+    const instrument = useStore(s => s.instrument);
+    const view = useStore(s => s.view);
 
     // Init from URL on mount
     useEffect(() => {
@@ -36,11 +40,11 @@ export const useUrlSync = () => {
         if (window.location.protocol === 'blob:') return;
 
         const params = new URLSearchParams();
-        params.set('key', store.key);
-        params.set('scale', store.scale);
-        params.set('bpm', store.bpm.toString());
-        params.set('inst', store.instrument);
-        params.set('view', store.view);
+        params.set('key', key);
+        params.set('scale', scale);
+        params.set('bpm', bpm.toString());
+        params.set('inst', instrument);
+        params.set('view', view);
 
         const url = `${window.location.pathname}?${params.toString()}`;
 
@@ -51,14 +55,17 @@ export const useUrlSync = () => {
             // Ignored: likely running in a restricted iframe or blob context
             console.debug('URL sync skipped:', e);
         }
-    }, [store.key, store.scale, store.bpm, store.instrument, store.view]);
+    }, [key, scale, bpm, instrument, view]);
 };
 
 // --- EXISTING HOOKS ---
 
 // Helper hook to calculate derived musical data from the store
 export const useDerivedData = () => {
-    const { key, scale, complexity, mood } = useStore();
+    const key = useStore(s => s.key);
+    const scale = useStore(s => s.scale);
+    const complexity = useStore(s => s.complexity);
+    const mood = useStore(s => s.mood);
 
     const chords = useMemo(() =>
         generateChordsForScale(key, scale, complexity),

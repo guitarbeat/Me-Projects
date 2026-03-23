@@ -30,8 +30,6 @@ export const AccessControlSettings: React.FC = () => {
     profile,
     session,
     refreshProfile,
-    setCustomPassword,
-    removeCustomPassword,
   } = useAuth();
   const { toast } = useToast();
 
@@ -51,14 +49,13 @@ export const AccessControlSettings: React.FC = () => {
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const confirmInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Check if access code is set (either PIN or password)
+  // Check if the PIN-based access code is set.
   useEffect(() => {
     if (profile) {
       const profileWithPin = profile as typeof profile & {
         pin_hash?: string | null;
       };
       const hasPinSet = !!profileWithPin.pin_hash;
-      const hasPasswordSet = profile.has_custom_password ?? false;
 
       // Check localStorage fallback for PIN
       let localPinSet = false;
@@ -67,7 +64,7 @@ export const AccessControlSettings: React.FC = () => {
         localPinSet = !!storedPinHash;
       }
 
-      setIsEnabled(hasPinSet || localPinSet || hasPasswordSet);
+      setIsEnabled(hasPinSet || localPinSet);
     }
   }, [profile]);
 
@@ -130,7 +127,7 @@ export const AccessControlSettings: React.FC = () => {
     }
   };
 
-  // Save both PIN and password at once
+  // Save the PIN-based access code.
   const handleSaveAccessCode = async (pinValue: string) => {
     if (!session?.user || !profile) {
       return;
@@ -154,19 +151,6 @@ export const AccessControlSettings: React.FC = () => {
       // Save PIN to localStorage backup
       localStorage.setItem(`pin_hash_${profile.id}`, pinHash);
 
-      // Also set the same PIN as password (using PIN digits as password)
-      // Note: We still use the weak PIN duplication for the Supabase password itself
-      // because we can't change the Auth provider requirements easily.
-      // But the stored pin_hash is now secure.
-      const passwordResult = await setCustomPassword(pinValue + pinValue); // 8 char min: 4 digits doubled
-      if (passwordResult.error) {
-        // If password fails, still keep PIN but log warning
-        console.warn(
-          'Failed to set password alongside PIN:',
-          passwordResult.error
-        );
-      }
-
       setIsEnabled(true);
       setShowSetupForm(false);
       setPinStep('enter');
@@ -176,7 +160,7 @@ export const AccessControlSettings: React.FC = () => {
 
       toast({
         title: 'Access code set',
-        description: 'Your account is now protected',
+        description: 'Your calendar is now protected',
       });
     } catch (err) {
       console.error('Error saving access code:', err);
@@ -191,7 +175,7 @@ export const AccessControlSettings: React.FC = () => {
     }
   };
 
-  // Remove both PIN and password
+  // Remove the PIN-based access code.
   const handleRemoveAccessCode = async () => {
     if (!session?.user || !profile) {
       return;
@@ -213,15 +197,12 @@ export const AccessControlSettings: React.FC = () => {
       localStorage.removeItem(`pin_hash_${profile.id}`);
       localStorage.removeItem(`pin_unlocked_${profile.id}`);
 
-      // Remove password
-      await removeCustomPassword();
-
       setIsEnabled(false);
       refreshProfile();
 
       toast({
         title: 'Access code removed',
-        description: 'Your account is no longer protected',
+        description: 'Your calendar is no longer protected',
       });
     } catch (err) {
       console.error('Error removing access code:', err);

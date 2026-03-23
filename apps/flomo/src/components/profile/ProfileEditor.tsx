@@ -60,6 +60,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { PrivacySettings } from '@/components/profile/PrivacySettings';
 import { SecurityOverview } from '@/components/profile/SecurityOverview';
 import { AccessControlSettings } from '@/components/profile/AccessControlSettings';
+import { PasswordSettings } from '@/components/profile/PasswordSettings';
 import { useAdminRole } from '@/hooks/useAdminRole';
 import { AdminPanel } from '@/components/admin/AdminPanel';
 
@@ -868,8 +869,7 @@ export const ProfileEditor: React.FC<ProfileEditorProps> = ({
                     ?.is_private ?? false,
                 hasAccessCode:
                   !!(profile as typeof profile & { pin_hash?: string | null })
-                    ?.pin_hash ||
-                  (profile?.has_custom_password ?? false),
+                    ?.pin_hash,
               }}
               onScrollTo={(section) => {
                 const el = document.getElementById(`${section}-section`);
@@ -882,8 +882,11 @@ export const ProfileEditor: React.FC<ProfileEditorProps> = ({
             {/* Privacy Settings */}
             <PrivacySettings />
 
-            {/* Access Control (PIN + Password) */}
+            {/* Access Control (PIN lock) */}
             <AccessControlSettings />
+
+            {/* Account Password */}
+            <PasswordSettings />
 
             {/* Danger Zone */}
             <Card className="border-destructive/30">

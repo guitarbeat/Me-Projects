@@ -91,7 +91,7 @@ export const Calendar = () => {
     }
   });
 
-  // Access code state - check if PIN or password is set
+  // Access code state - based on the PIN lock only.
   const hasAccessCode = useMemo(() => {
     if (!profile) {
       return false;
@@ -99,7 +99,7 @@ export const Calendar = () => {
     const profileWithPin = profile as typeof profile & {
       pin_hash?: string | null;
     };
-    return !!profileWithPin.pin_hash || !!profile.has_custom_password;
+    return !!profileWithPin.pin_hash;
   }, [profile]);
 
   // Handle privacy toggle - localStorage only

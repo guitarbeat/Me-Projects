@@ -8,10 +8,10 @@ export const SupabaseHealthCheck = memo(() => {
 
   useEffect(() => {
     const checkConnection = async () => {
-      // Use a lightweight query to check table existence
-      // 'count' is efficient. We check 'profiles' as it's critical.
+      // Use a lightweight query against the public view so the check works
+      // before authentication and does not depend on private table access.
       const { error } = await supabase
-        .from('profiles')
+        .from('public_profiles')
         .select('count', { count: 'exact' });
 
       if (error) {

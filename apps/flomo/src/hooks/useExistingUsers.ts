@@ -58,10 +58,11 @@ export const useExistingUsers = () => {
     }
 
     try {
-      // Use profiles table - fetch essential fields + has_custom_password, limit to 10 for faster load
+      // Use the public view so unauthenticated discovery never touches
+      // sensitive profile columns.
       const { data, error } = await supabase
-        .from('profiles')
-        .select('id, username, display_name, avatar_url, has_custom_password')
+        .from('public_profiles')
+        .select('id, username, display_name, avatar_url')
         .not('username', 'is', null)
         .not('username', 'ilike', 'anonymous_%')
         .order('created_at', { ascending: false })
@@ -82,7 +83,6 @@ export const useExistingUsers = () => {
           username: p.username,
           display_name: p.display_name || undefined,
           avatar_url: p.avatar_url ?? null,
-          has_custom_password: p.has_custom_password ?? false,
         }));
 
       setUserProfiles(profiles);

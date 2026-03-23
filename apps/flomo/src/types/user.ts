@@ -38,7 +38,6 @@ export interface UserBubbleProfile {
   username: string;
   display_name?: string | undefined;
   avatar_url: string | null;
-  has_custom_password?: boolean;
 }
 
 /**

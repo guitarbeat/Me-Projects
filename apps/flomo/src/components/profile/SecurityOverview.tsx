@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils';
 
 interface SecurityStatus {
   isPrivate: boolean;
-  hasAccessCode: boolean; // Unified: true if either PIN or password is set
+  hasAccessCode: boolean; // True when the PIN lock is enabled
 }
 
 interface SecurityOverviewProps {

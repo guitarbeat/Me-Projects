@@ -101,16 +101,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
     );
   }, [username, userProfiles]);
 
-  // Show password field if matching user has custom password
-  useEffect(() => {
-    if (matchingUser?.has_custom_password) {
-      setShowPasswordField(true);
-    } else if (!showPasswordField || !password) {
-      // Only hide if there's no password entered (user might be typing)
-      setShowPasswordField(false);
-    }
-  }, [matchingUser, showPasswordField, password]);
-
   // Auto-dismiss errors after 5 seconds
   useEffect(() => {
     if (error) {
@@ -131,17 +121,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
   }, [showError, error]);
 
   const handleBubbleSignIn = async (usernameValue: string) => {
-    const user = userProfiles.find(
-      (p) => p.username.toLowerCase() === usernameValue.toLowerCase()
-    );
-
-    // If user has custom password, show password field instead of auto-submitting
-    if (user?.has_custom_password) {
-      setUsername(usernameValue);
-      setShowPasswordField(true);
-      return;
-    }
-
     setUsername(usernameValue);
     // Auto-submit for bubble sign-in
     setLoading(true);
@@ -242,10 +221,19 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
   );
 
   const handleUsernameChange = (value: string) => {
+    const normalizedValue = value.trim().toLowerCase();
+    const normalizedUsername = username.trim().toLowerCase();
+
     setUsername(value);
     if (error) {
       setError('');
       setShowError(false);
+    }
+
+    if (normalizedValue !== normalizedUsername) {
+      setPassword('');
+      setShowPassword(false);
+      setShowPasswordField(false);
     }
 
     // Real-time validation feedback
@@ -524,7 +512,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
                   borderRadius: 'clamp(0.75rem, 2vw, 1rem)',
                   fontSize: 'var(--text-base)',
                 }}
-                placeholder="Enter your password"
+                placeholder="Enter or create a password"
                 autoComplete="current-password"
                 disabled={loading}
                 aria-invalid={isPasswordError}
@@ -561,6 +549,11 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
           {/* New user hint */}
           {!matchingUser && username.length >= 2 && !showPasswordField && (
             <p className="text-xs text-muted-foreground text-center animate-fade-in">
+              New here? Enter a username to get started, then choose a password.
+            </p>
+          )}
+          {false && !matchingUser && username.length >= 2 && !showPasswordField && (
+            <p className="text-xs text-muted-foreground text-center animate-fade-in">
               New here? Just enter a username to get started! 🌸
             </p>
           )}
@@ -568,12 +561,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
           {/* Matching user hint */}
           {matchingUser && buttonState === 'idle' && !showPasswordField && (
             <p className="text-xs text-green-600 dark:text-green-400 text-center animate-fade-in">
-              Welcome back! Press Continue or tap your bubble below 👇
+              Welcome back! Press Continue or tap your bubble below.
             </p>
           )}
 
           {/* Password required hint */}
           {showPasswordField && (
+            <p className="text-xs text-muted-foreground text-center animate-fade-in">
+              Use a password to continue. New accounts create it here; existing accounts enter it here.
+            </p>
+          )}
+          {false && showPasswordField && (
             <p className="text-xs text-muted-foreground text-center animate-fade-in">
               This account has a password set 🔐
             </p>
@@ -606,6 +604,13 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
         {userProfiles.length === 0 && (
           <p className="text-center text-sm text-muted-foreground font-quicksand mt-4 animate-hint-entrance">
             <span className="gentle-breathe inline-block">
+              First time here? Enter a username to get started, then choose a password.
+            </span>
+          </p>
+        )}
+        {false && userProfiles.length === 0 && (
+          <p className="text-center text-sm text-muted-foreground font-quicksand mt-4 animate-hint-entrance">
+            <span className="gentle-breathe inline-block">
               First time here? Enter a username to get started! 🌸
             </span>
           </p>
@@ -627,3 +632,4 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
     </div>
   );
 };
+

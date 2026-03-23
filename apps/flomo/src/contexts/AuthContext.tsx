@@ -1,6 +1,7 @@
 import React, { useEffect, useState, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Session } from '@supabase/supabase-js';
+import { Session, User } from '@supabase/supabase-js';
+import type { Database } from '@/integrations/supabase/types';
 import { UserProfile } from '@/types/user';
 
 export interface LocalUser {
@@ -20,7 +21,8 @@ export interface AuthContextType {
   ) => Promise<{ error: Error | null; needsPassword?: boolean }>;
   signUp: (
     username: string,
-    displayName: string
+    displayName: string,
+    password: string
   ) => Promise<{ error: Error | null }>;
   signInOrSignUp: (
     username: string,
@@ -80,6 +82,95 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     avatarUrl: profile.avatar_url ?? null,
   });
 
+  const buildLegacyPassword = (username: string): string =>
+    `flo_${username}_pass`;
+
+  const ensureProfileRecord = async ({
+    authUser,
+    username,
+    displayName,
+    hasCustomPassword,
+  }: {
+    authUser: User;
+    username?: string;
+    displayName?: string;
+    hasCustomPassword?: boolean;
+  }): Promise<Error | null> => {
+    const metadata = authUser.user_metadata ?? {};
+    const normalizedUsername =
+      username ||
+      (typeof metadata.username === 'string'
+        ? metadata.username.trim().toLowerCase()
+        : '');
+
+    if (!normalizedUsername) {
+      return new Error('Unable to sync profile without a username');
+    }
+
+    const resolvedDisplayName =
+      displayName ||
+      (typeof metadata.display_name === 'string' && metadata.display_name.trim()) ||
+      (typeof metadata.first_name === 'string' && metadata.first_name.trim()) ||
+      normalizedUsername;
+
+    const profilePatch: Database['public']['Tables']['profiles']['Insert'] = {
+      id: authUser.id,
+      email: authUser.email ?? null,
+      username: normalizedUsername,
+      display_name: resolvedDisplayName,
+      first_name: resolvedDisplayName,
+    };
+
+    if (typeof hasCustomPassword === 'boolean') {
+      profilePatch.has_custom_password = hasCustomPassword;
+    }
+
+    const { error } = await supabase
+      .from('profiles')
+      .upsert(profilePatch, { onConflict: 'id' });
+
+    return error ? new Error(error.message) : null;
+  };
+
+  const loadProfileForUser = async (
+    authUser: User
+  ): Promise<UserProfile | null> => {
+    let profileData = await fetchProfile(authUser.id);
+
+    if (!profileData) {
+      const syncError = await ensureProfileRecord({ authUser });
+      if (syncError) {
+        console.error('Error creating missing profile:', syncError);
+        return null;
+      }
+
+      profileData = await fetchProfile(authUser.id);
+    }
+
+    return profileData;
+  };
+
+  const findPublicProfileByUsername = async (
+    username: string
+  ): Promise<{ id: string | null } | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('public_profiles')
+        .select('id')
+        .eq('username', username)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      return data;
+    } catch (err) {
+      console.error('Error looking up public profile:', err);
+      return null;
+    }
+  };
+
   const fetchProfile = async (userId: string): Promise<UserProfile | null> => {
     try {
       // Select all profile fields including new privacy/pin fields
@@ -133,7 +224,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         if (initialSession?.user) {
           setSession(initialSession);
           // Fetch profile in parallel with setting loading false for perceived speed
-          const profilePromise = fetchProfile(initialSession.user.id);
+          const profilePromise = loadProfileForUser(initialSession.user);
 
           // Set loading false immediately after session is confirmed
           if (mounted) {
@@ -179,7 +270,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           if (!mounted) {
             return;
           }
-          fetchProfile(newSession.user.id).then((profileData) => {
+          loadProfileForUser(newSession.user).then((profileData) => {
             if (!mounted) {
               return;
             }
@@ -219,9 +310,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const cleaned = username.trim().toLowerCase();
 
-      // Sign in with email (username@flo.local) and either custom password or deterministic password
+      // Use the real password when provided. Otherwise fall back to the
+      // legacy username-derived credential for existing accounts only.
       const email = `${cleaned}@flo.local`;
-      const actualPassword = password || `flo_${cleaned}_pass`;
+      const actualPassword = password || buildLegacyPassword(cleaned);
 
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -251,7 +343,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const signUp = async (
     username: string,
-    displayName: string
+    displayName: string,
+    password: string
   ): Promise<{ error: Error | null }> => {
     try {
       const validationError = validateUsername(username);
@@ -259,10 +352,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return { error: new Error(validationError) };
       }
 
+      if (password.trim().length < 8) {
+        return { error: new Error('Password must be at least 8 characters') };
+      }
+
       const cleaned = username.trim().toLowerCase();
 
       const email = `${cleaned}@flo.local`;
-      const password = `flo_${cleaned}_pass`;
       const redirectUrl = `${window.location.origin}/`;
 
       const { data, error } = await supabase.auth.signUp({
@@ -298,6 +394,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         }
       }
 
+      const {
+        data: { user: currentUser },
+      } = await supabase.auth.getUser();
+
+      const profileError = await ensureProfileRecord({
+        authUser: currentUser || data.user,
+        username: cleaned,
+        displayName: displayName || cleaned,
+        hasCustomPassword: true,
+      });
+
+      if (profileError) {
+        return { error: profileError };
+      }
+
       return { error: null };
     } catch (err) {
       return { error: err as Error };
@@ -316,18 +427,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       const cleaned = username.trim().toLowerCase();
-
-      // First, check if user exists in profiles table
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id, has_custom_password')
-        .eq('username', cleaned)
-        .maybeSingle();
-
-      // If user exists and has custom password, require password
-      if (existingProfile?.has_custom_password && !password) {
-        return { error: null, needsPassword: true };
-      }
+      const existingPublicProfile = await findPublicProfileByUsername(cleaned);
 
       // Try to sign in
       const loginResult = await signIn(username, password);
@@ -336,21 +436,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return { error: null };
       }
 
-      // If login failed and user doesn't exist in profiles, create new account
-      if (!existingProfile) {
-        const signUpResult = await signUp(username, displayName);
-        if (
-          signUpResult.error &&
-          /already registered/i.test(signUpResult.error.message)
-        ) {
-          // Race condition: user exists in auth but not profiles, try sign-in
-          return await signIn(username);
+      // Existing public accounts should prompt for a password instead of
+      // silently creating a duplicate auth user.
+      if (existingPublicProfile) {
+        if (!password && loginResult.needsPassword) {
+          return { error: null, needsPassword: true };
         }
-        return signUpResult;
+
+        return loginResult;
       }
 
-      // User exists but login failed - wrong password or other error
-      return loginResult;
+      if (!password) {
+        return { error: null, needsPassword: true };
+      }
+
+      // Create new accounts only after the user supplies a real password.
+      const signUpResult = await signUp(username, displayName, password);
+      if (
+        signUpResult.error &&
+        /already registered/i.test(signUpResult.error.message)
+      ) {
+        // Private existing accounts are hidden from public_profiles, so retry
+        // sign-in with the supplied password before surfacing an error.
+        return await signIn(username, password);
+      }
+
+      return signUpResult;
     } catch (err) {
       console.error('Error in signInOrSignUp:', err);
       return { error: err as Error };
@@ -406,7 +517,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return;
     }
 
-    const profileData = await fetchProfile(session.user.id);
+    const profileData = await loadProfileForUser(session.user);
     if (profileData) {
       setProfile(profileData);
       setUser(buildLocalUser(profileData));
@@ -434,14 +545,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return { error: new Error(authError.message) };
       }
 
-      // Update has_custom_password flag in profiles
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ has_custom_password: true })
-        .eq('id', session.user.id);
+      const profileError = await ensureProfileRecord({
+        authUser: session.user,
+        username: profile?.username || undefined,
+        displayName: profile?.display_name || undefined,
+        hasCustomPassword: true,
+      });
 
       if (profileError) {
-        return { error: new Error(profileError.message) };
+        return { error: profileError };
       }
 
       // Refresh profile to get updated data
@@ -454,39 +566,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const removeCustomPassword = async (): Promise<{ error: Error | null }> => {
-    try {
-      if (!session?.user || !profile?.username) {
-        return { error: new Error('Not authenticated') };
-      }
-
-      // Reset to deterministic password
-      const deterministicPassword = `flo_${profile.username.toLowerCase()}_pass`;
-
-      const { error: authError } = await supabase.auth.updateUser({
-        password: deterministicPassword,
-      });
-
-      if (authError) {
-        return { error: new Error(authError.message) };
-      }
-
-      // Update has_custom_password flag in profiles
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ has_custom_password: false })
-        .eq('id', session.user.id);
-
-      if (profileError) {
-        return { error: new Error(profileError.message) };
-      }
-
-      // Refresh profile to get updated data
-      await refreshProfile();
-
-      return { error: null };
-    } catch (err) {
-      return { error: err as Error };
-    }
+    return {
+      error: new Error(
+        'Removing the account password is no longer supported.'
+      ),
+    };
   };
 
   const updateFromLocalUser = (localUser: LocalUser | null): void => {

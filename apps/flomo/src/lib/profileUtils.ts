@@ -44,7 +44,7 @@ export async function fetchProfileByUsername(
 ): Promise<BaseUserProfile | null> {
   try {
     const { data, error } = await supabase
-      .from('profiles')
+      .from('public_profiles')
       .select('id, username, display_name, avatar_url')
       .ilike('username', username)
       .single();
@@ -68,7 +68,7 @@ export async function fetchAvailableProfiles(
 ): Promise<BaseUserProfile[]> {
   try {
     const { data, error } = await supabase
-      .from('profiles')
+      .from('public_profiles')
       .select('id, username, display_name, avatar_url')
       .not('id', 'eq', excludeUserId)
       .not('username', 'is', null)
@@ -86,28 +86,22 @@ export async function fetchAvailableProfiles(
 }
 
 /**
- * Fetch public profiles for user lists (uses RPC for security).
+ * Fetch public profiles for user lists.
  */
 export async function fetchPublicProfiles(): Promise<BaseUserProfile[]> {
   try {
-    const { data, error } = await supabase.rpc('get_existing_usernames');
+    const { data, error } = await supabase
+      .from('public_profiles')
+      .select('id, username, display_name, avatar_url')
+      .order('created_at', { ascending: false });
 
     if (error) {
       throw error;
     }
 
-    // Map RPC response to BaseUserProfile format
-    return (data || []).map(
-      (user: {
-        username: string;
-        display_name: string;
-        avatar_url: string;
-      }) => ({
-        id: '', // RPC doesn't return ID for security
-        username: user.username,
-        display_name: user.display_name,
-        avatar_url: user.avatar_url,
-      })
+    return (data || []).filter(
+      (user): user is typeof user & { id: string; username: string } =>
+        user.id !== null && user.username !== null
     );
   } catch (err) {
     console.error('Error fetching public profiles:', err);

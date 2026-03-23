@@ -150,6 +150,15 @@ interface TriData {
     functionLabel?: string;
 }
 
+interface GridPoint {
+    sx: number;
+    sy: number;
+    note: string;
+    isDiatonic: boolean;
+    gx: number;
+    gy: number;
+}
+
 interface FluxStreamProps {
     from: { x: number; y: number };
     to: { x: number; y: number };
@@ -253,18 +262,36 @@ const TonnetzNode = React.memo(({ x, y, note, isKey, isDiatonic, active, mood: _
 });
 TonnetzNode.displayName = 'TonnetzNode';
 
+const HarmonicGridLines = React.memo(({ points }: { points: GridPoint[] }) => {
+    return (
+        <g opacity={0.15}>
+            {points.map((p, i) => (
+                <React.Fragment key={i}>
+                    <line x1={p.sx} y1={p.sy} x2={p.sx + X_VEC.x} y2={p.sy} stroke="var(--border)" strokeWidth={1} />
+                    <line x1={p.sx} y1={p.sy} x2={p.sx + Y_VEC.x} y2={p.sy + Y_VEC.y} stroke="var(--border)" strokeWidth={1} />
+                    <line x1={p.sx} y1={p.sy} x2={p.sx + X_VEC.x - Y_VEC.x} y2={p.sy + X_VEC.y - Y_VEC.y} stroke="var(--border)" strokeWidth={1} />
+                </React.Fragment>
+            ))}
+        </g>
+    );
+});
+HarmonicGridLines.displayName = 'HarmonicGridLines';
+
 interface TonnetzTriangleProps {
     t: TriData;
     mood: { valence: number; arousal: number };
-    state: { isActive: boolean; isHover: boolean; isLinked: boolean; isTension: boolean };
+    isActive: boolean;
+    isHover: boolean;
+    isLinked: boolean;
+    isTension: boolean;
     matchScore: number;
-    onClick: () => void;
-    onEnter: () => void;
+    onClick: (t: TriData) => void;
+    onEnter: (t: TriData) => void;
     onLeave: () => void;
     resolutionSource?: { targetId: string } | null;
 }
-const TonnetzTriangle = React.memo(({ t, mood, state, matchScore, onClick, onEnter, onLeave, resolutionSource }: TonnetzTriangleProps) => {
-    const { isActive, isHover, isLinked, isTension } = state;
+const TonnetzTriangle = React.memo(({ t, mood, isActive, isHover, isLinked, isTension, matchScore, onClick, onEnter, onLeave, resolutionSource }: TonnetzTriangleProps) => {
+    const state = { isActive, isHover, isLinked, isTension };
     const fill = getFillColor(t, mood, state, matchScore);
     const isTarget = resolutionSource && resolutionSource.targetId === t.id;
     const isTonic = t.functionLabel === 'Tonic';
@@ -272,13 +299,11 @@ const TonnetzTriangle = React.memo(({ t, mood, state, matchScore, onClick, onEnt
     const baseScale = matchScore > 0.9 && !isActive && !isHover ? 0.9 : 1; 
     const finalScale = isActive ? 1.15 : isHover ? 1.05 : isTarget ? 1.1 : baseScale;
     
-
-    
     return (
         <g 
             className={cn("cursor-pointer interact-base transition-transform duration-300", isActive && "z-10")} 
             style={{ transformOrigin: `${t.center.x}px ${t.center.y}px`, transform: `scale(${finalScale})` }}
-            onMouseEnter={onEnter} onMouseLeave={onLeave} onClick={(e) => { e.stopPropagation(); onClick(); }}
+            onMouseEnter={() => onEnter(t)} onMouseLeave={onLeave} onClick={(e) => { e.stopPropagation(); onClick(t); }}
         >
             {isTarget && (
                 <circle cx={t.center.x} cy={t.center.y} r={25} fill="none" stroke="var(--accent)" strokeWidth={1} opacity={0.4}>
@@ -331,7 +356,7 @@ const generateGridData = (key: Note, scale: ScaleType, chords: Chord[], secondar
     const chrom = (['F','Bb','Eb','Ab','Db','Gb','Cb'].includes(key)||key.includes('b')) ? ['C','Db','D','Eb','E','F','Gb','G','Ab','A','Bb','B'] : ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
     const scaleNotes = getScaleNotes(key, scale);
     const keyIdx = chrom.indexOf(key);
-    const points: Array<{ sx: number; sy: number; note: string; isDiatonic: boolean; gx: number; gy: number }> = [];
+    const points: Array<GridPoint> = [];
     const tris: TriData[] = [];
     
     for (let x = -GRID_SIZE; x <= GRID_SIZE; x++) {
@@ -482,6 +507,16 @@ export const HarmonicSpace = () => {
         handleProgression('add', chordToPlay);
     }, [complexity, playOne, handleProgression]);
 
+    const handleEnter = useCallback((t: TriData) => {
+        setHover({ id: t.id });
+        setHoveredChord({...t.chordInfo, sentiment: estimateChordSentiment(t.chordInfo, currentKey, scaleType)});
+    }, [currentKey, scaleType, setHoveredChord]);
+
+    const handleLeave = useCallback(() => {
+        setHover(null);
+        setHoveredChord(null);
+    }, [setHoveredChord]);
+
     return (
         <div className="w-full h-full relative overflow-hidden bg-[var(--bg-panel)] touch-none select-none flex items-center justify-center cursor-move"
              onWheel={(e) => setView(v => ({ ...v, k: Math.max(0.5, Math.min(4, v.k * (1 - e.deltaY * 0.001))) }))}
@@ -496,14 +531,17 @@ export const HarmonicSpace = () => {
                     <radialGradient id="tonic-glow"><stop offset="0%" stopColor="white" stopOpacity="0.8" /><stop offset="100%" stopColor="transparent" /></radialGradient>
                 </defs>
                 <g transform={`translate(${view.x}, ${view.y}) scale(${view.k})`} className="transition-transform duration-75">
-                    <g opacity={0.15}>{points.map((p,i)=><React.Fragment key={i}><line x1={p.sx} y1={p.sy} x2={p.sx+X_VEC.x} y2={p.sy} stroke="var(--border)" strokeWidth={1} /><line x1={p.sx} y1={p.sy} x2={p.sx+Y_VEC.x} y2={p.sy+Y_VEC.y} stroke="var(--border)" strokeWidth={1} /><line x1={p.sx} y1={p.sy} x2={p.sx+X_VEC.x-Y_VEC.x} y2={p.sy+X_VEC.y-Y_VEC.y} stroke="var(--border)" strokeWidth={1} /></React.Fragment>)}</g>
+                    <HarmonicGridLines points={points} />
                     <g>{activeFlux.map((s, i) => <FluxStream key={i} {...s} />)}</g>
                     <g>{tris.map(t => {
                         const score = getSentimentMatch(t.chordInfo, currentKey, scaleType, targetMood);
                         return <TonnetzTriangle key={t.id} t={t} mood={mood} matchScore={score} 
-                                    state={{isActive:activeIds.set.has(t.id), isHover:hover?.id===t.id, isTension: t.isTension, isLinked: false}} 
+                                    isActive={activeIds.set.has(t.id)}
+                                    isHover={hover?.id===t.id}
+                                    isTension={t.isTension}
+                                    isLinked={false}
                                     resolutionSource={activeFlux.find(s => s.targetId === t.id)}
-                                    onClick={() => handleChordAction(t)} onEnter={()=>{setHover({ id: t.id }); setHoveredChord({...t.chordInfo, sentiment: estimateChordSentiment(t.chordInfo, currentKey, scaleType)});}} onLeave={()=>{setHover(null); setHoveredChord(null);}} />;
+                                    onClick={handleChordAction} onEnter={handleEnter} onLeave={handleLeave} />;
                     })}</g>
                     <g>{points.map((p, i) => <TonnetzNode key={i} x={p.sx} y={p.sy} note={p.note} isKey={p.note === currentKey} isDiatonic={p.isDiatonic} active={activeNotes.has(p.note)} mood={mood} onSelectKey={setKey} />)}</g>
                 </g>

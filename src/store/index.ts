@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { Chord, Note, ScaleType, InstrumentType, ChordComplexity } from '../types';
 import { audioEngine } from '../lib/audio';
 import { SCALE_DEFS } from '../lib/constants';
-import { findClosestScale, getTempoFromArousal } from '../lib/theory';
+import { findClosestScale, getTempoFromArousal, generateId } from '../lib/theory';
 
 type AddPayload = Chord | Chord[] | { chord: Chord; index: number } | { chords: Chord[]; index: number };
 type RemovePayload = number;
@@ -207,8 +207,13 @@ export const useStore = create<AppState>((set, get) => ({
                     } else {
                         newChords = Array.isArray(payload) ? payload : [payload as Chord];
                     }
-                    // Assign current duration default
-                    const processed = newChords.map(c => ({ ...c, duration: timeSig.num }));
+                    // Assign current duration default and new ID.
+                    // Unique IDs are critical for React list performance (reconciliation) and correct drag-and-drop behavior.
+                    const processed = newChords.map(c => ({
+                        ...c,
+                        id: generateId(),
+                        duration: timeSig.num
+                    }));
 
                     if (insertIndex !== -1 && insertIndex <= newProgression.length) {
                         newProgression.splice(insertIndex, 0, ...processed);
@@ -333,7 +338,7 @@ export const useStore = create<AppState>((set, get) => ({
         audioEngine.setInstrument(project.state.instrument);
 
         return {
-            progression: project.state.progression,
+            progression: project.state.progression.map(c => c.id ? c : { ...c, id: generateId() }),
             key: project.state.key,
             scale: project.state.scale,
             bpm: project.state.bpm,

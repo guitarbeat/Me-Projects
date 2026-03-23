@@ -400,7 +400,9 @@ export const ProgressionStrip = ({ showPalette = false }: { showPalette?: boolea
                     )}
 
                     {progression.map((c: Chord, i: number) => (
-                        <React.Fragment key={i}>
+                        // Optimization: Use stable ID as key to allow React to move DOM nodes instead of re-rendering/recreating them.
+                        // This significantly improves performance during drag-and-drop reordering.
+                        <React.Fragment key={c.id}>
                             <TimelineNode 
                                 chord={c} 
                                 index={i} 

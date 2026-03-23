@@ -3,6 +3,8 @@ import { Chord, Note, ScaleType, ChordComplexity } from '../types';
 import { CHROMATIC_SHARPS, CHROMATIC_FLATS, SCALE_DEFS } from './constants';
 import { ScaleDef } from '../types';
 
+export const generateId = () => typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2, 9);
+
 export const getScaleNotes = (root: Note, scaleType: ScaleType): Note[] => {
     if (!SCALE_DEFS[scaleType]) return [];
     const semitones = SCALE_DEFS[scaleType].intervals;
@@ -72,6 +74,7 @@ export const buildChord = (root: Note, quality: Chord['quality'], extension: str
     if (extension && !suffix) symbol += extension;
 
     return {
+        id: generateId(),
         root,
         quality,
         extension,
@@ -187,6 +190,7 @@ export const generateChordsForScale = (root: Note, scaleType: ScaleType, complex
         const notes = noteIndices.map(i => scaleNotes[i]);
 
         chords.push({
+            id: generateId(),
             root: note,
             quality,
             extension: complexity !== 'triad' ? extension : '',

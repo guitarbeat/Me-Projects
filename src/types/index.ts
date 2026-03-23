@@ -33,6 +33,7 @@ export type InstrumentType = 'rhodes' | 'pad' | 'pluck' | 'synth';
 export type ChordComplexity = 'triad' | '7th' | '9th' | '11th';
 
 export interface Chord {
+  id: string;
   root: Note;
   quality: 'Major' | 'Minor' | 'Diminished' | 'Augmented' | 'Half-Dim' | 'Dominant' | 'Sus2' | 'Sus4';
   extension: string;

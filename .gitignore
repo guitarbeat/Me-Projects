@@ -1,3 +1,40 @@
-nini.earth-main.zip
+# OS and editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+# Logs and runtime files
+*.log
+*.pid
+logs/
+
+# Dependency directories
 node_modules/
+.venv/
+venv/
+
+# Build and test output
+dist/
+dist-ssr/
+build/
+coverage/
+test-results/
+playwright-report/
+.next/
+out/
+.cache/
+
+# Python caches
+__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local environment files
+.env
+.env.local
+.env.*.local
+
+# Imported archives
 *.zip

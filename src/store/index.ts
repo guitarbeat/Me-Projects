@@ -152,8 +152,12 @@ export const useStore = create<AppState>((set, get) => ({
     toggleScaleLock: () => set((s) => ({ isScaleLocked: !s.isScaleLocked })),
 
     setBpm: (bpm) => {
-        set({ bpm });
-        audioEngine.setBpm(bpm);
+        // Sentinel Security: Input Validation
+        if (typeof bpm !== 'number' || isNaN(bpm)) return;
+        const safeBpm = Math.max(20, Math.min(300, bpm));
+
+        set({ bpm: safeBpm });
+        audioEngine.setBpm(safeBpm);
     },
 
     setTimeSig: (timeSig) => set({ timeSig }),
@@ -171,20 +175,25 @@ export const useStore = create<AppState>((set, get) => ({
     setHoveredSequenceIndex: (hoveredSequenceIndex) => set({ hoveredSequenceIndex }),
 
     setMood: (v, a, t) => {
+        // Sentinel Security: Input Validation
+        const clamp = (val: number) => Math.max(-1, Math.min(1, val));
+        const safeV = clamp(v);
+        const safeA = clamp(a);
+
         const state = get();
-        const currentTension = t !== undefined ? t : state.mood.tension;
+        const currentTension = t !== undefined ? clamp(t) : state.mood.tension;
 
         // 1. Update Audio Engine immediately
-        audioEngine.setMood(v, a, currentTension);
+        audioEngine.setMood(safeV, safeA, currentTension);
 
         // 2. Snap to Scale if unlocked
         let newScale = state.scale;
         if (!state.isScaleLocked) {
-            newScale = findClosestScale(v, a, currentTension, state.scale);
+            newScale = findClosestScale(safeV, safeA, currentTension, state.scale);
         }
 
         set({
-            mood: { valence: v, arousal: a, tension: currentTension },
+            mood: { valence: safeV, arousal: safeA, tension: currentTension },
             scale: newScale
         });
     },
@@ -308,9 +317,13 @@ export const useStore = create<AppState>((set, get) => ({
 
     // --- PERSISTENCE ---
     saveProject: (name) => set((state) => {
+        // Sentinel Security: Input Validation
+        let safeName = (name || '').trim().slice(0, 50);
+        if (!safeName) safeName = 'Untitled Project';
+
         const newProject: SavedProject = {
             id: crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(),
-            name,
+            name: safeName,
             timestamp: Date.now(),
             state: {
                 progression: state.progression,
@@ -330,7 +343,8 @@ export const useStore = create<AppState>((set, get) => ({
 
     loadProject: (id) => set((state) => {
         const project = state.savedProjects.find(p => p.id === id);
-        if (!project) return {};
+        // Sentinel Security: Basic structural validation
+        if (!project || !project.state || !project.state.mood) return {};
 
         // Restore audio engine state
         audioEngine.setMood(project.state.mood.valence, project.state.mood.arousal, project.state.mood.tension);

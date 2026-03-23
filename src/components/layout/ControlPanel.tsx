@@ -1,6 +1,6 @@
 
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { cn, IconButton } from '../ui';
 // Re-export panel components
 import { useStore } from '../../lib';
@@ -80,12 +80,10 @@ const FloatingToggle = ({ isVisible, onClick }: { isVisible: boolean, onClick: (
 };
 
 export default function ControlPanel() {
-    const { 
-        key: currentKey, 
-        scale, 
-        isPlaying, 
-        togglePlay,
-    } = useStore();
+    const currentKey = useStore(s => s.key);
+    const scale = useStore(s => s.scale);
+    const isPlaying = useStore(s => s.isPlaying);
+    const togglePlay = useStore(s => s.togglePlay);
 
     // Flexible Panel State
     const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -120,7 +118,7 @@ export default function ControlPanel() {
         { id: 'library', icon: Save, label: 'Project Library' }
     ];
 
-    const activePanels = [
+    const activePanels = useMemo(() => [
         {
             id: 'map',
             content: (
@@ -202,7 +200,7 @@ export default function ControlPanel() {
             minSize: 20,
             miniOverlay: <div className="flex items-center justify-center w-full h-full"><Save size={14} className="text-[var(--accent)]" /></div>
         }
-    ].filter(p => visiblePanels[p.id as keyof typeof visiblePanels]);
+    ].filter(p => visiblePanels[p.id as keyof typeof visiblePanels]), [visiblePanels, currentKey, scale]);
 
     return (
         <div className="h-full flex flex-col bg-[var(--bg-main)] text-[var(--text-main)] overflow-hidden font-sans transition-colors duration-500">

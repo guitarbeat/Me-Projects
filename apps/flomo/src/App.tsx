@@ -11,6 +11,7 @@ import {
 } from '@/components/layout/ErrorBoundary';
 import { OfflineBanner, SupabaseHealthCheck } from '@/components/feedback';
 import { PinLockOverlay } from '@/components/profile/PinLockOverlay';
+import { LegacyPasswordUpgradeDialog } from '@/components/profile/LegacyPasswordUpgradeDialog';
 import { LoginPage } from './pages/Login';
 
 // Lazy load heavy components with prefetch
@@ -57,7 +58,7 @@ const queryClient = new QueryClient({
  * Main SPA content with cross-fade transitions between auth states
  */
 export const AppContent = () => {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
   const [displayUser, setDisplayUser] = useState<boolean>(!!user);
   const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -160,6 +161,9 @@ export const AppContent = () => {
           )}
         </div>
       </main>
+      {user && profile && !profile.has_custom_password && (
+        <LegacyPasswordUpgradeDialog />
+      )}
     </div>
   );
 };

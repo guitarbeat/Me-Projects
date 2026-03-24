@@ -1,5 +1,11 @@
 import time
+from pathlib import Path
 from playwright.sync_api import sync_playwright
+
+ARTIFACT_DIR = Path(__file__).resolve().parent
+INITIAL_SCREENSHOT = ARTIFACT_DIR / "initial.png"
+FINAL_SCREENSHOT = ARTIFACT_DIR / "final.png"
+ERROR_SCREENSHOT = ARTIFACT_DIR / "error.png"
 
 def verify_grid(page):
     print("Navigating to app...")
@@ -14,7 +20,7 @@ def verify_grid(page):
     print("Grid loaded.")
 
     # Take screenshot of initial state
-    page.screenshot(path="verification_initial.png")
+    page.screenshot(path=str(INITIAL_SCREENSHOT))
 
     # Find the "Show Month Labels" checkbox in Sidebar
     # Sidebar has labels.
@@ -90,7 +96,7 @@ def verify_grid(page):
         print(f"Hex input expansion failed. Expected #aabbcc, got {val}")
 
     print("Taking final screenshot...")
-    page.screenshot(path="verification_final.png")
+    page.screenshot(path=str(FINAL_SCREENSHOT))
 
 with sync_playwright() as p:
     browser = p.chromium.launch(headless=True)
@@ -99,6 +105,6 @@ with sync_playwright() as p:
         verify_grid(page)
     except Exception as e:
         print(f"Error: {e}")
-        page.screenshot(path="verification_error.png")
+        page.screenshot(path=str(ERROR_SCREENSHOT))
     finally:
         browser.close()

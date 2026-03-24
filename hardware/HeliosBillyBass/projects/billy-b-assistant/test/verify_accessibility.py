@@ -1,6 +1,11 @@
+from pathlib import Path
 from playwright.sync_api import sync_playwright, expect
 
+ARTIFACT_DIR = Path(__file__).resolve().parents[3] / "verification"
+SCREENSHOT_PATH = ARTIFACT_DIR / "accessibility.png"
+
 def verify_accessibility():
+    ARTIFACT_DIR.mkdir(exist_ok=True)
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         page = browser.new_page()
@@ -56,8 +61,8 @@ def verify_accessibility():
         expect(val_input).to_have_attribute("aria-label", "Backstory Value")
 
         # Take screenshot of focused state
-        page.screenshot(path="verification_accessibility.png")
-        print("Screenshot saved to verification_accessibility.png")
+        page.screenshot(path=str(SCREENSHOT_PATH))
+        print(f"Screenshot saved to {SCREENSHOT_PATH}")
 
         browser.close()
 

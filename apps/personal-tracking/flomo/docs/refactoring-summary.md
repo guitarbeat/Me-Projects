@@ -77,7 +77,7 @@
 - `src/components/CalendarGrid.tsx` - Grid component
 - `REFACTORING_PLAN.md` - Refactoring strategy
 - `CHANGELOG.md` - Version history
-- `REFACTORING_SUMMARY.md` - This file
+- `docs/refactoring-summary.md` - This file
 
 ### Edge Functions
 

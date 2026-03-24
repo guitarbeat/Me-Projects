@@ -19,7 +19,7 @@ export default tseslint.config(
       '**/*.spec.tsx',
       '**/*.spec.ts',
       'supabase/**/*',
-      'test_supabase.ts',
+      'verification/test_supabase.ts',
     ],
   },
   {

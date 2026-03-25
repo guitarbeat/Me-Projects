@@ -29,6 +29,9 @@
   --app-text: hsl(220, 39%, 11%);
   --app-text-secondary: hsl(220, 9%, 46%);
   --app-warning: hsl(0, 73%, 67%);
+  --app-panel: hsla(0, 0%, 100%, 0.74);
+  --app-panel-soft: hsla(0, 0%, 100%, 0.52);
+  --app-panel-border: hsla(222, 36%, 18%, 0.08);
 }
 
 .dark {
@@ -58,6 +61,9 @@
   --app-text: hsl(0, 0%, 98%);
   --app-text-secondary: hsl(240, 5%, 64.9%);
   --app-warning: hsl(0, 62.8%, 30.6%);
+  --app-panel: hsla(222, 28%, 12%, 0.82);
+  --app-panel-soft: hsla(222, 26%, 18%, 0.72);
+  --app-panel-border: hsla(0, 0%, 100%, 0.08);
 }
 
 @layer base {
@@ -68,6 +74,11 @@
   body {
     @apply font-sans antialiased;
     background-color: var(--app-background);
+    background-image:
+      radial-gradient(circle at top left, rgba(59, 130, 246, 0.08), transparent 36%),
+      radial-gradient(circle at top right, rgba(16, 185, 129, 0.08), transparent 28%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.3), transparent);
+    background-attachment: fixed;
     color: var(--app-text);
     font-family:
       'Inter',
@@ -76,6 +87,36 @@
       BlinkMacSystemFont,
       system-ui,
       sans-serif;
+    min-height: 100vh;
+  }
+
+  #root {
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .app-shell-panel {
+    @apply rounded-[28px] border backdrop-blur-xl;
+    background-color: var(--app-panel);
+    border-color: var(--app-panel-border);
+    box-shadow: 0 32px 72px -48px rgba(15, 23, 42, 0.4);
+  }
+
+  .app-shell-panel-soft {
+    @apply rounded-[24px] border;
+    background-color: var(--app-panel-soft);
+    border-color: var(--app-panel-border);
+  }
+
+  .app-kicker {
+    @apply text-xs font-semibold uppercase tracking-[0.22em];
+    color: var(--app-text-secondary);
+  }
+
+  .app-stat-label {
+    @apply text-xs font-medium uppercase tracking-[0.16em];
+    color: var(--app-text-secondary);
   }
 }
 

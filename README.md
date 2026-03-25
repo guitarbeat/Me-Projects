@@ -6,33 +6,63 @@ There is no root-level workspace setup. Install, build, and run commands from th
 
 ## Apps
 
-### creative-web
+### builders
+
+#### calendar-generators
 
 | Project | Path | What it is | Primary stack | Start here |
 | --- | --- | --- | --- | --- |
-| lenticular-lab | `apps/creative-web/lenticular-lab/` | Lenticular-style interactive visual experiment. | React, TypeScript, Vite | [`package.json`](apps/creative-web/lenticular-lab/package.json), `npm run dev` |
-| nini.earth | `apps/creative-web/nini.earth/` | Retro-futuristic tribute website with custom media assets. | Static web app, Gulp, Sass | [`README.md`](apps/creative-web/nini.earth/README.md), `npm run dev` |
+| Year-Grid-Generator | `apps/builders/calendar-generators/Year-Grid-Generator/` | Customizable year-long contribution-style grid generator. | React, TypeScript, Vite | [`README.md`](apps/builders/calendar-generators/Year-Grid-Generator/README.md), `npm run dev` |
 
-### personal-tracking
-
-| Project | Path | What it is | Primary stack | Start here |
-| --- | --- | --- | --- | --- |
-| brain-bloom-journal | `apps/personal-tracking/brain-bloom-journal/` | Emotion tracking and wellness journal app ("Tampana"). | React, TypeScript, Vite, Jest | [`README.md`](apps/personal-tracking/brain-bloom-journal/README.md), `npm run dev` |
-| flomo | `apps/personal-tracking/flomo/` | Privacy-focused period tracking calendar. | React, TypeScript, Vite, Supabase | [`README.md`](apps/personal-tracking/flomo/README.md), `npm run dev` |
-
-### productivity
+#### document-imaging
 
 | Project | Path | What it is | Primary stack | Start here |
 | --- | --- | --- | --- | --- |
-| SwipeInbox | `apps/productivity/SwipeInbox/` | Swipe-based email management interface. | React, TypeScript, Vite, Express | [`README.md`](apps/productivity/SwipeInbox/README.md), `npm run dev` |
-| waterfall-flow-control | `apps/productivity/waterfall-flow-control/` | Financial dashboard with cash-flow visualizations. | React, TypeScript, Vite, Supabase | [`README.md`](apps/productivity/waterfall-flow-control/README.md), `npm run dev` |
+| scanforge | `apps/builders/document-imaging/scanforge/` | AI-assisted scanned document editor that preserves the original look. | React, TypeScript, Vite, Gemini | [`README.md`](apps/builders/document-imaging/scanforge/README.md), `npm run dev` |
 
-### utility-apps
+### communication-and-reflection
+
+#### inbox-tools
 
 | Project | Path | What it is | Primary stack | Start here |
 | --- | --- | --- | --- | --- |
-| scanforge | `apps/utility-apps/scanforge/` | AI-assisted scanned document editor that preserves the original look. | React, TypeScript, Vite, Gemini | [`README.md`](apps/utility-apps/scanforge/README.md), `npm run dev` |
-| Year-Grid-Generator | `apps/utility-apps/Year-Grid-Generator/` | Customizable year-long contribution-style grid generator. | React, TypeScript, Vite | [`README.md`](apps/utility-apps/Year-Grid-Generator/README.md), `npm run dev` |
+| SwipeInbox | `apps/communication-and-reflection/inbox-tools/SwipeInbox/` | Unified inbox-and-reflection workspace that now hosts the Brain Bloom journal experience inside the SwipeInbox shell. | React, TypeScript, Vite, Express | [`README.md`](apps/communication-and-reflection/inbox-tools/SwipeInbox/README.md), `npm run dev` |
+
+#### wellness-journals
+
+| Project | Path | What it is | Primary stack | Start here |
+| --- | --- | --- | --- | --- |
+| brain-bloom-journal | `apps/communication-and-reflection/wellness-journals/brain-bloom-journal/` | Legacy standalone Brain Bloom source retained while the journal feature is hosted in SwipeInbox. | React, TypeScript, Vite, Jest | [`README.md`](apps/communication-and-reflection/wellness-journals/brain-bloom-journal/README.md), `npm run dev` |
+
+### creative
+
+#### tribute-sites
+
+| Project | Path | What it is | Primary stack | Start here |
+| --- | --- | --- | --- | --- |
+| nini.earth | `apps/creative/tribute-sites/nini.earth/` | Retro-futuristic tribute website with custom media assets. | Static web app, Gulp, Sass | [`README.md`](apps/creative/tribute-sites/nini.earth/README.md), `npm run dev` |
+
+#### visual-experiments
+
+| Project | Path | What it is | Primary stack | Start here |
+| --- | --- | --- | --- | --- |
+| lenticular-lab | `apps/creative/visual-experiments/lenticular-lab/` | Lenticular-style interactive visual experiment. | React, TypeScript, Vite | [`package.json`](apps/creative/visual-experiments/lenticular-lab/package.json), `npm run dev` |
+
+### personal
+
+#### health-trackers
+
+| Project | Path | What it is | Primary stack | Start here |
+| --- | --- | --- | --- | --- |
+| flomo | `apps/personal/health-trackers/flomo/` | Privacy-focused period tracking calendar. | React, TypeScript, Vite, Supabase | [`README.md`](apps/personal/health-trackers/flomo/README.md), `npm run dev` |
+
+### work
+
+#### finance-dashboards
+
+| Project | Path | What it is | Primary stack | Start here |
+| --- | --- | --- | --- | --- |
+| waterfall-flow-control | `apps/work/finance-dashboards/waterfall-flow-control/` | Financial dashboard with cash-flow visualizations. | React, TypeScript, Vite, Supabase | [`README.md`](apps/work/finance-dashboards/waterfall-flow-control/README.md), `npm run dev` |
 
 ## Tools
 

@@ -232,8 +232,8 @@ export default function Settings() {
                 <p className="text-sm font-medium text-[var(--app-text)]">Journal route</p>
               </div>
               <p className="mt-2 text-sm leading-6 text-[var(--app-text-secondary)]">
-                Reflection preferences now persist inside SwipeInbox, including legacy Tampana
-                settings when they exist.
+                Reflection preferences now persist directly inside SwipeInbox with no separate
+                journal codepath to maintain.
               </p>
             </div>
           </div>

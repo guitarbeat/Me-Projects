@@ -1,6 +1,5 @@
 import {
   defaultJournalSettings,
-  isJournalView,
   type JournalEntry,
   type JournalSettings,
   type StoredJournalEntry,
@@ -46,43 +45,6 @@ export function writeJsonStorage<T>(key: string, value: T) {
   }
 }
 
-function readLegacyBoolean(key: string): boolean | undefined {
-  const value = readJsonStorage<boolean | string | null>(key, null);
-
-  if (value === true || value === 'true') {
-    return true;
-  }
-
-  if (value === false || value === 'false') {
-    return false;
-  }
-
-  return undefined;
-}
-
-function readLegacySettings(): Partial<JournalSettings> {
-  const legacySettings = readJsonStorage<Record<string, unknown>>('tampanaSettings', {});
-  const legacyView = readJsonStorage<string | null>('tampanaCurrentView', null);
-
-  const defaultViewCandidate =
-    legacyView ?? (typeof legacySettings.defaultView === 'string' ? legacySettings.defaultView : null);
-
-  return {
-    defaultView:
-      defaultViewCandidate && isJournalView(defaultViewCandidate)
-        ? defaultViewCandidate
-        : undefined,
-    showWeekends: readLegacyBoolean('tampanaShowWeekends'),
-    timeFormat24h: readLegacyBoolean('tampanaTimeFormat24h'),
-    notifications:
-      typeof legacySettings.notifications === 'boolean' ? legacySettings.notifications : undefined,
-    defaultEventDuration:
-      typeof legacySettings.eventDuration === 'number'
-        ? legacySettings.eventDuration
-        : undefined,
-  };
-}
-
 function serializeEntry(entry: JournalEntry): StoredJournalEntry {
   return {
     ...entry,
@@ -111,7 +73,6 @@ export function loadJournalSettings(): JournalSettings {
 
   return {
     ...defaultJournalSettings,
-    ...readLegacySettings(),
     ...storedSettings,
   };
 }

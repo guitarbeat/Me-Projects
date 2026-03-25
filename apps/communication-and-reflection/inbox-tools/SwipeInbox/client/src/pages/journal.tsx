@@ -215,7 +215,7 @@ export default function JournalPage() {
                 <p className="app-kicker">Journal</p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-tight">Reflection planner</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--app-text-secondary)]">
-                  Brain Bloom now lives inside SwipeInbox, so action and reflection can stay in the
+                  Reflection now lives inside SwipeInbox, so action and follow-up can stay in the
                   same daily loop.
                 </p>
               </div>
@@ -412,7 +412,7 @@ export default function JournalPage() {
               <div>
                 <h3 className="text-base font-semibold text-[var(--app-text)]">Working defaults</h3>
                 <p className="text-sm text-[var(--app-text-secondary)]">
-                  Legacy Tampana preferences are picked up here when available.
+                  Journal defaults stay local to the merged SwipeInbox workspace.
                 </p>
               </div>
             </div>

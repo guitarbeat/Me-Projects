@@ -32,32 +32,27 @@ function getEnvConfig(): Partial<JournalN8nConfig> {
 }
 
 export function loadJournalN8nConfig(): JournalN8nConfig {
-  const legacyConfig = readJsonStorage<Partial<JournalN8nConfig>>('tampanaN8N', {});
   const storedConfig = readJsonStorage<Partial<JournalN8nConfig>>(journalStorageKeys.n8n, {});
   const envConfig = getEnvConfig();
 
   return {
-    enabled: Boolean(storedConfig.enabled ?? legacyConfig.enabled ?? false),
-    baseUrl: storedConfig.baseUrl || legacyConfig.baseUrl || envConfig.baseUrl || '',
+    enabled: Boolean(storedConfig.enabled ?? false),
+    baseUrl: storedConfig.baseUrl || envConfig.baseUrl || '',
     exportPath:
-      storedConfig.exportPath || legacyConfig.exportPath || envConfig.exportPath || '/webhook/tampana/export',
+      storedConfig.exportPath ||
+      envConfig.exportPath ||
+      '/webhook/swipeinbox/journal/export',
     summaryPath:
       storedConfig.summaryPath ||
-      legacyConfig.summaryPath ||
       envConfig.summaryPath ||
-      '/webhook/tampana/summary',
-    authHeader: storedConfig.authHeader || legacyConfig.authHeader || envConfig.authHeader,
-    authToken: storedConfig.authToken || legacyConfig.authToken || envConfig.authToken,
+      '/webhook/swipeinbox/journal/summary',
+    authHeader: storedConfig.authHeader || envConfig.authHeader,
+    authToken: storedConfig.authToken || envConfig.authToken,
   };
 }
 
 function readQueue(): QueuedRequest[] {
-  const storedQueue = readJsonStorage<QueuedRequest[]>(journalStorageKeys.n8nQueue, []);
-  if (storedQueue.length > 0) {
-    return storedQueue;
-  }
-
-  return readJsonStorage<QueuedRequest[]>('tampanaN8NQueue', []);
+  return readJsonStorage<QueuedRequest[]>(journalStorageKeys.n8nQueue, []);
 }
 
 function writeQueue(queue: QueuedRequest[]) {

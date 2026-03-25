@@ -49,7 +49,7 @@ const sectionMeta: Record<string, AppShellSection> = {
     description:
       'Capture energy, recovery, and follow-up blocks in the same calm workspace that handles the inbox.',
     highlights: [
-      { label: 'Source', value: 'Brain Bloom feature set' },
+      { label: 'Source', value: 'Integrated journal tools' },
       { label: 'Exports', value: 'JSON, CSV, summaries' },
       { label: 'Storage', value: 'Host-local persistence' },
     ],

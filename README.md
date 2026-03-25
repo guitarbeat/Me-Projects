@@ -26,13 +26,7 @@ There is no root-level workspace setup. Install, build, and run commands from th
 
 | Project | Path | What it is | Primary stack | Start here |
 | --- | --- | --- | --- | --- |
-| SwipeInbox | `apps/communication-and-reflection/inbox-tools/SwipeInbox/` | Unified inbox-and-reflection workspace that now hosts the Brain Bloom journal experience inside the SwipeInbox shell. | React, TypeScript, Vite, Express | [`README.md`](apps/communication-and-reflection/inbox-tools/SwipeInbox/README.md), `npm run dev` |
-
-#### wellness-journals
-
-| Project | Path | What it is | Primary stack | Start here |
-| --- | --- | --- | --- | --- |
-| brain-bloom-journal | `apps/communication-and-reflection/wellness-journals/brain-bloom-journal/` | Legacy standalone Brain Bloom source retained while the journal feature is hosted in SwipeInbox. | React, TypeScript, Vite, Jest | [`README.md`](apps/communication-and-reflection/wellness-journals/brain-bloom-journal/README.md), `npm run dev` |
+| SwipeInbox | `apps/communication-and-reflection/inbox-tools/SwipeInbox/` | Unified inbox-and-reflection workspace with inbox triage, journal planning, and export flows in one host app. | React, TypeScript, Vite, Express | [`README.md`](apps/communication-and-reflection/inbox-tools/SwipeInbox/README.md), `npm run dev` |
 
 ### creative
 

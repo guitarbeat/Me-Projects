@@ -164,6 +164,51 @@ export const MoodSelector = () => {
         return () => { if (el) el.removeEventListener('wheel', handleWheel); };
     }, [setMood, mood]);
 
+    // Keyboard Handler
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        const step = 0.1;
+        let v = mood.valence;
+        let a = mood.arousal;
+        let t = mood.tension;
+        let changed = false;
+
+        if (e.shiftKey) {
+            // Adjust Tension
+            if (e.key === 'ArrowUp') { t = Math.min(1, t + step); changed = true; }
+            if (e.key === 'ArrowDown') { t = Math.max(0, t - step); changed = true; }
+        } else {
+            // Adjust Valence/Arousal
+            if (e.key === 'ArrowUp') { a = Math.min(1, a + step); changed = true; }
+            if (e.key === 'ArrowDown') { a = Math.max(-1, a - step); changed = true; }
+            if (e.key === 'ArrowRight') { v = Math.min(1, v + step); changed = true; }
+            if (e.key === 'ArrowLeft') { v = Math.max(-1, v - step); changed = true; }
+        }
+
+        if (changed) {
+            e.preventDefault();
+            // Clamp values
+            v = Math.max(-1, Math.min(1, v));
+            a = Math.max(-1, Math.min(1, a));
+            t = Math.max(0, Math.min(1, t));
+            setMood(v, a, t);
+        }
+    };
+
+    // Find closest zone for accessibility label
+    const currentZone = useMemo(() => {
+        let minDist = Infinity;
+        let match = EMOTIONAL_ZONES[0];
+
+        for (const zone of EMOTIONAL_ZONES) {
+            const dist = Math.hypot(mood.valence - zone.v, mood.arousal - zone.a);
+            if (dist < minDist) {
+                minDist = dist;
+                match = zone;
+            }
+        }
+        return match;
+    }, [mood.valence, mood.arousal]);
+
     // Pointer Handlers
     const handlePointerDown = (e: React.PointerEvent) => {
         if ((e.target as HTMLElement).closest('.chord-node')) return;
@@ -215,7 +260,10 @@ export const MoodSelector = () => {
                     className="absolute inset-0 cursor-crosshair touch-none outline-none z-0"
                     tabIndex={0}
                     role="slider"
-                    aria-label="Mood Selector"
+                    aria-label="Mood Selector. Use arrow keys to adjust valence and arousal. Shift+Arrow keys for tension."
+                    aria-valuetext={`${currentZone.label} (${currentZone.desc}). Valence: ${mood.valence.toFixed(1)}, Arousal: ${mood.arousal.toFixed(1)}, Tension: ${(mood.tension * 100).toFixed(0)}%`}
+                    aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Shift+ArrowUp Shift+ArrowDown"
+                    onKeyDown={handleKeyDown}
                     onPointerDown={handlePointerDown}
                     onPointerMove={handlePointerMove}
                     onPointerUp={handlePointerUp}

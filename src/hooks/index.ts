@@ -2,8 +2,9 @@
 import { useEffect, useMemo } from 'react';
 import { generateChordsForScale, getTensionChords, getMusicalCharacteristics } from '../lib/theory';
 import { SCALE_DEFS } from '../lib/constants';
+import { isValidBpm, isValidInstrument, isValidKey, isValidScale } from '../lib/validation';
 import { useStore } from '../store';
-import { Chord, ScaleType, InstrumentType } from '../types';
+import { Chord, InstrumentType, ScaleType } from '../types';
 
 // --- URL SYNC HOOK ---
 export const useUrlSync = () => {
@@ -25,11 +26,36 @@ export const useUrlSync = () => {
         // Batch updates would be ideal, but individual setters work for now
         // Get setters directly from store to avoid dependency issues
         const state = useStore.getState();
-        if (params.has('key')) state.setKey(params.get('key') as string);
-        if (params.has('scale')) state.setScale(params.get('scale') as ScaleType);
-        if (params.has('bpm')) state.setBpm(parseInt(params.get('bpm')!));
-        if (params.has('inst')) state.setInstrument(params.get('inst') as InstrumentType);
-        if (params.has('view')) state.setView(params.get('view')!);
+
+        // 🛡️ Sentinel: Validate URL params to prevent invalid state/crashes
+        const key = params.get('key');
+        if (key && isValidKey(key)) {
+            state.setKey(key);
+        }
+
+        const scale = params.get('scale');
+        if (scale && isValidScale(scale)) {
+            state.setScale(scale);
+        }
+
+        const bpm = params.get('bpm');
+        if (bpm) {
+            const parsedBpm = parseInt(bpm, 10);
+            if (isValidBpm(parsedBpm)) {
+                state.setBpm(parsedBpm);
+            }
+        }
+
+        const inst = params.get('inst');
+        if (inst && isValidInstrument(inst)) {
+            state.setInstrument(inst);
+        }
+
+        const view = params.get('view');
+        // Basic length check for view to prevent DoS via massive strings
+        if (view && view.length < 50) {
+            state.setView(view);
+        }
     }, []); // Only run once on mount
 
     // Sync state to URL

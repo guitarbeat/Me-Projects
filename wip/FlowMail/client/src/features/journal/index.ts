@@ -18,9 +18,15 @@ export const journalFeature = {
     { path: '/journal', label: 'Journal', icon: 'NotebookPen', order: 3 },
   ],
   storage: {
-    type: 'localStorage',
+    type: 'localStorage' as const,
     key: 'flowmail-journal-events',
   },
-  exports: ['json', 'csv', 'markdown'],
+  capabilities: [
+    'emotion-tracking',
+    'export-json',
+    'export-csv',
+    'export-markdown',
+    'n8n-integration',
+  ],
   dependencies: ['date-fns'],
 };

@@ -17,7 +17,6 @@ interface ColorInputProps {
 }
 
 const ColorInput: React.FC<ColorInputProps> = ({ label, value, onChange }) => {
-const ColorInput: React.FC<{ label: string, value: string, onChange: (val: string) => void }> = ({ label, value, onChange }) => {
   const id = useId();
   const [text, setText] = useState(value);
   const [isFocused, setIsFocused] = useState(false);

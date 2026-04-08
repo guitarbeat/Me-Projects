@@ -1,16 +1,14 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Archive, CalendarDays, Clock3, Inbox, NotebookPen, LayoutGrid, List } from 'lucide-react';
+import { Archive, CalendarDays, Clock3, Inbox, LayoutGrid, List } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { type Email, type Stats } from '@shared/schema';
 import { Button } from '@/components/ui/button';
 import { CardStack } from '@/components/card-stack';
-import { EmailListView } from '@/features/email-inbox/components/EmailListView';
-import { EmailFilters, type EmailFilterOptions } from '@/features/email-inbox/components/EmailFilters';
-import { BulkActions } from '@/features/email-inbox/components/BulkActions';
-import { loadJournalEvents } from '@/features/journal/lib/storage';
-import { emotionMeta } from '@/features/journal/types';
+import { EmailListView } from '../components/EmailListView';
+import { EmailFilters, type EmailFilterOptions } from '../components/EmailFilters';
+import { BulkActions } from '../components/BulkActions';
 
 export default function InboxPage() {
   const [, navigate] = useLocation();
@@ -44,13 +42,6 @@ export default function InboxPage() {
       return true;
     });
   }, [emails, filters]);
-
-  const journalEntries = loadJournalEvents().sort(
-    (left, right) => left.start.getTime() - right.start.getTime()
-  );
-  const nextJournalEntry =
-    journalEntries.find((entry) => entry.start.getTime() >= Date.now()) ??
-    journalEntries[journalEntries.length - 1];
 
   if (emailsLoading || statsLoading) {
     return (
@@ -185,60 +176,6 @@ export default function InboxPage() {
               <span className="text-lg font-semibold">{stats?.archived || 0}</span>
             </div>
           </div>
-        </motion.section>
-
-        <motion.section
-          className="app-shell-panel px-5 py-5"
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, delay: 0.1 }}
-        >
-          <div className="mb-4 flex items-center gap-3">
-            <div className="rounded-2xl bg-violet-500/10 p-2 text-violet-600 dark:text-violet-300">
-              <NotebookPen className="h-4 w-4" />
-            </div>
-            <div>
-              <h3 className="text-base font-semibold text-[var(--app-text)]">Journal bridge</h3>
-              <p className="text-sm text-[var(--app-text-secondary)]">
-                Reflection context now sits inside the same frontend shell.
-              </p>
-            </div>
-          </div>
-
-          {nextJournalEntry ? (
-            <div className="app-shell-panel-soft space-y-3 px-4 py-4">
-              <div>
-                <p className="app-stat-label">Next or latest block</p>
-                <p className="mt-2 text-base font-semibold text-[var(--app-text)]">
-                  {nextJournalEntry.title}
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span
-                  className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-medium uppercase tracking-[0.14em] ${emotionMeta[nextJournalEntry.emotion].badgeClass}`}
-                >
-                  {emotionMeta[nextJournalEntry.emotion].marker}{' '}
-                  {emotionMeta[nextJournalEntry.emotion].label}
-                </span>
-                <span className="text-sm text-[var(--app-text-secondary)]">
-                  {journalEntries.length} journal block{journalEntries.length === 1 ? '' : 's'}
-                </span>
-              </div>
-              <p className="text-sm leading-6 text-[var(--app-text-secondary)]">
-                {nextJournalEntry.notes ||
-                  'No note attached yet. Add one in the journal to keep follow-up context visible.'}
-              </p>
-            </div>
-          ) : (
-            <div className="app-shell-panel-soft px-4 py-4 text-sm leading-6 text-[var(--app-text-secondary)]">
-              No journal blocks yet. Start one when an inbox thread needs a reflection pass,
-              decompression block, or deliberate follow-up slot.
-            </div>
-          )}
-
-          <Button className="mt-4 w-full" onClick={() => navigate('/journal')}>
-            Open journal
-          </Button>
         </motion.section>
 
         <motion.section

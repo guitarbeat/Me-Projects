@@ -6,10 +6,10 @@ import { Toaster } from './components/ui/toaster';
 import { TooltipProvider } from './components/ui/tooltip';
 import { AppShell } from './components/app-shell';
 import { InboxPage, LaterPage } from './features/email-inbox';
-import Journal from './pages/journal';
+import { JournalPage } from './features/journal';
 import Settings from './pages/settings';
 import NotFound from './pages/not-found';
-import YearGridApp from './features/year-grid/App';
+import { YearGridApp } from './features/year-grid';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,7 +38,7 @@ function App() {
           <AppShell onToggleYearGrid={toggleYearGrid}>
             <Routes>
               <Route path="/settings" element={<Settings />} />
-              <Route path="/journal" element={<Journal />} />
+              <Route path="/journal" element={<JournalPage />} />
               <Route path="/later" element={<LaterPage />} />
               <Route path="/inbox" element={<InboxPage />} />
               <Route path="/" element={<InboxPage />} />

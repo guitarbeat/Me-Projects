@@ -41,11 +41,11 @@ export function loadJournalN8nConfig(): JournalN8nConfig {
     exportPath:
       storedConfig.exportPath ||
       envConfig.exportPath ||
-      '/webhook/swipeinbox/journal/export',
+      '/webhook/flowmail/journal/export',
     summaryPath:
       storedConfig.summaryPath ||
       envConfig.summaryPath ||
-      '/webhook/swipeinbox/journal/summary',
+      '/webhook/flowmail/journal/summary',
     authHeader: storedConfig.authHeader || envConfig.authHeader,
     authToken: storedConfig.authToken || envConfig.authToken,
   };

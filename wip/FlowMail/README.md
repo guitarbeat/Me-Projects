@@ -1,8 +1,8 @@
-# SwipeInbox
+# FlowMail
 
-![CI](https://github.com/your-username/rest-express/actions/workflows/ci.yml/badge.svg)
+![CI](https://github.com/your-username/flowmail/actions/workflows/ci.yml/badge.svg)
 
-SwipeInbox is an email management application featuring a swipe-based interface.
+FlowMail is an email management application featuring a swipe-based interface for inbox triage and integrated journal reflection.
 
 ## Development
 

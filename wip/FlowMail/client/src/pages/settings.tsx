@@ -46,7 +46,7 @@ const providerGuides: Record<
     steps: [
       'Open Yahoo Account Security.',
       'Enable two-step verification first.',
-      'Generate an app password for SwipeInbox.',
+      'Generate an app password for FlowMail.',
       'Use the generated password here instead of your main password.',
     ],
     note: 'Yahoo requires two-step verification before app passwords are available.',
@@ -232,7 +232,7 @@ export default function Settings() {
                 <p className="text-sm font-medium text-[var(--app-text)]">Journal route</p>
               </div>
               <p className="mt-2 text-sm leading-6 text-[var(--app-text-secondary)]">
-                Reflection preferences now persist directly inside SwipeInbox with no separate
+                Reflection preferences now persist directly inside FlowMail with no separate
                 journal codepath to maintain.
               </p>
             </div>

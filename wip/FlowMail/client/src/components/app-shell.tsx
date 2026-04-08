@@ -97,7 +97,7 @@ export function AppShell({ children }: AppShellProps) {
             <div className="space-y-5">
               <div className="flex items-center justify-between gap-4">
                 <div className="space-y-2">
-                  <p className="app-kicker">SwipeInbox workspace</p>
+                  <p className="app-kicker">FlowMail workspace</p>
                   <div>
                     <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                       {meta.title}

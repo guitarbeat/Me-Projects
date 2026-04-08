@@ -1,8 +1,8 @@
-# SwipeEmail - Email Management Application
+# FlowMail - Email Management Application
 
 ## Overview
 
-SwipeEmail is a modern email management application built with React and Express.js that allows users to process emails through an intuitive swipe-based interface. The application features a Tinder-like card stack UI for email triaging, with the ability to swipe left to delete emails and right to save them for later.
+FlowMail is a modern email management application built with React and Express.js that allows users to process emails through an intuitive swipe-based interface. The application features a Tinder-like card stack UI for email triaging, with the ability to swipe left to archive emails and right to save them for later.
 
 ## System Architecture
 
@@ -25,6 +25,15 @@ SwipeEmail is a modern email management application built with React and Express
 - **Database Provider**: Neon serverless PostgreSQL
 - **Session Management**: connect-pg-simple for PostgreSQL session storage
 - **Development**: Hot reload with Vite integration
+
+### Component Structure
+
+The application uses a component-based architecture with:
+
+- **UI Components**: Reusable shadcn/ui components
+- **Feature Components**: Email-specific components (CardStack, EmailCard, etc.)
+- **Layout Components**: Header, stats grid, progress indicators
+- **Hooks**: Custom hooks for swipe gestures and mobile detection
 
 ### Component Structure
 

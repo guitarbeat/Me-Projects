@@ -6,10 +6,10 @@ import {
 } from '@/features/journal/types';
 
 export const journalStorageKeys = {
-  events: 'swipeinbox:journal:events',
-  settings: 'swipeinbox:journal:settings',
-  n8n: 'swipeinbox:journal:n8n',
-  n8nQueue: 'swipeinbox:journal:n8n-queue',
+  events: 'flowmail:journal:events',
+  settings: 'flowmail:journal:settings',
+  n8n: 'flowmail:journal:n8n',
+  n8nQueue: 'flowmail:journal:n8n-queue',
 } as const;
 
 function isBrowser() {

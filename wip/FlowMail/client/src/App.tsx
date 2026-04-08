@@ -5,9 +5,8 @@ import { ThemeProvider } from './contexts/theme-context';
 import { Toaster } from './components/ui/toaster';
 import { TooltipProvider } from './components/ui/tooltip';
 import { AppShell } from './components/app-shell';
-import Home from './pages/home';
+import { InboxPage, LaterPage } from './features/email-inbox';
 import Journal from './pages/journal';
-import Later from './pages/later';
 import Settings from './pages/settings';
 import NotFound from './pages/not-found';
 import YearGridApp from './features/year-grid/App';
@@ -23,6 +22,10 @@ const queryClient = new QueryClient({
 function App() {
   const [view, setView] = useState<'email' | 'year-grid'>('email');
 
+  const toggleYearGrid = () => {
+    setView((prev) => (prev === 'email' ? 'year-grid' : 'email'));
+  };
+
   if (view === 'year-grid') {
     return <YearGridApp />;
   }
@@ -32,13 +35,13 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
-          <AppShell>
+          <AppShell onToggleYearGrid={toggleYearGrid}>
             <Routes>
               <Route path="/settings" element={<Settings />} />
               <Route path="/journal" element={<Journal />} />
-              <Route path="/later" element={<Later />} />
-              <Route path="/inbox" element={<Home />} />
-              <Route path="/" element={<Home />} />
+              <Route path="/later" element={<LaterPage />} />
+              <Route path="/inbox" element={<InboxPage />} />
+              <Route path="/" element={<InboxPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppShell>

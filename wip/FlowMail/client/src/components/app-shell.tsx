@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Inbox, Moon, NotebookPen, Settings2, Sun, Clock } from 'lucide-react';
+import { Inbox, Moon, NotebookPen, Settings2, Sun, Clock, CalendarDays } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/theme-context';
@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 
 interface AppShellProps {
   children: React.ReactNode;
+  onToggleYearGrid?: () => void;
 }
 
 type AppShellSection = {
@@ -97,7 +98,7 @@ function getActivePath(location: string) {
   return '/inbox';
 }
 
-export function AppShell({ children }: AppShellProps) {
+export function AppShell({ children, onToggleYearGrid }: AppShellProps) {
   const { theme, toggleTheme } = useTheme();
   const [location, navigate] = useLocation();
   const activePath = getActivePath(location);
@@ -136,6 +137,19 @@ export function AppShell({ children }: AppShellProps) {
                 >
                   {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                 </Button>
+
+                {onToggleYearGrid && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0 rounded-full border-[var(--app-panel-border)] bg-white/70 dark:bg-white/5"
+                    onClick={onToggleYearGrid}
+                    title="Toggle Year Grid View"
+                  >
+                    <CalendarDays className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
 
               <nav className="flex flex-wrap gap-2">

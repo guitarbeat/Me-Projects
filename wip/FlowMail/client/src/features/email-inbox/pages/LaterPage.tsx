@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { formatTimeAgo } from '@/lib/utils';
 
-export default function Later() {
+export default function LaterPage() {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();

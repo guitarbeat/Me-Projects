@@ -1,0 +1,38 @@
+export interface AppColors {
+  bg: string;
+  text: string;
+  empty: string;
+  fill: string;
+}
+
+export type ActiveLabelFormat = 'date' | 'week' | 'day' | 'month' | 'month-date' | 'full';
+
+export interface AppConfig {
+  date: string;
+  mode: 'horizontal' | 'vertical';
+  granularity: 'day' | 'week' | 'month';
+  itemsPerRow: number;
+  isMondayFirst: boolean;
+  showMonths: boolean;
+  showDays: boolean;
+  showYearLabel: boolean;
+  showActiveLabel: boolean;
+  activeLabelFormat: ActiveLabelFormat;
+  dotSize: number;
+  gap: number;
+  radius: number;
+  fontFamily: string;
+  fontSize: number;
+  colors: AppColors;
+  transparentBg: boolean;
+}
+
+export interface DayData {
+  date?: Date;
+  dayOfWeek?: number;
+  month?: number;
+  weekIndex?: number;
+  filled: boolean;
+  active?: boolean;
+  label: string;
+}

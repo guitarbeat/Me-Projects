@@ -6,13 +6,13 @@ import { useLocation } from 'wouter';
 import { type Email, type Stats } from '@shared/schema';
 import { Button } from '@/components/ui/button';
 import { CardStack } from '@/components/card-stack';
-import { EmailListView } from '@/components/email-list-view';
-import { EmailFilters, type EmailFilterOptions } from '@/components/email-filters';
-import { BulkActions } from '@/components/bulk-actions';
+import { EmailListView } from '@/features/email-inbox/components/EmailListView';
+import { EmailFilters, type EmailFilterOptions } from '@/features/email-inbox/components/EmailFilters';
+import { BulkActions } from '@/features/email-inbox/components/BulkActions';
 import { loadJournalEvents } from '@/features/journal/lib/storage';
 import { emotionMeta } from '@/features/journal/types';
 
-export default function Home() {
+export default function InboxPage() {
   const [, navigate] = useLocation();
   const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
   const [filters, setFilters] = useState<EmailFilterOptions>({});

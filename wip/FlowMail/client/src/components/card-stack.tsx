@@ -80,16 +80,26 @@ export function CardStack({ emails }: CardStackProps) {
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') {
+      // Prevent shortcuts when typing in input fields
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      if (e.key === 'ArrowLeft' || e.key === 'a') {
+        e.preventDefault();
         handleSwipe('left');
-      } else if (e.key === 'ArrowRight') {
+      } else if (e.key === 'ArrowRight' || e.key === 'd') {
+        e.preventDefault();
         handleSwipe('right');
+      } else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        handleUndo();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentIndex, emails]);
+  }, [currentIndex, emails, lastAction]);
 
   if (emails.length === 0) {
     return (

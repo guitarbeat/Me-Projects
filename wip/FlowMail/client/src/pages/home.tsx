@@ -1,15 +1,22 @@
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Archive, CalendarDays, Clock3, Inbox, NotebookPen } from 'lucide-react';
+import { Archive, CalendarDays, Clock3, Inbox, NotebookPen, LayoutGrid, List } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { type Email, type Stats } from '@shared/schema';
 import { Button } from '@/components/ui/button';
 import { CardStack } from '@/components/card-stack';
+import { EmailListView } from '@/components/email-list-view';
+import { EmailFilters, type EmailFilterOptions } from '@/components/email-filters';
+import { BulkActions } from '@/components/bulk-actions';
 import { loadJournalEvents } from '@/features/journal/lib/storage';
 import { emotionMeta } from '@/features/journal/types';
 
 export default function Home() {
   const [, navigate] = useLocation();
+  const [viewMode, setViewMode] = useState<'cards' | 'list'>('cards');
+  const [filters, setFilters] = useState<EmailFilterOptions>({});
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
 
   const { data: emails = [], isLoading: emailsLoading } = useQuery<Email[]>({
     queryKey: ['/api/emails/status/inbox'],
@@ -18,6 +25,25 @@ export default function Home() {
   const { data: stats, isLoading: statsLoading } = useQuery<Stats>({
     queryKey: ['/api/stats'],
   });
+
+  // Filter emails based on active filters
+  const filteredEmails = useMemo(() => {
+    if (!emails.length) return [];
+    
+    return emails.filter((email) => {
+      if (filters.sender && !email.sender.toLowerCase().includes(filters.sender.toLowerCase()) &&
+          !email.senderEmail.toLowerCase().includes(filters.sender.toLowerCase())) {
+        return false;
+      }
+      if (filters.subject && !email.subject.toLowerCase().includes(filters.subject.toLowerCase())) {
+        return false;
+      }
+      if (filters.priority && email.priority.toLowerCase() !== filters.priority.toLowerCase()) {
+        return false;
+      }
+      return true;
+    });
+  }, [emails, filters]);
 
   const journalEntries = loadJournalEvents().sort(
     (left, right) => left.start.getTime() - right.start.getTime()
@@ -50,7 +76,7 @@ export default function Home() {
             <div>
               <p className="app-kicker">Inbox</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight">
-                {emails.length} email{emails.length === 1 ? '' : 's'} ready for triage
+                {filteredEmails.length} email{filteredEmails.length === 1 ? '' : 's'} ready for triage
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--app-text-secondary)]">
                 Swipe through the queue, then keep any emotional or strategic follow-up in the
@@ -71,8 +97,49 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="mx-auto w-full max-w-md">
-          <CardStack emails={emails} />
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <EmailFilters onFilterChange={setFilters} activeFilters={filters} />
+          
+          <div className="flex items-center gap-2 rounded-lg border border-[var(--app-panel-border)] p-1">
+            <Button
+              size="sm"
+              variant={viewMode === 'cards' ? 'default' : 'ghost'}
+              onClick={() => setViewMode('cards')}
+              className="h-8 px-3"
+            >
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              variant={viewMode === 'list' ? 'default' : 'ghost'}
+              onClick={() => setViewMode('list')}
+              className="h-8 px-3"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+
+        {viewMode === 'list' && (
+          <div className="mb-4">
+            <BulkActions
+              emails={filteredEmails}
+              selectedIds={selectedIds}
+              onSelectionChange={setSelectedIds}
+            />
+          </div>
+        )}
+
+        <div className={viewMode === 'cards' ? 'mx-auto w-full max-w-md' : ''}>
+          {viewMode === 'cards' ? (
+            <CardStack emails={filteredEmails} />
+          ) : (
+            <EmailListView
+              emails={filteredEmails}
+              selectedIds={selectedIds}
+              onSelectionChange={setSelectedIds}
+            />
+          )}
         </div>
       </motion.section>
 
@@ -183,13 +250,13 @@ export default function Home() {
           <h3 className="text-base font-semibold text-[var(--app-text)]">Shortcuts</h3>
           <div className="mt-4 space-y-3">
             <div className="app-shell-panel-soft px-4 py-3 text-sm text-[var(--app-text-secondary)]">
-              Swipe left to archive permanently.
+              <strong>Cards:</strong> Swipe left/right or use arrow keys. Press A/D for quick actions.
             </div>
             <div className="app-shell-panel-soft px-4 py-3 text-sm text-[var(--app-text-secondary)]">
-              Swipe right to save for later.
+              <strong>List:</strong> Select multiple emails for bulk actions.
             </div>
             <div className="app-shell-panel-soft px-4 py-3 text-sm text-[var(--app-text-secondary)]">
-              Use the journal route for recovery blocks, notes, and exports.
+              <strong>Undo:</strong> Press Ctrl/Cmd+Z to undo the last action.
             </div>
           </div>
         </motion.section>

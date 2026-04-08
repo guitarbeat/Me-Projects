@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Inbox, Moon, NotebookPen, Settings2, Sun } from 'lucide-react';
+import { Inbox, Moon, NotebookPen, Settings2, Sun, Clock } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/contexts/theme-context';
@@ -22,6 +22,11 @@ const navigationItems = [
     label: 'Inbox',
   },
   {
+    href: '/later',
+    icon: Clock,
+    label: 'Later',
+  },
+  {
     href: '/journal',
     icon: NotebookPen,
     label: 'Journal',
@@ -42,6 +47,16 @@ const sectionMeta: Record<string, AppShellSection> = {
       { label: 'Workspace', value: 'Merged host app' },
       { label: 'Flow', value: 'Swipe, sort, reflect' },
       { label: 'Theme', value: 'Shared shell' },
+    ],
+  },
+  '/later': {
+    title: 'Saved for later',
+    description:
+      'Review emails that need more time or attention. Move them back to inbox or archive when ready.',
+    highlights: [
+      { label: 'Status', value: 'Pending review' },
+      { label: 'Actions', value: 'Restore or archive' },
+      { label: 'Priority', value: 'Focused attention' },
     ],
   },
   '/journal': {
@@ -73,6 +88,10 @@ function getActivePath(location: string) {
 
   if (location.startsWith('/settings')) {
     return '/settings';
+  }
+
+  if (location.startsWith('/later')) {
+    return '/later';
   }
 
   return '/inbox';

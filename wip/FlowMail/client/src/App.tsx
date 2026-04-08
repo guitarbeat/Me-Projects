@@ -7,6 +7,7 @@ import { TooltipProvider } from './components/ui/tooltip';
 import { AppShell } from './components/app-shell';
 import Home from './pages/home';
 import Journal from './pages/journal';
+import Later from './pages/later';
 import Settings from './pages/settings';
 import NotFound from './pages/not-found';
 import YearGridApp from './features/year-grid/App';
@@ -35,6 +36,7 @@ function App() {
             <Routes>
               <Route path="/settings" element={<Settings />} />
               <Route path="/journal" element={<Journal />} />
+              <Route path="/later" element={<Later />} />
               <Route path="/inbox" element={<Home />} />
               <Route path="/" element={<Home />} />
               <Route path="*" element={<NotFound />} />

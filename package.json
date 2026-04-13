@@ -1,0 +1,26 @@
+{
+  "name": "me-projects",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "finished-applications/flomo",
+    "finished-applications/lenticular-lab",
+    "finished-applications/nini.earth",
+    "finished-applications/scanforge",
+    "finished-applications/waterfall-flow-control",
+    "wip/FlowMail"
+  ],
+  "scripts": {
+    "dev:flowmail": "npm run dev --workspace=wip/FlowMail",
+    "dev:flomo": "npm run dev --workspace=finished-applications/flomo",
+    "dev:lenticular": "npm run dev --workspace=finished-applications/lenticular-lab",
+    "dev:nini": "npm run dev --workspace=finished-applications/nini.earth",
+    "dev:scanforge": "npm run dev --workspace=finished-applications/scanforge",
+    "dev:waterfall": "npm run dev --workspace=finished-applications/waterfall-flow-control",
+    "install:all": "npm install"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

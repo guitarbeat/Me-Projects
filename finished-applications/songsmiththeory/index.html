@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#000000">
+  <meta name="description"
+    content="A professional musical composition tool for exploring harmony, scales, and chord progressions.">
+  <title>Harmonic Studio</title>
+
+  <!-- PWA Manifest & Icons -->
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Harmonic">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: ['class', '[data-theme="dark"]'],
+      theme: {
+        extend: {
+          colors: {
+            border: "var(--border)",
+            input: "var(--input)",
+            ring: "var(--ring)",
+            background: "var(--bg-main)",
+            foreground: "var(--text-main)",
+          }
+        }
+      }
+    }
+  </script>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      /* 
+         * --- COLOR PALETTE (Dark Theme - True Black) ---
+         * High contrast, OLED friendly, Pure Black.
+         */
+      --bg-main: #000000;
+      --bg-surface: #000000;
+      --bg-panel: #27272a;
+      /* Zinc 800 for visible panels */
+      --bg-element: #3f3f46;
+      /* Zinc 700 for elements */
+
+      --text-main: #ffffff;
+      --text-muted: #a1a1aa;
+      --text-dim: #71717a;
+
+      --border: #000000;
+      --border-hover: #3f3f46;
+      --border-soft: #27272a;
+
+      --accent: #ffffff;
+
+      /* Semantic Colors */
+      --color-success: #34d399;
+      --color-warning: #fbbf24;
+      --color-error: #f87171;
+      --color-info: #38bdf8;
+
+      --bg-soft: rgba(255, 255, 255, 0.1);
+      --bg-soft-hover: rgba(255, 255, 255, 0.15);
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      transition: none;
+    }
+
+    /* Minimalist Panel Utility */
+    .glass-panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border);
+    }
+
+    /* Hide number input spinners */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      appearance: none;
+      margin: 0;
+    }
+
+    input[type=number] {
+      -moz-appearance: textfield;
+    }
+
+    /* Utilities */
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: var(--border-hover);
+      border-radius: 10px;
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Input Zoom Fix for iOS */
+    @media screen and (max-width: 768px) {
+
+      input,
+      select,
+      textarea {
+        font-size: 16px !important;
+      }
+    }
+
+    /* Interaction classes */
+    .interact-base {
+      transition-property: transform, opacity, background-color, border-color, box-shadow, color, filter;
+      transition-duration: 300ms;
+      transition-timing-function: var(--ease-out-expo);
+      will-change: transform, opacity;
+      backface-visibility: hidden;
+      transform: translateZ(0);
+      touch-action: manipulation;
+      /* Improves touch response */
+    }
+
+    @media (hover: hover) {
+      .interact-lift:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 24px -10px rgba(0, 0, 0, 0.5);
+        border-color: var(--border-hover);
+        z-index: 10;
+      }
+
+      .interact-lift-sm:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px -4px rgba(0, 0, 0, 0.3);
+        border-color: var(--border-hover);
+        z-index: 5;
+      }
+
+      [data-theme="dark"] .interact-lift-sm:hover {
+        filter: brightness(1.1);
+      }
+
+      .interact-push:hover {
+        transform: translateY(-1px);
+      }
+
+      [data-theme="dark"] .interact-push:hover {
+        filter: brightness(1.1);
+      }
+
+      .interact-scale:hover {
+        transform: scale(1.1);
+        color: var(--text-main);
+      }
+    }
+
+    /* Active states (work on touch) */
+    .interact-lift:active {
+      transform: translateY(0) scale(0.99);
+      box-shadow: 0 2px 8px -4px rgba(0, 0, 0, 0.5);
+      transition-duration: 150ms;
+    }
+
+    .interact-lift-sm:active {
+      transform: translateY(0) scale(0.98);
+      box-shadow: none;
+      transition-duration: 100ms;
+    }
+
+    .interact-push:active {
+      transform: translateY(1px) scale(0.97);
+      transition-duration: 100ms;
+    }
+
+    [data-theme="dark"] .interact-push:active {
+      filter: brightness(0.95);
+    }
+
+    .interact-scale:active {
+      transform: scale(0.9);
+      transition-duration: 100ms;
+    }
+
+    .interact-input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 1px var(--accent);
+      transform: translateY(-1px);
+    }
+  </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client?deps=react@18.2.0",
+    "react/jsx-runtime": "https://esm.sh/react@18.2.0/jsx-runtime",
+    "lucide-react": "https://esm.sh/lucide-react@0.292.0?deps=react@18.2.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.31.0",
+    "tone": "https://esm.sh/tone@14.7.77",
+    "@tonaljs/tonal": "https://esm.sh/@tonaljs/tonal@4.10.0",
+    "react-resizable-panels": "https://esm.sh/react-resizable-panels@2.0.19?deps=react@18.2.0,react-dom@18.2.0",
+    "zustand": "https://esm.sh/zustand@4.5.2?deps=react@18.2.0",
+    "vite": "https://aistudiocdn.com/vite@^7.2.6",
+    "@vitejs/plugin-react": "https://aistudiocdn.com/@vitejs/plugin-react@^5.1.1",
+    "rollup-plugin-visualizer": "https://aistudiocdn.com/rollup-plugin-visualizer@^6.0.5",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
+    "react/": "https://aistudiocdn.com/react@^19.2.1/"
+  }
+}
+</script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/index.tsx"></script>
+</body>
+
+</html>

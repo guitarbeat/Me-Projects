@@ -4,6 +4,7 @@ import { DayData, ActiveLabelFormat } from '../types';
 interface DayCellProps {
   filled: boolean;
   active?: boolean;
+  selected?: boolean;
   label: string;
   // Config props needed for content rendering
   index: number;
@@ -14,6 +15,7 @@ interface DayCellProps {
   dotSize: number;
   // Data item
   item: DayData;
+  onClick?: () => void;
 }
 
 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -22,6 +24,7 @@ const dayNamesShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const DayCell: React.FC<DayCellProps> = React.memo(({
   filled,
   active,
+  selected,
   label,
   index,
   granularity,
@@ -29,27 +32,44 @@ const DayCell: React.FC<DayCellProps> = React.memo(({
   activeLabelFormat,
   showMonths,
   dotSize,
-  item
+  item,
+  onClick
 }) => {
+  const getBackgroundColor = () => {
+    if (active) return 'var(--color-fill)';
+    if (selected) return 'var(--color-fill)';
+    
+    const intensity = item.intensity || 0;
+    if (intensity > 0) {
+      // Use fill color with varying opacities for intensity
+      const opacities = [0, 0.3, 0.5, 0.7, 1];
+      const opacity = opacities[intensity];
+      return `var(--intensity-${intensity}, rgba(234, 88, 12, ${opacity}))`; // Fallback to hardcoded if CSS var not provided
+    }
+    
+    return filled ? 'rgba(234, 88, 12, 0.1)' : 'var(--color-empty)';
+  };
+
   const style: React.CSSProperties = {
     width: 'var(--dot-size)',
     height: 'var(--dot-size)',
-    backgroundColor: filled ? 'var(--color-fill)' : 'var(--color-empty)',
+    backgroundColor: getBackgroundColor(),
     borderRadius: 'var(--radius)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    // Using max() and calc() for responsive font size based on dot size
     fontSize: 'max(8px, calc(var(--dot-size) * 0.4))',
-    color: filled ? 'var(--color-bg)' : 'var(--color-text)',
+    color: (item.intensity && item.intensity >= 3) || active ? 'white' : 'var(--color-text)',
     fontWeight: 'bold',
     userSelect: 'none',
-    zIndex: active ? 10 : 2,
+    zIndex: active || selected ? 10 : 2,
     position: 'relative',
-    boxShadow: 'none',
+    boxShadow: active || selected ? '0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-fill)' : 'none',
     lineHeight: 1,
     textAlign: 'center',
-    whiteSpace: 'pre-line'
+    whiteSpace: 'pre-line',
+    transition: 'background-color 0.2s ease, transform 0.1s ease, border-radius 0.3s ease',
+    cursor: granularity === 'day' ? 'pointer' : 'default',
   };
 
   // Helper to determine content
@@ -98,19 +118,17 @@ const DayCell: React.FC<DayCellProps> = React.memo(({
     <div
       title={label}
       style={style}
+      onClick={onClick}
     >
       <span className="pointer-events-none w-full">{renderContent()}</span>
     </div>
   );
 }, (prevProps, nextProps) => {
   // Custom comparison function for React.memo
-  // We only re-render if props that affect rendering change.
-  // Note: CSS variables handle styling (colors, radius, dotSize for dimensions),
-  // but dotSize is also used for logic inside renderContent, so we must check it.
-
   return (
     prevProps.filled === nextProps.filled &&
     prevProps.active === nextProps.active &&
+    prevProps.selected === nextProps.selected &&
     prevProps.label === nextProps.label &&
     prevProps.index === nextProps.index &&
     prevProps.granularity === nextProps.granularity &&
@@ -118,8 +136,8 @@ const DayCell: React.FC<DayCellProps> = React.memo(({
     prevProps.activeLabelFormat === nextProps.activeLabelFormat &&
     prevProps.showMonths === nextProps.showMonths &&
     prevProps.dotSize === nextProps.dotSize &&
-    // Shallow compare item object - assumes YearGrid memoizes dataItems correctly
-    prevProps.item === nextProps.item
+    prevProps.item === nextProps.item &&
+    prevProps.onClick === nextProps.onClick
   );
 });
 

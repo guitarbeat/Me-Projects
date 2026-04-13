@@ -18,7 +18,10 @@
     "db:push": "drizzle-kit push",
     "db:seed": "tsx server/seed.ts",
     "verify-architecture": "tsx scripts/verify-architecture.ts",
-    "create-feature": "tsx scripts/create-feature.ts"
+    "create-feature": "tsx scripts/create-feature.ts",
+    "validate": "npm run lint && npm run format:check && npm run check && npm run test",
+    "ci": "npm run lint && npm run format:check && npm run check && npm run build && npm run test",
+    "test:coverage": "vitest --coverage --run"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",

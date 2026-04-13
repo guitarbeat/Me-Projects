@@ -111,9 +111,36 @@ export default function JournalPage() {
   const [settings, setSettings] = useState(() => loadJournalSettings());
   const [view, setView] = useState<JournalView>(() => loadJournalSettings().defaultView);
   const [selectedDate, setSelectedDate] = useState(() => new Date());
-  const [emotionFilter, setEmotionFilter] = useState<JournalEmotion | 'all'>('all');
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<JournalEntry | null>(null);
+  
+  // URL date deep-linking
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const dateParam = params.get('date');
+    const noteParam = params.get('note');
+
+    if (dateParam) {
+      const parsedDate = new Date(dateParam);
+      if (!isNaN(parsedDate.getTime())) {
+        setSelectedDate(parsedDate);
+        setView('day'); // Focus on the day view if a date is provided
+      }
+    }
+
+    if (noteParam) {
+      // Create a temporary note entry or pre-fill the editing dialog
+      // For this workflow, we'll open the dialog with the note
+      const placeholderEntry: JournalEntry = {
+        id: 'new-export',
+        title: `Reflection: ${new Date().toLocaleDateString()}`,
+        start: new Date(selectedDate),
+        end: new Date(new Date(selectedDate).getTime() + 60 * 60 * 1000),
+        notes: decodeURIComponent(noteParam),
+        allDay: true,
+      };
+      setEditingEntry(placeholderEntry);
+      setDialogOpen(true);
+    }
+  }, []);
 
   useEffect(() => {
     saveJournalEvents(entries);

@@ -6,6 +6,7 @@ export interface AppColors {
 }
 
 export type ActiveLabelFormat = 'date' | 'week' | 'day' | 'month' | 'month-date' | 'full';
+export type DotShape = 'square' | 'rounded' | 'circle';
 
 export interface AppConfig {
   date: string;
@@ -21,6 +22,8 @@ export interface AppConfig {
   dotSize: number;
   gap: number;
   radius: number;
+  dotShape: DotShape;
+  maxIntensityThreshold: number;
   fontFamily: string;
   fontSize: number;
   colors: AppColors;
@@ -34,5 +37,9 @@ export interface DayData {
   weekIndex?: number;
   filled: boolean;
   active?: boolean;
+  intensity?: number;
+  count?: number;
   label: string;
 }
+
+export type { Activity } from '../../shared/schema';

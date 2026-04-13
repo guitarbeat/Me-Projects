@@ -74,6 +74,21 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
       if (granularity === 'day') {
         const daysArr: DayData[] = [];
         
+        // Intensity and Label helpers
+        const calculateIntensity = (c: number) => {
+          if (c === 0) return 0;
+          const threshold = config.maxIntensityThreshold || 5;
+          if (c >= threshold) return 4;
+          if (c >= threshold * 0.75) return 3;
+          if (c >= threshold * 0.5) return 2;
+          return 1;
+        };
+
+        const getDayLabel = (d: Date, c: number) => {
+          const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+          return `${dateStr}: ${c} items`;
+        };
+
         // Calculate start offset to determine visual week index
         const firstDayOfWeek = new Date(year, 0, 1).getDay(); // 0=Sun, 1=Mon...
         let initialOffset = firstDayOfWeek;
@@ -81,24 +96,44 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
           initialOffset = initialOffset === 0 ? 6 : initialOffset - 1;
         }
 
-        for (let i = 0; i < totalDays; i++) {
-          const d = new Date(year, 0, i + 1);
-          
-          // Visual week index based on grid position
-          const gridIndex = i + initialOffset;
-          const visualWeekIndex = Math.floor(gridIndex / 7) + 1;
+        const items: DayData[] = [];
+        const startDate = new Date(year, 0, 1);
+        const endDate = new Date(year, 11, 31);
 
-          daysArr.push({
-            date: d,
-            dayOfWeek: d.getDay(),
-            month: d.getMonth(),
-            weekIndex: visualWeekIndex,
-            filled: i <= currentDayOfYear,
-            active: i === currentDayOfYear,
-            label: d.toDateString() + ` (Week ${visualWeekIndex})`
+        // Fill days
+        const current = new Date(startDate);
+        while (current <= endDate) {
+          const dateKey = current.toISOString().split('T')[0];
+          const count = activityMap[dateKey] || 0;
+          const intensity = calculateIntensity(count);
+          
+          items.push({
+            date: new Date(current),
+            dayOfWeek: current.getDay(),
+            month: current.getMonth(),
+            weekIndex: 0,
+            filled: current <= currentDate,
+            active: current.getTime() === currentDate.getTime(),
+            count,
+            intensity,
+            label: getDayLabel(current, count),
           });
+          current.setDate(current.getDate() + 1);
         }
-        return { dataItems: daysArr, startDayOffset: initialOffset, year };
+
+        // Assign week indices
+        let currentWeek = 0;
+        const startDay = isMondayFirst ? (startDate.getDay() + 6) % 7 : startDate.getDay();
+        
+        items.forEach((item, idx) => {
+          const day = isMondayFirst ? (item.dayOfWeek! + 6) % 7 : item.dayOfWeek!;
+          if (idx > 0 && day === 0) {
+            currentWeek++;
+          }
+          item.weekIndex = currentWeek;
+        });
+
+        return { dataItems: items, startDayOffset: startDay, year };
       } 
       
       if (granularity === 'week') {
@@ -378,6 +413,7 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
               key={i}
               filled={item.filled}
               active={item.active}
+              selected={selectedDate === (item.date ? item.date.toISOString().split('T')[0] : null)}
               label={item.label}
               item={item}
               index={i}
@@ -386,6 +422,11 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
               activeLabelFormat={activeLabelFormat}
               showMonths={showMonths}
               dotSize={dotSize}
+              onClick={() => {
+                if (item.date && onSelectDate) {
+                  onSelectDate(item.date.toISOString().split('T')[0]);
+                }
+              }}
             />
           ))}
         </div>

@@ -8,6 +8,7 @@ import { AppShell } from './components/app-shell';
 import { InboxPage, LaterPage } from './features/email-inbox';
 import { JournalPage } from './features/journal';
 import Settings from './pages/settings';
+import DashboardPage from './pages/dashboard';
 import NotFound from './pages/not-found';
 import { YearGridApp } from './features/year-grid';
 
@@ -20,28 +21,19 @@ const queryClient = new QueryClient({
 });
 
 function App() {
-  const [view, setView] = useState<'email' | 'year-grid'>('email');
-
-  const toggleYearGrid = () => {
-    setView((prev) => (prev === 'email' ? 'year-grid' : 'email'));
-  };
-
-  if (view === 'year-grid') {
-    return <YearGridApp />;
-  }
-
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <TooltipProvider>
           <Toaster />
-          <AppShell onToggleYearGrid={toggleYearGrid}>
+          <AppShell>
             <Routes>
               <Route path="/settings" element={<Settings />} />
               <Route path="/journal" element={<JournalPage />} />
+              <Route path="/activity" element={<YearGridApp />} />
               <Route path="/later" element={<LaterPage />} />
               <Route path="/inbox" element={<InboxPage />} />
-              <Route path="/" element={<InboxPage />} />
+              <Route path="/" element={<DashboardPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppShell>

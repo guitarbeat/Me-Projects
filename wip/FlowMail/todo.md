@@ -29,14 +29,16 @@
 
 ## Frontend (React + Wouter + React Query)
 
-- [ ] Create pages: `pages/home.tsx`, `pages/settings.tsx`, `pages/not-found.tsx`
-- [ ] Build core components: `CardStack`, `EmailCard`, `SwipeOverlay`, `ActionButtons`, `StatsGrid`, `ActivitiesList`
-- [ ] Wire React Query hooks to backend: list inbox/later/archived, update status, delete, undo, stats, activities
-- [ ] Settings page: provider select, email/password form; call `/api/email/providers`, `/api/email/test`, `/api/email/fetch`; show results/toasts
-- [ ] Add loading, empty, and error states; toasts via `@/components/ui/toaster`
-- [ ] Theme support using `ThemeProvider`; add theme toggle in header
+- [x] Create pages: `pages/dashboard.tsx`, `pages/settings.tsx`, `pages/not-found.tsx`
+- [x] Build core components: `CardStack`, `EmailCard`, `SwipeOverlay`, `ActionButtons`, `StatsGrid`, `ActivitiesList`
+- [x] Wire React Query hooks to backend: list inbox/later/archived, update status, delete, undo, stats, activities
+- [x] Settings page: provider select, email/password form
+- [x] Add loading, empty, and error states; toasts via `@/components/ui/toaster`
+- [x] Theme support using `ThemeProvider`; add theme toggle in header
+- [x] Unified "Everything App" Navigation & Shell
+- [x] Global Search & Command Palette (Cmd+K)
 
-## Build & Deploy
+### Feature Template Customization
 
 - [x] Ensure `npm run build` outputs client to `dist/public` and server to `dist/index.js`; verify `npm start` serves app
 - [ ] Add production logging

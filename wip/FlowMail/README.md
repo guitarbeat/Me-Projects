@@ -2,7 +2,15 @@
 
 ![CI](https://github.com/your-username/flowmail/actions/workflows/ci.yml/badge.svg)
 
-FlowMail is an email management application featuring a swipe-based interface for inbox triage and integrated journal reflection.
+FlowMail is an integrated "Everything App" workspace featuring a premium dashboard, swipe-based email triage, a productivity activity tracker, and a integrated journal for personal reflection.
+
+## Core Features
+
+- **Unified Dashboard**: Mission control for your communicating, tracking, and reflecting.
+- **Activity Tracker (Heatmap)**: GitHub-style activity grid visualizing your productivity flow.
+- **Global Command Palette**: Lightning-fast search across Emails, Journal, and Activities (Cmd+K).
+- **Email Triage**: Modern, swipe-inspired interface for managing communication.
+- **Journal Planner**: Deeply linked reflection tool for capturing learnings and follow-ups.
 
 ## Development
 

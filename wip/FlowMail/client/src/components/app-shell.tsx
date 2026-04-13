@@ -7,7 +7,6 @@ import { cn } from '@/lib/utils';
 
 interface AppShellProps {
   children: React.ReactNode;
-  onToggleYearGrid?: () => void;
 }
 
 type AppShellSection = {
@@ -17,6 +16,11 @@ type AppShellSection = {
 };
 
 const navigationItems = [
+  {
+    href: '/',
+    icon: LayoutDashboard,
+    label: 'Dashboard',
+  },
   {
     href: '/inbox',
     icon: Inbox,
@@ -33,6 +37,11 @@ const navigationItems = [
     label: 'Journal',
   },
   {
+    href: '/activity',
+    icon: CalendarDays,
+    label: 'Activity',
+  },
+  {
     href: '/settings',
     icon: Settings2,
     label: 'Settings',
@@ -40,12 +49,22 @@ const navigationItems = [
 ] as const;
 
 const sectionMeta: Record<string, AppShellSection> = {
+  '/': {
+    title: 'Dashboard',
+    description:
+      'Your unified workspace overview. See what needs attention across your inbox, journal, and activity.',
+    highlights: [
+      { label: 'Status', value: 'All systems active' },
+      { label: 'Focus', value: 'Prioritized tasks' },
+      { label: 'Workspace', value: 'Everything App' },
+    ],
+  },
   '/inbox': {
     title: 'Inbox triage',
     description:
       'Clear the queue quickly, then carry the follow-up context into the journal without changing products.',
     highlights: [
-      { label: 'Workspace', value: 'Merged host app' },
+      { label: 'Workspace', value: 'Email center' },
       { label: 'Flow', value: 'Swipe, sort, reflect' },
       { label: 'Theme', value: 'Shared shell' },
     ],
@@ -70,6 +89,16 @@ const sectionMeta: Record<string, AppShellSection> = {
       { label: 'Storage', value: 'Host-local persistence' },
     ],
   },
+  '/activity': {
+    title: 'Flow & Progress',
+    description:
+      'Monitor your email triage habits and consistency. Visualize your productivity across days, weeks, and months.',
+    highlights: [
+      { label: 'Visualization', value: 'Interactive grid' },
+      { label: 'Data Source', value: 'Local activity logs' },
+      { label: 'Type', value: 'Growth tracking' },
+    ],
+  },
   '/settings': {
     title: 'Workspace settings',
     description:
@@ -83,29 +112,38 @@ const sectionMeta: Record<string, AppShellSection> = {
 };
 
 function getActivePath(location: string) {
-  if (location.startsWith('/journal')) {
-    return '/journal';
-  }
-
-  if (location.startsWith('/settings')) {
-    return '/settings';
-  }
-
-  if (location.startsWith('/later')) {
-    return '/later';
-  }
-
+  if (location === '/') return '/';
+  if (location.startsWith('/journal')) return '/journal';
+  if (location.startsWith('/activity')) return '/activity';
+  if (location.startsWith('/settings')) return '/settings';
+  if (location.startsWith('/later')) return '/later';
+  if (location.startsWith('/inbox')) return '/inbox';
   return '/inbox';
 }
 
-export function AppShell({ children, onToggleYearGrid }: AppShellProps) {
+export function AppShell({ children }: AppShellProps) {
   const { theme, toggleTheme } = useTheme();
   const [location, navigate] = useLocation();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const activePath = getActivePath(location);
   const meta = sectionMeta[activePath];
 
+  // Global shortcut for search (Cmd+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsSearchOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
     <div className="min-h-screen bg-[var(--app-background)] text-[var(--app-text)]">
+      <CommandPalette isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-4 sm:px-6 lg:px-8">
         <motion.header
           className="app-shell-panel mb-6 overflow-hidden px-5 py-5 sm:px-7 sm:py-6"
@@ -128,28 +166,43 @@ export function AppShell({ children, onToggleYearGrid }: AppShellProps) {
                   </div>
                 </div>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="shrink-0 rounded-full border-[var(--app-panel-border)] bg-white/70 dark:bg-white/5"
-                  onClick={toggleTheme}
-                >
-                  {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="hidden sm:flex items-center gap-3 rounded-full border-[var(--app-panel-border)] bg-white/70 px-4 dark:bg-white/5 text-[var(--app-text-secondary)] hover:text-[var(--app-text)] text-xs transition-all w-48 justify-between"
+                    onClick={() => setIsSearchOpen(true)}
+                  >
+                    <div className="flex items-center gap-2">
+                        <Search className="h-3.5 w-3.5" />
+                        Search everything...
+                    </div>
+                    <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-[var(--app-background)] px-1.5 font-mono text-[10px] font-medium opacity-100">
+                        <span className="text-xs">⌘</span>K
+                    </kbd>
+                  </Button>
 
-                {onToggleYearGrid && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0 rounded-full border-[var(--app-panel-border)] bg-white/70 dark:bg-white/5 sm:hidden"
+                    onClick={() => setIsSearchOpen(true)}
+                  >
+                     <Search className="h-4 w-4" />
+                  </Button>
+
                   <Button
                     type="button"
                     variant="outline"
                     size="icon"
                     className="shrink-0 rounded-full border-[var(--app-panel-border)] bg-white/70 dark:bg-white/5"
-                    onClick={onToggleYearGrid}
-                    title="Toggle Year Grid View"
+                    onClick={toggleTheme}
                   >
-                    <CalendarDays className="h-4 w-4" />
+                    {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
                   </Button>
-                )}
+                </div>
               </div>
 
               <nav className="flex flex-wrap gap-2">

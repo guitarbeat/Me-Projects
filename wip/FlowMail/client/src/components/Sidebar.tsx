@@ -17,10 +17,10 @@ interface ColorInputProps {
 }
 
 const ColorInput: React.FC<ColorInputProps> = ({ label, value, onChange }) => {
-  const id = useId();
   const [text, setText] = useState(value);
   const [isFocused, setIsFocused] = useState(false);
   const inputId = useId();
+  const colorId = useId();
 
   // Sync text when value changes externally (e.g. preset selection), but not while typing
   useEffect(() => {
@@ -52,22 +52,22 @@ const ColorInput: React.FC<ColorInputProps> = ({ label, value, onChange }) => {
 
   return (
     <div className="space-y-1">
-      <label htmlFor={inputId} className="text-[10px] text-gray-500 uppercase cursor-pointer hover:text-gray-300 transition-colors">{label}</label>
-      <label htmlFor={id} className="text-[10px] text-gray-500 uppercase cursor-pointer">{label}</label>
+      <label htmlFor={inputId} className="text-[10px] text-gray-500 uppercase cursor-pointer hover:text-gray-300 transition-colors">
+        {label}
+      </label>
       <div className="flex items-center gap-2 bg-[#1a1a1a] p-1.5 rounded border border-[#333] focus-within:border-orange-500 transition-colors">
         <input
+          id={colorId}
           type="color"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="bg-transparent"
-          aria-label={`${label} Color Picker`}
+          className="bg-transparent cursor-pointer w-6 h-6 border-0"
           title={`Pick ${label} Color`}
           aria-label={`${label} color picker`}
         />
         <input
-          id={id}
-          type="text"
           id={inputId}
+          type="text"
           value={text}
           onChange={handleTextChange}
           onFocus={() => setIsFocused(true)}
@@ -88,6 +88,7 @@ interface SidebarProps {
   setConfig: React.Dispatch<React.SetStateAction<AppConfig>>;
   onDownload: () => void;
   isDownloading: boolean;
+  onReset: () => void;
 }
 
 const THEMES: { name: string; colors: AppColors }[] = [
@@ -113,7 +114,7 @@ const THEMES: { name: string; colors: AppColors }[] = [
   },
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDownloading }) => {
+const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDownloading, onReset }) => {
   const [copyStatus, setCopyStatus] = useState<'idle' | 'editor' | 'image'>('idle');
   
   const updateConfig = <K extends keyof AppConfig>(key: K, value: AppConfig[K]) => {
@@ -133,11 +134,20 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
   };
 
   const copyLink = (type: 'editor' | 'image') => {
-    const params = new URLSearchParams(window.location.search);
+    const params = new URLSearchParams();
+    
+    // Add essential config to URL for sharing
+    params.set('date', config.date);
+    params.set('mode', config.mode);
+    params.set('gran', config.granularity);
+    params.set('size', config.dotSize.toString());
+    params.set('gap', config.gap.toString());
+    params.set('rad', config.radius.toString());
+    params.set('fill', config.colors.fill);
+    params.set('bg', config.colors.bg);
+
     if (type === 'image') {
       params.set('view', 'image');
-    } else {
-      params.delete('view');
     }
     
     const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
@@ -152,18 +162,26 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
       {/* Header */}
       <div className="p-5 border-b border-[#222] flex justify-between items-center bg-[#111]">
         <h1 className="text-sm font-bold tracking-widest uppercase text-white flex items-center gap-2">
-          <span className="material-symbols-outlined text-orange-500">calendar_view_week</span>
-          Year Grid
+          <span className="material-symbols-outlined text-orange-500">grid_view</span>
+          Activity Settings
         </h1>
-        <button 
-          onClick={onDownload}
-          disabled={isDownloading}
-          className="text-xs bg-white text-black px-3 py-1.5 rounded font-bold hover:bg-gray-200 transition-colors uppercase tracking-wider flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none"
-          className="text-xs bg-white text-black px-3 py-1.5 rounded font-bold hover:bg-gray-200 focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-colors uppercase tracking-wider flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <span className="material-symbols-outlined text-[16px]">download</span>
-          {isDownloading ? 'Wait...' : 'Save'}
-        </button>
+        <div className="flex items-center gap-1">
+          <button 
+            onClick={onReset}
+            title="Reset to Defaults"
+            className="p-1.5 rounded text-gray-500 hover:text-white hover:bg-[#222] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-400"
+          >
+            <span className="material-symbols-outlined text-[18px]">restart_alt</span>
+          </button>
+          <button 
+            onClick={onDownload}
+            disabled={isDownloading}
+            className="text-xs bg-white text-black px-3 py-1.5 rounded font-bold hover:bg-gray-200 focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-colors uppercase tracking-wider flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span className="material-symbols-outlined text-[16px]">download</span>
+            {isDownloading ? 'Wait...' : 'Save'}
+          </button>
+        </div>
       </div>
 
       {/* Controls */}
@@ -175,7 +193,6 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
            <div className="grid grid-cols-2 gap-2">
              <button 
                onClick={() => copyLink('editor')}
-               className="flex flex-col items-center justify-center p-2 rounded bg-[#1f1f1f] hover:bg-[#252525] border border-[#333] transition-colors group focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none"
                className="flex flex-col items-center justify-center p-2 rounded bg-[#1f1f1f] hover:bg-[#252525] border border-[#333] focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-colors group"
              >
                <span className="material-symbols-outlined text-gray-400 group-hover:text-white mb-1">link</span>
@@ -185,7 +202,6 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
              </button>
              <button 
                onClick={() => copyLink('image')}
-               className="flex flex-col items-center justify-center p-2 rounded bg-[#1f1f1f] hover:bg-[#252525] border border-[#333] transition-colors group focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none"
                className="flex flex-col items-center justify-center p-2 rounded bg-[#1f1f1f] hover:bg-[#252525] border border-[#333] focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-colors group"
              >
                <span className="material-symbols-outlined text-gray-400 group-hover:text-white mb-1">image</span>
@@ -195,7 +211,7 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
              </button>
            </div>
            <p className="text-[10px] text-gray-600 leading-tight">
-             Use "Image Link" to embed a live-updating view of this grid in supported apps (Notion, etc.) or as an iframe.
+             Use "Image Link" to embed a live-updating view of your activity grid in supported apps (Notion, etc.) or as an iframe.
            </p>
         </section>
 
@@ -216,7 +232,6 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
                 onClick={setDateToToday}
                 title="Set to Today"
                 aria-label="Set date to today"
-                className="bg-[#222] hover:bg-[#333] border border-[#333] rounded px-3 flex items-center justify-center text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none"
                 className="bg-[#222] hover:bg-[#333] border border-[#333] rounded px-3 flex items-center justify-center text-gray-400 hover:text-white focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-colors"
               >
                 <span className="material-symbols-outlined text-[18px]">today</span>
@@ -232,7 +247,6 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
                     key={g}
                     aria-pressed={config.granularity === g}
                     onClick={() => updateConfig('granularity', g as any)}
-                    className={`text-[10px] uppercase py-1.5 rounded transition-all focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none ${config.granularity === g ? 'bg-[#333] text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
                     className={`text-[10px] uppercase py-1.5 rounded focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-all ${config.granularity === g ? 'bg-[#333] text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
                   >
                     {g}
@@ -262,7 +276,6 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
             <button 
               aria-pressed={config.mode === 'horizontal'}
               onClick={() => updateConfig('mode', 'horizontal')}
-              className={`text-xs py-2 rounded border transition-all focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none ${config.mode === 'horizontal' ? 'bg-[#222] text-gray-300 border-[#444]' : 'bg-[#1a1a1a] text-gray-500 border-transparent hover:bg-[#333]'}`}
               className={`text-xs py-2 rounded border focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-all ${config.mode === 'horizontal' ? 'bg-[#222] text-gray-300 border-[#444]' : 'bg-[#1a1a1a] text-gray-500 border-transparent hover:bg-[#333]'}`}
             >
               Horizontal
@@ -270,7 +283,6 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
             <button 
               aria-pressed={config.mode === 'vertical'}
               onClick={() => updateConfig('mode', 'vertical')}
-              className={`text-xs py-2 rounded border transition-all focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none ${config.mode === 'vertical' ? 'bg-[#222] text-gray-300 border-[#444]' : 'bg-[#1a1a1a] text-gray-500 border-transparent hover:bg-[#333]'}`}
               className={`text-xs py-2 rounded border focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-all ${config.mode === 'vertical' ? 'bg-[#222] text-gray-300 border-[#444]' : 'bg-[#1a1a1a] text-gray-500 border-transparent hover:bg-[#333]'}`}
             >
               Vertical
@@ -332,6 +344,45 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
               className="focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111] rounded"
             />
           </div>
+
+          {/* Dot Shape Selector */}
+          <div className="space-y-1 pt-2">
+             <label className="text-xs text-gray-400 block pb-1">Dot Shape</label>
+             <div className="grid grid-cols-3 gap-1 bg-[#1a1a1a] p-1 rounded border border-[#333]">
+                {['square', 'rounded', 'circle'].map((s) => (
+                  <button
+                    key={s}
+                    onClick={() => {
+                        updateConfig('dotShape', s as any);
+                        if (s === 'square') updateConfig('radius', 0);
+                        if (s === 'circle') updateConfig('radius', config.dotSize / 2);
+                        if (s === 'rounded' && config.radius === 0) updateConfig('radius', 2);
+                    }}
+                    className={`text-[10px] uppercase py-1.5 rounded transition-all ${config.dotShape === s ? 'bg-[#333] text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
+                  >
+                    {s}
+                  </button>
+                ))}
+             </div>
+          </div>
+
+          {/* Intensity Threshold */}
+          <div className="space-y-1 pt-2">
+            <div className="flex justify-between text-xs text-gray-400">
+                <label htmlFor="input-intensity">Intensity Focus</label>
+                <span>{config.maxIntensityThreshold}+ items</span>
+            </div>
+            <input 
+              id="input-intensity"
+              type="range" min="1" max="50" step="1" 
+              value={config.maxIntensityThreshold}
+              onChange={(e) => updateConfig('maxIntensityThreshold', parseInt(e.target.value))}
+              className="focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111] rounded"
+            />
+            <p className="text-[9px] text-gray-600 leading-tight pt-1">
+                Define the count required for the highest activity color.
+            </p>
+          </div>
         </section>
 
         {/* Color Palette */}
@@ -344,7 +395,6 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
                <button 
                  key={t.name}
                  onClick={() => applyTheme(t.colors)}
-                 className="w-full aspect-square rounded border border-[#333] hover:border-white transition-colors relative overflow-hidden group focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none"
                  className="w-full aspect-square rounded border border-[#333] hover:border-white focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-colors relative overflow-hidden group"
                  title={t.name}
                  aria-label={t.name + ' Theme'}

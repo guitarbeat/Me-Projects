@@ -7,6 +7,7 @@
     "finished-applications/lenticular-lab",
     "finished-applications/nini.earth",
     "finished-applications/scanforge",
+    "finished-applications/songsmiththeory",
     "finished-applications/waterfall-flow-control",
     "wip/FlowMail"
   ],
@@ -16,6 +17,7 @@
     "dev:lenticular": "npm run dev --workspace=finished-applications/lenticular-lab",
     "dev:nini": "npm run dev --workspace=finished-applications/nini.earth",
     "dev:scanforge": "npm run dev --workspace=finished-applications/scanforge",
+    "dev:songsmiththeory": "npm run dev --workspace=finished-applications/songsmiththeory",
     "dev:waterfall": "npm run dev --workspace=finished-applications/waterfall-flow-control",
     "install:all": "npm install"
   },

@@ -113,9 +113,7 @@ export function EmailListView({ emails, selectedIds, onSelectionChange }: EmailL
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
                     <p className="font-semibold text-[var(--app-text)]">{email.sender}</p>
-                    {email.unread && (
-                      <span className="h-2 w-2 rounded-full bg-primary" />
-                    )}
+                    {email.unread && <span className="h-2 w-2 rounded-full bg-primary" />}
                     {email.attachments && email.attachments > 0 && (
                       <Paperclip className="h-3.5 w-3.5 text-[var(--app-text-secondary)]" />
                     )}
@@ -140,7 +138,9 @@ export function EmailListView({ emails, selectedIds, onSelectionChange }: EmailL
                   <span className="text-xs text-[var(--app-text-secondary)]">
                     {formatTimeAgo(email.timestamp)}
                   </span>
-                  <span className={`text-xs font-medium uppercase ${getPriorityColor(email.priority)}`}>
+                  <span
+                    className={`text-xs font-medium uppercase ${getPriorityColor(email.priority)}`}
+                  >
                     {email.priority}
                   </span>
                 </div>

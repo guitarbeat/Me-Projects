@@ -2,13 +2,7 @@ export const journalViews = ['day', 'week', 'month'] as const;
 
 export type JournalView = (typeof journalViews)[number];
 
-export const journalEmotions = [
-  'focused',
-  'calm',
-  'energized',
-  'reflective',
-  'stretched',
-] as const;
+export const journalEmotions = ['focused', 'calm', 'energized', 'reflective', 'stretched'] as const;
 
 export type JournalEmotion = (typeof journalEmotions)[number];
 

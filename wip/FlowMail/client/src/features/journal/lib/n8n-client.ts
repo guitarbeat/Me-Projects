@@ -1,4 +1,8 @@
-import { journalStorageKeys, readJsonStorage, writeJsonStorage } from '@/features/journal/lib/storage';
+import {
+  journalStorageKeys,
+  readJsonStorage,
+  writeJsonStorage,
+} from '@/features/journal/lib/storage';
 
 export type JournalN8nConfig = {
   enabled: boolean;
@@ -20,7 +24,7 @@ type QueuedRequest = {
 };
 
 function getEnvConfig(): Partial<JournalN8nConfig> {
-  const env = import.meta.env;
+  const { env } = import.meta;
 
   return {
     baseUrl: env.VITE_N8N_BASE_URL,
@@ -39,13 +43,9 @@ export function loadJournalN8nConfig(): JournalN8nConfig {
     enabled: Boolean(storedConfig.enabled ?? false),
     baseUrl: storedConfig.baseUrl || envConfig.baseUrl || '',
     exportPath:
-      storedConfig.exportPath ||
-      envConfig.exportPath ||
-      '/webhook/flowmail/journal/export',
+      storedConfig.exportPath || envConfig.exportPath || '/webhook/flowmail/journal/export',
     summaryPath:
-      storedConfig.summaryPath ||
-      envConfig.summaryPath ||
-      '/webhook/flowmail/journal/summary',
+      storedConfig.summaryPath || envConfig.summaryPath || '/webhook/flowmail/journal/summary',
     authHeader: storedConfig.authHeader || envConfig.authHeader,
     authToken: storedConfig.authToken || envConfig.authToken,
   };

@@ -35,7 +35,7 @@ export const DashboardActivityGrid: React.FC = () => {
 
   const activityMap = useMemo(() => {
     const map: Record<string, number> = {};
-    activities.forEach(activity => {
+    activities.forEach((activity) => {
       if (!activity.timestamp) return;
       const dateKey = new Date(activity.timestamp).toISOString().split('T')[0];
       map[dateKey] = (map[dateKey] || 0) + 1;
@@ -46,7 +46,11 @@ export const DashboardActivityGrid: React.FC = () => {
   return (
     <div className="w-full overflow-hidden flex justify-center py-2">
       <div className="scale-[0.85] origin-top">
-         <YearGrid config={DASHBOARD_GRID_CONFIG} activityMap={activityMap} className="!p-0 !shadow-none" />
+        <YearGrid
+          config={DASHBOARD_GRID_CONFIG}
+          activityMap={activityMap}
+          className="!p-0 !shadow-none"
+        />
       </div>
     </div>
   );

@@ -90,9 +90,7 @@ export default function LaterPage() {
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
                 <Clock className="h-8 w-8 text-emerald-600 dark:text-emerald-300" />
               </div>
-              <h3 className="mb-2 text-lg font-medium text-[var(--app-text)]">
-                No saved emails
-              </h3>
+              <h3 className="mb-2 text-lg font-medium text-[var(--app-text)]">No saved emails</h3>
               <p className="text-[var(--app-text-secondary)]">
                 Emails you save for later will appear here
               </p>

@@ -111,7 +111,7 @@ export default function JournalPage() {
   const [settings, setSettings] = useState(() => loadJournalSettings());
   const [view, setView] = useState<JournalView>(() => loadJournalSettings().defaultView);
   const [selectedDate, setSelectedDate] = useState(() => new Date());
-  
+
   // URL date deep-linking
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -153,7 +153,9 @@ export default function JournalPage() {
     });
   }, [settings, view]);
 
-  const sortedEntries = [...entries].sort((left, right) => left.start.getTime() - right.start.getTime());
+  const sortedEntries = [...entries].sort(
+    (left, right) => left.start.getTime() - right.start.getTime()
+  );
   const windowBounds = getWindowBounds(selectedDate, view);
 
   const visibleEntries = sortedEntries.filter((entry) => {
@@ -177,7 +179,10 @@ export default function JournalPage() {
 
   const todayCount = sortedEntries.filter((entry) => isSameDay(entry.start, new Date())).length;
   const upcomingEntry = sortedEntries.find((entry) => entry.start.getTime() >= Date.now()) ?? null;
-  const recentNotes = sortedEntries.filter((entry) => entry.notes).slice(-3).reverse();
+  const recentNotes = sortedEntries
+    .filter((entry) => entry.notes)
+    .slice(-3)
+    .reverse();
   const emotionCounts = journalEmotions.map((emotion) => ({
     emotion,
     count: sortedEntries.filter((entry) => entry.emotion === emotion).length,
@@ -242,8 +247,8 @@ export default function JournalPage() {
                 <p className="app-kicker">Journal</p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-tight">Reflection planner</h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--app-text-secondary)]">
-                  Reflection now lives inside FlowMail, so action and follow-up can stay in the
-                  same daily loop.
+                  Reflection now lives inside FlowMail, so action and follow-up can stay in the same
+                  daily loop.
                 </p>
               </div>
 
@@ -368,7 +373,8 @@ export default function JournalPage() {
                                     emotionMeta[entry.emotion].badgeClass
                                   )}
                                 >
-                                  {emotionMeta[entry.emotion].marker} {emotionMeta[entry.emotion].label}
+                                  {emotionMeta[entry.emotion].marker}{' '}
+                                  {emotionMeta[entry.emotion].label}
                                 </span>
                                 <span className="text-sm text-[var(--app-text-secondary)]">
                                   {formatEntryTime(entry, settings.timeFormat24h)}
@@ -506,7 +512,9 @@ export default function JournalPage() {
               <div className="rounded-2xl border border-[var(--app-panel-border)] bg-white/70 px-4 py-3 dark:bg-white/5">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-medium text-[var(--app-text)]">Toast confirmations</p>
+                    <p className="text-sm font-medium text-[var(--app-text)]">
+                      Toast confirmations
+                    </p>
                     <p className="text-xs text-[var(--app-text-secondary)]">
                       Confirm adds and edits with quick local notifications.
                     </p>
@@ -574,7 +582,10 @@ export default function JournalPage() {
                     </div>
                     <div className="h-2 rounded-full bg-black/5 dark:bg-white/10">
                       <div
-                        className={cn('h-2 rounded-full transition-all', emotionMeta[emotion].barClass)}
+                        className={cn(
+                          'h-2 rounded-full transition-all',
+                          emotionMeta[emotion].barClass
+                        )}
                         style={{ width: `${width}%` }}
                       />
                     </div>

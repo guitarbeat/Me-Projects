@@ -48,7 +48,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
     const matches: SearchResult[] = [];
 
     // Search Emails
-    emails.forEach(email => {
+    emails.forEach((email) => {
       if (email.subject.toLowerCase().includes(q) || email.sender.toLowerCase().includes(q)) {
         matches.push({
           id: `email-${email.id}`,
@@ -56,35 +56,38 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
           title: email.subject,
           subtitle: `from ${email.sender}`,
           date: new Date(email.timestamp || '').toLocaleDateString(),
-          original: email
+          original: email,
         });
       }
     });
 
     // Search Journal
-    journalEntries.forEach(entry => {
-      if (entry.title.toLowerCase().includes(q) || (entry.notes?.toLowerCase().includes(q))) {
+    journalEntries.forEach((entry) => {
+      if (entry.title.toLowerCase().includes(q) || entry.notes?.toLowerCase().includes(q)) {
         matches.push({
           id: `journal-${entry.id}`,
           type: 'journal',
           title: entry.title,
           subtitle: entry.notes || 'No notes',
           date: entry.start.toLocaleDateString(),
-          original: entry
+          original: entry,
         });
       }
     });
 
     // Search Activities
-    activities.forEach(activity => {
-      if (activity.emailSubject?.toLowerCase().includes(q) || activity.action.toLowerCase().includes(q)) {
+    activities.forEach((activity) => {
+      if (
+        activity.emailSubject?.toLowerCase().includes(q) ||
+        activity.action.toLowerCase().includes(q)
+      ) {
         matches.push({
           id: `activity-${activity.id}`,
           type: 'activity',
           title: `${activity.action.toUpperCase()}: ${activity.emailSubject}`,
           subtitle: `Activity log entry`,
           date: new Date(activity.timestamp || '').toLocaleDateString(),
-          original: activity
+          original: activity,
         });
       }
     });
@@ -99,10 +102,10 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
-        setSelectedIndex(prev => (prev + 1) % results.length);
+        setSelectedIndex((prev) => (prev + 1) % results.length);
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
-        setSelectedIndex(prev => (prev - 1 + results.length) % results.length);
+        setSelectedIndex((prev) => (prev - 1 + results.length) % results.length);
       } else if (e.key === 'Enter' && results[selectedIndex]) {
         handleSelect(results[selectedIndex]);
       } else if (e.key === 'Escape') {
@@ -117,7 +120,8 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
   const handleSelect = (result: SearchResult) => {
     onClose();
     if (result.type === 'email') navigate('/inbox');
-    if (result.type === 'journal') navigate(`/journal?date=${result.original.start.toISOString().split('T')[0]}`);
+    if (result.type === 'journal')
+      navigate(`/journal?date=${result.original.start.toISOString().split('T')[0]}`);
     if (result.type === 'activity') navigate('/activity');
   };
 
@@ -140,7 +144,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
             onClick={onClose}
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
           />
-          
+
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: -20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -173,29 +177,48 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                       onClick={() => handleSelect(result)}
                       onMouseEnter={() => setSelectedIndex(idx)}
                       className={cn(
-                        "w-full flex items-center gap-4 p-3 rounded-xl transition-all text-left group",
-                        idx === selectedIndex ? "bg-orange-500 text-white" : "hover:bg-white/5 text-gray-400"
+                        'w-full flex items-center gap-4 p-3 rounded-xl transition-all text-left group',
+                        idx === selectedIndex
+                          ? 'bg-orange-500 text-white'
+                          : 'hover:bg-white/5 text-gray-400'
                       )}
                     >
-                      <div className={cn(
-                        "p-2 rounded-lg shrink-0",
-                        idx === selectedIndex ? "bg-white/20" : "bg-white/5"
-                      )}>
+                      <div
+                        className={cn(
+                          'p-2 rounded-lg shrink-0',
+                          idx === selectedIndex ? 'bg-white/20' : 'bg-white/5'
+                        )}
+                      >
                         {result.type === 'email' && <Inbox className="w-4 h-4" />}
                         {result.type === 'activity' && <BarChart className="w-4 h-4" />}
                         {result.type === 'journal' && <NotebookPen className="w-4 h-4" />}
                       </div>
-                      
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                            <p className={cn("text-sm font-bold truncate", idx === selectedIndex ? "text-white" : "text-gray-200")}>
-                                {result.title}
-                            </p>
-                            <span className={cn("text-[9px] uppercase tracking-widest font-black shrink-0", idx === selectedIndex ? "text-white/60" : "text-gray-600")}>
-                                {result.type}
-                            </span>
+                          <p
+                            className={cn(
+                              'text-sm font-bold truncate',
+                              idx === selectedIndex ? 'text-white' : 'text-gray-200'
+                            )}
+                          >
+                            {result.title}
+                          </p>
+                          <span
+                            className={cn(
+                              'text-[9px] uppercase tracking-widest font-black shrink-0',
+                              idx === selectedIndex ? 'text-white/60' : 'text-gray-600'
+                            )}
+                          >
+                            {result.type}
+                          </span>
                         </div>
-                        <p className={cn("text-xs truncate", idx === selectedIndex ? "text-white/80" : "text-gray-500")}>
+                        <p
+                          className={cn(
+                            'text-xs truncate',
+                            idx === selectedIndex ? 'text-white/80' : 'text-gray-500'
+                          )}
+                        >
                           {result.subtitle}
                         </p>
                       </div>
@@ -211,44 +234,55 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
                 </div>
               ) : query ? (
                 <div className="py-12 text-center text-gray-500 space-y-2">
-                    <Command className="w-8 h-8 mx-auto opacity-20 mb-4" />
-                    <p className="text-sm font-medium">No results found for "{query}"</p>
-                    <p className="text-xs opacity-60">Try searching for a different keyword or date.</p>
+                  <Command className="w-8 h-8 mx-auto opacity-20 mb-4" />
+                  <p className="text-sm font-medium">No results found for "{query}"</p>
+                  <p className="text-xs opacity-60">
+                    Try searching for a different keyword or date.
+                  </p>
                 </div>
               ) : (
                 <div className="p-4 space-y-4">
-                    <div>
-                        <p className="text-[10px] uppercase font-bold tracking-widest text-gray-600 mb-2 px-2">Quick Commands</p>
-                        <div className="grid grid-cols-2 gap-2">
-                            {[
-                                { label: 'Go to Dashboard', icon: LayoutDashboard, path: '/' },
-                                { label: 'Triage Inbox', icon: Inbox, path: '/inbox' },
-                                { label: 'Write Journal', icon: NotebookPen, path: '/journal' },
-                                { label: 'View History', icon: BarChart, path: '/activity' },
-                            ].map(cmd => (
-                                <button 
-                                    key={cmd.path}
-                                    onClick={() => { navigate(cmd.path); onClose(); }}
-                                    className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 hover:bg-white/10 text-left transition-all"
-                                >
-                                    <cmd.icon className="w-4 h-4 text-orange-500" />
-                                    <span className="text-xs font-medium text-gray-300">{cmd.label}</span>
-                                </button>
-                            ))}
-                        </div>
+                  <div>
+                    <p className="text-[10px] uppercase font-bold tracking-widest text-gray-600 mb-2 px-2">
+                      Quick Commands
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { label: 'Go to Dashboard', icon: LayoutDashboard, path: '/' },
+                        { label: 'Triage Inbox', icon: Inbox, path: '/inbox' },
+                        { label: 'Write Journal', icon: NotebookPen, path: '/journal' },
+                        { label: 'View History', icon: BarChart, path: '/activity' },
+                      ].map((cmd) => (
+                        <button
+                          key={cmd.path}
+                          onClick={() => {
+                            navigate(cmd.path);
+                            onClose();
+                          }}
+                          className="flex items-center gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 hover:bg-white/10 text-left transition-all"
+                        >
+                          <cmd.icon className="w-4 h-4 text-orange-500" />
+                          <span className="text-xs font-medium text-gray-300">{cmd.label}</span>
+                        </button>
+                      ))}
                     </div>
+                  </div>
                 </div>
               )}
             </div>
 
             {/* Footer */}
             <div className="p-3 bg-white/5 border-t border-white/5 flex items-center justify-between text-[10px] text-gray-600 font-medium">
-                <div className="flex items-center gap-4">
-                    <span className="flex items-center gap-1"><Command className="w-3 h-3" /> Search</span>
-                    <span className="flex items-center gap-1">↑↓ Navigate</span>
-                    <span className="flex items-center gap-1"><CornerDownLeft className="w-3 h-3" /> Select</span>
-                </div>
-                <div>FlowMail Unified Search v1.0</div>
+              <div className="flex items-center gap-4">
+                <span className="flex items-center gap-1">
+                  <Command className="w-3 h-3" /> Search
+                </span>
+                <span className="flex items-center gap-1">↑↓ Navigate</span>
+                <span className="flex items-center gap-1">
+                  <CornerDownLeft className="w-3 h-3" /> Select
+                </span>
+              </div>
+              <div>FlowMail Unified Search v1.0</div>
             </div>
           </motion.div>
         </div>

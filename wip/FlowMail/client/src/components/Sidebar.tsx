@@ -52,7 +52,10 @@ const ColorInput: React.FC<ColorInputProps> = ({ label, value, onChange }) => {
 
   return (
     <div className="space-y-1">
-      <label htmlFor={inputId} className="text-[10px] text-gray-500 uppercase cursor-pointer hover:text-gray-300 transition-colors">
+      <label
+        htmlFor={inputId}
+        className="text-[10px] text-gray-500 uppercase cursor-pointer hover:text-gray-300 transition-colors"
+      >
         {label}
       </label>
       <div className="flex items-center gap-2 bg-[#1a1a1a] p-1.5 rounded border border-[#333] focus-within:border-orange-500 transition-colors">
@@ -92,37 +95,43 @@ interface SidebarProps {
 }
 
 const THEMES: { name: string; colors: AppColors }[] = [
-  { 
-    name: 'Ember', 
-    colors: { bg: '#0a0a0a', text: '#525252', empty: '#1f1f1f', fill: '#ea580c' } 
+  {
+    name: 'Ember',
+    colors: { bg: '#0a0a0a', text: '#525252', empty: '#1f1f1f', fill: '#ea580c' },
   },
-  { 
-    name: 'GitHub', 
-    colors: { bg: '#0d1117', text: '#8b949e', empty: '#161b22', fill: '#39d353' } 
+  {
+    name: 'GitHub',
+    colors: { bg: '#0d1117', text: '#8b949e', empty: '#161b22', fill: '#39d353' },
   },
-  { 
-    name: 'Ocean', 
-    colors: { bg: '#0f172a', text: '#94a3b8', empty: '#1e293b', fill: '#38bdf8' } 
+  {
+    name: 'Ocean',
+    colors: { bg: '#0f172a', text: '#94a3b8', empty: '#1e293b', fill: '#38bdf8' },
   },
-  { 
-    name: 'Forest', 
-    colors: { bg: '#1a2e05', text: '#ecfccb', empty: '#2f4d0d', fill: '#a3e635' } 
+  {
+    name: 'Forest',
+    colors: { bg: '#1a2e05', text: '#ecfccb', empty: '#2f4d0d', fill: '#a3e635' },
   },
-  { 
-    name: 'Berry', 
-    colors: { bg: '#2e020f', text: '#fbcfe8', empty: '#500724', fill: '#ec4899' } 
+  {
+    name: 'Berry',
+    colors: { bg: '#2e020f', text: '#fbcfe8', empty: '#500724', fill: '#ec4899' },
   },
 ];
 
-const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDownloading, onReset }) => {
+const Sidebar: React.FC<SidebarProps> = ({
+  config,
+  setConfig,
+  onDownload,
+  isDownloading,
+  onReset,
+}) => {
   const [copyStatus, setCopyStatus] = useState<'idle' | 'editor' | 'image'>('idle');
-  
+
   const updateConfig = <K extends keyof AppConfig>(key: K, value: AppConfig[K]) => {
-    setConfig(prev => ({ ...prev, [key]: value }));
+    setConfig((prev) => ({ ...prev, [key]: value }));
   };
 
   const updateColor = (key: keyof AppConfig['colors'], value: string) => {
-    setConfig(prev => ({ ...prev, colors: { ...prev.colors, [key]: value } }));
+    setConfig((prev) => ({ ...prev, colors: { ...prev.colors, [key]: value } }));
   };
 
   const setDateToToday = () => {
@@ -130,12 +139,12 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
   };
 
   const applyTheme = (colors: AppColors) => {
-    setConfig(prev => ({ ...prev, colors }));
+    setConfig((prev) => ({ ...prev, colors }));
   };
 
   const copyLink = (type: 'editor' | 'image') => {
     const params = new URLSearchParams();
-    
+
     // Add essential config to URL for sharing
     params.set('date', config.date);
     params.set('mode', config.mode);
@@ -149,7 +158,7 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
     if (type === 'image') {
       params.set('view', 'image');
     }
-    
+
     const url = `${window.location.origin}${window.location.pathname}?${params.toString()}`;
     navigator.clipboard.writeText(url).then(() => {
       setCopyStatus(type);
@@ -166,14 +175,14 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
           Activity Settings
         </h1>
         <div className="flex items-center gap-1">
-          <button 
+          <button
             onClick={onReset}
             title="Reset to Defaults"
             className="p-1.5 rounded text-gray-500 hover:text-white hover:bg-[#222] transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-gray-400"
           >
             <span className="material-symbols-outlined text-[18px]">restart_alt</span>
           </button>
-          <button 
+          <button
             onClick={onDownload}
             disabled={isDownloading}
             className="text-xs bg-white text-black px-3 py-1.5 rounded font-bold hover:bg-gray-200 focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-colors uppercase tracking-wider flex items-center gap-1 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -186,49 +195,59 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
 
       {/* Controls */}
       <div className="flex-1 overflow-y-auto p-5 space-y-8 custom-scrollbar">
-        
         {/* Share Section */}
         <section className="space-y-3 bg-[#161616] -mx-5 px-5 py-4 border-b border-[#222]">
-           <h2 className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Share & Embed</h2>
-           <div className="grid grid-cols-2 gap-2">
-             <button 
-               onClick={() => copyLink('editor')}
-               className="flex flex-col items-center justify-center p-2 rounded bg-[#1f1f1f] hover:bg-[#252525] border border-[#333] focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-colors group"
-             >
-               <span className="material-symbols-outlined text-gray-400 group-hover:text-white mb-1">link</span>
-               <span className="text-[10px] text-gray-400 uppercase font-bold">
-                 {copyStatus === 'editor' ? 'Copied!' : 'Copy Link'}
-               </span>
-             </button>
-             <button 
-               onClick={() => copyLink('image')}
-               className="flex flex-col items-center justify-center p-2 rounded bg-[#1f1f1f] hover:bg-[#252525] border border-[#333] focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-colors group"
-             >
-               <span className="material-symbols-outlined text-gray-400 group-hover:text-white mb-1">image</span>
-               <span className="text-[10px] text-gray-400 uppercase font-bold">
-                 {copyStatus === 'image' ? 'Copied!' : 'Image Link'}
-               </span>
-             </button>
-           </div>
-           <p className="text-[10px] text-gray-600 leading-tight">
-             Use "Image Link" to embed a live-updating view of your activity grid in supported apps (Notion, etc.) or as an iframe.
-           </p>
+          <h2 className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">
+            Share & Embed
+          </h2>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => copyLink('editor')}
+              className="flex flex-col items-center justify-center p-2 rounded bg-[#1f1f1f] hover:bg-[#252525] border border-[#333] focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-colors group"
+            >
+              <span className="material-symbols-outlined text-gray-400 group-hover:text-white mb-1">
+                link
+              </span>
+              <span className="text-[10px] text-gray-400 uppercase font-bold">
+                {copyStatus === 'editor' ? 'Copied!' : 'Copy Link'}
+              </span>
+            </button>
+            <button
+              onClick={() => copyLink('image')}
+              className="flex flex-col items-center justify-center p-2 rounded bg-[#1f1f1f] hover:bg-[#252525] border border-[#333] focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-colors group"
+            >
+              <span className="material-symbols-outlined text-gray-400 group-hover:text-white mb-1">
+                image
+              </span>
+              <span className="text-[10px] text-gray-400 uppercase font-bold">
+                {copyStatus === 'image' ? 'Copied!' : 'Image Link'}
+              </span>
+            </button>
+          </div>
+          <p className="text-[10px] text-gray-600 leading-tight">
+            Use "Image Link" to embed a live-updating view of your activity grid in supported apps
+            (Notion, etc.) or as an iframe.
+          </p>
         </section>
 
         {/* Progress Settings */}
         <section className="space-y-3">
-          <h2 className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Progress Settings</h2>
+          <h2 className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">
+            Progress Settings
+          </h2>
           <div className="space-y-2">
-            <label htmlFor="date-input" className="text-xs text-gray-400 block">Current Date (Fill up to)</label>
+            <label htmlFor="date-input" className="text-xs text-gray-400 block">
+              Current Date (Fill up to)
+            </label>
             <div className="flex gap-2">
-              <input 
+              <input
                 id="date-input"
                 type="date"
                 value={config.date}
                 onChange={(e) => updateConfig('date', e.target.value)}
                 className="flex-1 bg-[#1a1a1a] border border-[#333] rounded px-3 py-2 text-sm text-white focus:border-orange-500 focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-colors font-mono"
               />
-              <button 
+              <button
                 onClick={setDateToToday}
                 title="Set to Today"
                 aria-label="Set date to today"
@@ -238,49 +257,53 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
               </button>
             </div>
           </div>
-          
+
           <div className="space-y-1">
-             <label className="text-xs text-gray-400 block">Granularity</label>
-             <div className="grid grid-cols-3 gap-1 bg-[#1a1a1a] p-1 rounded border border-[#333]">
-                {['day', 'week', 'month'].map((g) => (
-                  <button
-                    key={g}
-                    aria-pressed={config.granularity === g}
-                    onClick={() => updateConfig('granularity', g as any)}
-                    className={`text-[10px] uppercase py-1.5 rounded focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-all ${config.granularity === g ? 'bg-[#333] text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
-                  >
-                    {g}
-                  </button>
-                ))}
-             </div>
+            <label className="text-xs text-gray-400 block">Granularity</label>
+            <div className="grid grid-cols-3 gap-1 bg-[#1a1a1a] p-1 rounded border border-[#333]">
+              {['day', 'week', 'month'].map((g) => (
+                <button
+                  key={g}
+                  aria-pressed={config.granularity === g}
+                  onClick={() => updateConfig('granularity', g as any)}
+                  className={`text-[10px] uppercase py-1.5 rounded focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-all ${config.granularity === g ? 'bg-[#333] text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
           </div>
 
           {config.granularity === 'day' && (
             <div className="flex items-center gap-2">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 id="check-monday"
                 checked={config.isMondayFirst}
                 onChange={(e) => updateConfig('isMondayFirst', e.target.checked)}
                 className="accent-orange-500 w-4 h-4 cursor-pointer focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111] rounded-sm"
               />
-              <label htmlFor="check-monday" className="text-xs text-gray-400 cursor-pointer">Start week on Monday</label>
+              <label htmlFor="check-monday" className="text-xs text-gray-400 cursor-pointer">
+                Start week on Monday
+              </label>
             </div>
           )}
         </section>
 
         {/* Layout Settings */}
         <section className="space-y-3">
-          <h2 className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Grid Layout</h2>
+          <h2 className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">
+            Grid Layout
+          </h2>
           <div className="grid grid-cols-2 gap-2">
-            <button 
+            <button
               aria-pressed={config.mode === 'horizontal'}
               onClick={() => updateConfig('mode', 'horizontal')}
               className={`text-xs py-2 rounded border focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-all ${config.mode === 'horizontal' ? 'bg-[#222] text-gray-300 border-[#444]' : 'bg-[#1a1a1a] text-gray-500 border-transparent hover:bg-[#333]'}`}
             >
               Horizontal
             </button>
-            <button 
+            <button
               aria-pressed={config.mode === 'vertical'}
               onClick={() => updateConfig('mode', 'vertical')}
               className={`text-xs py-2 rounded border focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-all ${config.mode === 'vertical' ? 'bg-[#222] text-gray-300 border-[#444]' : 'bg-[#1a1a1a] text-gray-500 border-transparent hover:bg-[#333]'}`}
@@ -288,16 +311,21 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
               Vertical
             </button>
           </div>
-          
+
           {config.granularity !== 'day' && (
             <div className="space-y-1 pt-2">
               <div className="flex justify-between text-xs text-gray-400">
-                <label htmlFor="input-items-per-row">Items Per {config.mode === 'horizontal' ? 'Row' : 'Column'}</label>
+                <label htmlFor="input-items-per-row">
+                  Items Per {config.mode === 'horizontal' ? 'Row' : 'Column'}
+                </label>
                 <span>{config.itemsPerRow}</span>
               </div>
-              <input 
+              <input
                 id="input-items-per-row"
-                type="range" min="1" max={config.granularity === 'week' ? 53 : 12} step="1" 
+                type="range"
+                min="1"
+                max={config.granularity === 'week' ? 53 : 12}
+                step="1"
                 value={config.itemsPerRow}
                 onChange={(e) => updateConfig('itemsPerRow', parseInt(e.target.value))}
                 className="focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111] rounded"
@@ -307,12 +335,15 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
 
           <div className="space-y-1 pt-2">
             <div className="flex justify-between text-xs text-gray-400">
-                <label htmlFor="input-dot-size">Square Size</label>
-                <span>{config.dotSize}px</span>
+              <label htmlFor="input-dot-size">Square Size</label>
+              <span>{config.dotSize}px</span>
             </div>
-            <input 
+            <input
               id="input-dot-size"
-              type="range" min="4" max="100" step="1" 
+              type="range"
+              min="4"
+              max="100"
+              step="1"
               value={config.dotSize}
               onChange={(e) => updateConfig('dotSize', parseInt(e.target.value))}
               className="focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111] rounded"
@@ -320,12 +351,15 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
           </div>
           <div className="space-y-1">
             <div className="flex justify-between text-xs text-gray-400">
-                <label htmlFor="input-gap">Gap</label>
-                <span>{config.gap}px</span>
+              <label htmlFor="input-gap">Gap</label>
+              <span>{config.gap}px</span>
             </div>
-            <input 
+            <input
               id="input-gap"
-              type="range" min="0" max="50" step="1" 
+              type="range"
+              min="0"
+              max="50"
+              step="1"
               value={config.gap}
               onChange={(e) => updateConfig('gap', parseInt(e.target.value))}
               className="focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111] rounded"
@@ -333,12 +367,15 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
           </div>
           <div className="space-y-1">
             <div className="flex justify-between text-xs text-gray-400">
-                <label htmlFor="input-radius">Roundness</label>
-                <span>{config.radius}px</span>
+              <label htmlFor="input-radius">Roundness</label>
+              <span>{config.radius}px</span>
             </div>
-            <input 
+            <input
               id="input-radius"
-              type="range" min="0" max="50" step="1" 
+              type="range"
+              min="0"
+              max="50"
+              step="1"
               value={config.radius}
               onChange={(e) => updateConfig('radius', parseInt(e.target.value))}
               className="focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111] rounded"
@@ -347,61 +384,71 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
 
           {/* Dot Shape Selector */}
           <div className="space-y-1 pt-2">
-             <label className="text-xs text-gray-400 block pb-1">Dot Shape</label>
-             <div className="grid grid-cols-3 gap-1 bg-[#1a1a1a] p-1 rounded border border-[#333]">
-                {['square', 'rounded', 'circle'].map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => {
-                        updateConfig('dotShape', s as any);
-                        if (s === 'square') updateConfig('radius', 0);
-                        if (s === 'circle') updateConfig('radius', config.dotSize / 2);
-                        if (s === 'rounded' && config.radius === 0) updateConfig('radius', 2);
-                    }}
-                    className={`text-[10px] uppercase py-1.5 rounded transition-all ${config.dotShape === s ? 'bg-[#333] text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
-                  >
-                    {s}
-                  </button>
-                ))}
-             </div>
+            <label className="text-xs text-gray-400 block pb-1">Dot Shape</label>
+            <div className="grid grid-cols-3 gap-1 bg-[#1a1a1a] p-1 rounded border border-[#333]">
+              {['square', 'rounded', 'circle'].map((s) => (
+                <button
+                  key={s}
+                  onClick={() => {
+                    updateConfig('dotShape', s as any);
+                    if (s === 'square') updateConfig('radius', 0);
+                    if (s === 'circle') updateConfig('radius', config.dotSize / 2);
+                    if (s === 'rounded' && config.radius === 0) updateConfig('radius', 2);
+                  }}
+                  className={`text-[10px] uppercase py-1.5 rounded transition-all ${config.dotShape === s ? 'bg-[#333] text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`}
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Intensity Threshold */}
           <div className="space-y-1 pt-2">
             <div className="flex justify-between text-xs text-gray-400">
-                <label htmlFor="input-intensity">Intensity Focus</label>
-                <span>{config.maxIntensityThreshold}+ items</span>
+              <label htmlFor="input-intensity">Intensity Focus</label>
+              <span>{config.maxIntensityThreshold}+ items</span>
             </div>
-            <input 
+            <input
               id="input-intensity"
-              type="range" min="1" max="50" step="1" 
+              type="range"
+              min="1"
+              max="50"
+              step="1"
               value={config.maxIntensityThreshold}
               onChange={(e) => updateConfig('maxIntensityThreshold', parseInt(e.target.value))}
               className="focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111] rounded"
             />
             <p className="text-[9px] text-gray-600 leading-tight pt-1">
-                Define the count required for the highest activity color.
+              Define the count required for the highest activity color.
             </p>
           </div>
         </section>
 
         {/* Color Palette */}
         <section className="space-y-3">
-          <h2 className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Color Palette</h2>
-          
+          <h2 className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">
+            Color Palette
+          </h2>
+
           {/* Theme Presets */}
           <div className="grid grid-cols-5 gap-1 mb-2">
-             {THEMES.map(t => (
-               <button 
-                 key={t.name}
-                 onClick={() => applyTheme(t.colors)}
-                 className="w-full aspect-square rounded border border-[#333] hover:border-white focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-colors relative overflow-hidden group"
-                 title={t.name}
-                 aria-label={t.name + ' Theme'}
-               >
-                 <div className="absolute inset-0 bg-gradient-to-br" style={{ backgroundImage: `linear-gradient(to bottom right, ${t.colors.bg} 50%, ${t.colors.fill} 50%)` }}></div>
-               </button>
-             ))}
+            {THEMES.map((t) => (
+              <button
+                key={t.name}
+                onClick={() => applyTheme(t.colors)}
+                className="w-full aspect-square rounded border border-[#333] hover:border-white focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none transition-colors relative overflow-hidden group"
+                title={t.name}
+                aria-label={`${t.name} Theme`}
+              >
+                <div
+                  className="absolute inset-0 bg-gradient-to-br"
+                  style={{
+                    backgroundImage: `linear-gradient(to bottom right, ${t.colors.bg} 50%, ${t.colors.fill} 50%)`,
+                  }}
+                />
+              </button>
+            ))}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -419,15 +466,17 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
               />
             ))}
             <div className="col-span-2 pt-2 border-t border-[#222]">
-               <div className="flex items-center gap-2">
-                <input 
-                  type="checkbox" 
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
                   id="check-transparent"
                   checked={config.transparentBg}
                   onChange={(e) => updateConfig('transparentBg', e.target.checked)}
                   className="accent-orange-500 w-4 h-4 cursor-pointer focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111] rounded-sm"
                 />
-                <label htmlFor="check-transparent" className="text-xs text-gray-400 cursor-pointer">Transparent Background (Save)</label>
+                <label htmlFor="check-transparent" className="text-xs text-gray-400 cursor-pointer">
+                  Transparent Background (Save)
+                </label>
               </div>
             </div>
           </div>
@@ -435,12 +484,17 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
 
         {/* Labels & Font */}
         <section className="space-y-3">
-          <h2 className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">Labels & Font</h2>
-          
+          <h2 className="text-[10px] uppercase tracking-widest text-gray-500 font-bold">
+            Labels & Font
+          </h2>
+
           <div className="flex items-center justify-between">
-            <label htmlFor="check-year" className="text-xs text-gray-400 cursor-pointer">Show Year Watermark</label>
-            <input 
-              type="checkbox" id="check-year"
+            <label htmlFor="check-year" className="text-xs text-gray-400 cursor-pointer">
+              Show Year Watermark
+            </label>
+            <input
+              type="checkbox"
+              id="check-year"
               checked={config.showYearLabel}
               onChange={(e) => updateConfig('showYearLabel', e.target.checked)}
               className="accent-orange-500 w-4 h-4 cursor-pointer focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111] rounded-sm"
@@ -448,54 +502,68 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
           </div>
 
           <div className="space-y-2">
-             <div className="flex items-center justify-between">
-                <label htmlFor="check-active-label" className="text-xs text-gray-400 cursor-pointer">Show Active Label</label>
-                <input 
-                  type="checkbox" id="check-active-label"
-                  checked={config.showActiveLabel}
-                  onChange={(e) => updateConfig('showActiveLabel', e.target.checked)}
-                  className="accent-orange-500 w-4 h-4 cursor-pointer focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111] rounded-sm"
-                />
+            <div className="flex items-center justify-between">
+              <label htmlFor="check-active-label" className="text-xs text-gray-400 cursor-pointer">
+                Show Active Label
+              </label>
+              <input
+                type="checkbox"
+                id="check-active-label"
+                checked={config.showActiveLabel}
+                onChange={(e) => updateConfig('showActiveLabel', e.target.checked)}
+                className="accent-orange-500 w-4 h-4 cursor-pointer focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111] rounded-sm"
+              />
+            </div>
+
+            {/* Active Label Format Selector - Only show if active label is enabled */}
+            {config.showActiveLabel && config.granularity === 'day' && (
+              <div className="pl-2 border-l border-[#333]">
+                <label
+                  htmlFor="select-active-label-format"
+                  className="text-[10px] text-gray-500 block mb-1"
+                >
+                  Label Content
+                </label>
+                <select
+                  id="select-active-label-format"
+                  value={config.activeLabelFormat || 'date'}
+                  onChange={(e) =>
+                    updateConfig('activeLabelFormat', e.target.value as ActiveLabelFormat)
+                  }
+                  className="w-full bg-[#1a1a1a] border border-[#333] rounded px-2 py-1.5 text-xs text-white focus:border-orange-500 focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none"
+                >
+                  <option value="date">Date (13)</option>
+                  <option value="week">Week Number (1-53)</option>
+                  <option value="day">Day Name (M)</option>
+                  <option value="month">Month Name (Jan)</option>
+                  <option value="month-date">Date & Month (Jan 13)</option>
+                  <option value="full">Combined (Mon 13 Wk2)</option>
+                </select>
               </div>
-              
-              {/* Active Label Format Selector - Only show if active label is enabled */}
-              {config.showActiveLabel && config.granularity === 'day' && (
-                <div className="pl-2 border-l border-[#333]">
-                   <label htmlFor="select-active-label-format" className="text-[10px] text-gray-500 block mb-1">Label Content</label>
-                   <select 
-                      id="select-active-label-format"
-                      value={config.activeLabelFormat || 'date'}
-                      onChange={(e) => updateConfig('activeLabelFormat', e.target.value as ActiveLabelFormat)}
-                      className="w-full bg-[#1a1a1a] border border-[#333] rounded px-2 py-1.5 text-xs text-white focus:border-orange-500 focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none"
-                    >
-                      <option value="date">Date (13)</option>
-                      <option value="week">Week Number (1-53)</option>
-                      <option value="day">Day Name (M)</option>
-                      <option value="month">Month Name (Jan)</option>
-                      <option value="month-date">Date & Month (Jan 13)</option>
-                      <option value="full">Combined (Mon 13 Wk2)</option>
-                    </select>
-                </div>
-              )}
+            )}
           </div>
 
           <div className="flex items-center justify-between">
             <label htmlFor="check-months" className="text-xs text-gray-400 cursor-pointer">
               {config.granularity === 'day' ? 'Show Month Labels' : 'Show Cell Labels'}
             </label>
-            <input 
-              type="checkbox" id="check-months"
+            <input
+              type="checkbox"
+              id="check-months"
               checked={config.showMonths}
               onChange={(e) => updateConfig('showMonths', e.target.checked)}
               className="accent-orange-500 w-4 h-4 cursor-pointer focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111] rounded-sm"
             />
           </div>
-          
+
           {config.granularity === 'day' && (
             <div className="flex items-center justify-between">
-              <label htmlFor="check-days" className="text-xs text-gray-400 cursor-pointer">Show Day Labels</label>
-              <input 
-                type="checkbox" id="check-days"
+              <label htmlFor="check-days" className="text-xs text-gray-400 cursor-pointer">
+                Show Day Labels
+              </label>
+              <input
+                type="checkbox"
+                id="check-days"
                 checked={config.showDays}
                 onChange={(e) => updateConfig('showDays', e.target.checked)}
                 className="accent-orange-500 w-4 h-4 cursor-pointer focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111] rounded-sm"
@@ -505,12 +573,15 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
 
           <div className="space-y-1">
             <div className="flex justify-between text-xs text-gray-400">
-                <label htmlFor="input-font-size">Label Size</label>
-                <span>{config.fontSize}px</span>
+              <label htmlFor="input-font-size">Label Size</label>
+              <span>{config.fontSize}px</span>
             </div>
-            <input 
+            <input
               id="input-font-size"
-              type="range" min="8" max="32" step="1" 
+              type="range"
+              min="8"
+              max="32"
+              step="1"
               value={config.fontSize}
               onChange={(e) => updateConfig('fontSize', parseInt(e.target.value))}
               className="focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2 focus-visible:ring-offset-[#111] rounded"
@@ -518,8 +589,10 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
           </div>
 
           <div className="space-y-1">
-            <label htmlFor="select-font-family" className="text-xs text-gray-400 block">Font Family</label>
-            <select 
+            <label htmlFor="select-font-family" className="text-xs text-gray-400 block">
+              Font Family
+            </label>
+            <select
               id="select-font-family"
               value={config.fontFamily}
               onChange={(e) => updateConfig('fontFamily', e.target.value)}
@@ -532,7 +605,6 @@ const Sidebar: React.FC<SidebarProps> = ({ config, setConfig, onDownload, isDown
             </select>
           </div>
         </section>
-
       </div>
     </aside>
   );

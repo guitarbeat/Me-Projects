@@ -124,7 +124,7 @@ export function JournalEventDialog({
       return;
     }
 
-    const marker = emotionMeta[draft.emotion].marker;
+    const { marker } = emotionMeta[draft.emotion];
 
     onSave({
       id: entry?.id ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`,

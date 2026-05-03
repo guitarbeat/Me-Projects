@@ -4,6 +4,7 @@ import React, {
   useRef,
   useCallback,
   useMemo,
+  memo,
 } from 'react';
 import { FloatingBubble, type FloatingBubbleHandle } from './FloatingBubble';
 import {
@@ -27,7 +28,9 @@ interface FloatingUserBubblesProps {
   onBubbleClick?: (userId: string) => void;
 }
 
-export const FloatingUserBubbles: React.FC<FloatingUserBubblesProps> = ({
+// ⚡ Bolt: Wrapped in React.memo to prevent unnecessary re-renders of the entire bubble physics container
+// Expected Impact: Ensures physics animation loop remains smooth by preventing React from reconciling the tree when unrelated parent state changes.
+export const FloatingUserBubbles: React.FC<FloatingUserBubblesProps> = memo(({
   userProfiles = [],
   onAutofill,
   onBubbleClick,
@@ -436,4 +439,6 @@ export const FloatingUserBubbles: React.FC<FloatingUserBubblesProps> = ({
       })}
     </div>
   );
-};
+});
+
+FloatingUserBubbles.displayName = 'FloatingUserBubbles';

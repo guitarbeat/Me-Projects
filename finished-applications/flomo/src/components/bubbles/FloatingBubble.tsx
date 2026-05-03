@@ -5,6 +5,7 @@ import {
   useImperativeHandle,
   useLayoutEffect,
   forwardRef,
+  memo,
 } from 'react';
 import type { BubbleState } from './BubblePhysics';
 import type { UserBubbleProfile } from '@/types/user';
@@ -21,7 +22,9 @@ export interface FloatingBubbleHandle {
   update: (bubble: BubbleState) => void;
 }
 
-export const FloatingBubble = forwardRef<
+// ⚡ Bolt: Wrapped in React.memo to prevent unnecessary re-renders when parent's mouse/touch events trigger state updates.
+// Expected Impact: Reduces DOM updates and paint times during continuous user interaction (hover/move).
+export const FloatingBubble = memo(forwardRef<
   FloatingBubbleHandle,
   FloatingBubbleProps
 >(
@@ -263,6 +266,6 @@ export const FloatingBubble = forwardRef<
       </button>
     );
   }
-);
+));
 
 FloatingBubble.displayName = 'FloatingBubble';

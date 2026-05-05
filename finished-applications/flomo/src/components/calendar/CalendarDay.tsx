@@ -2,6 +2,11 @@ import { memo, useMemo } from 'react';
 import { Sparkles, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// Cache Intl formatters outside the component for better performance
+// as creating these formatters is expensive, reducing render time per day.
+const weekdayFormatter = new Intl.DateTimeFormat('en-US', { weekday: 'long' });
+const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long' });
+
 interface CalendarDayProps {
   day: number;
   currentDate: Date;
@@ -43,8 +48,8 @@ export const CalendarDay = memo(
         currentDate.getMonth(),
         day
       );
-      const weekday = fullDate.toLocaleDateString('en-US', { weekday: 'long' });
-      const month = fullDate.toLocaleDateString('en-US', { month: 'long' });
+      const weekday = weekdayFormatter.format(fullDate);
+      const month = monthFormatter.format(fullDate);
       return `${weekday}, ${month} ${day}, ${fullDate.getFullYear()}${isFloDay ? ', Period logged' : ''}`;
     }, [currentDate, day, isFloDay]);
 

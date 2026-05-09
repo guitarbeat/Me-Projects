@@ -1,6 +1,7 @@
 /**
  * Utilities for period tracking insights and pattern recognition
  */
+import { formatDateToYYYYMMDD } from './dateUtils';
 
 interface PeriodInsights {
   daysThisMonth: number;
@@ -80,11 +81,11 @@ export const calculatePeriodInsights = (
   yesterday.setDate(yesterday.getDate() - 1);
 
   let streak = 0;
-  const checkDate = allDates.includes(today.toISOString().split('T')[0])
+  const checkDate = allDates.includes(formatDateToYYYYMMDD(today))
     ? today
     : yesterday;
 
-  while (entries[checkDate.toISOString().split('T')[0]]) {
+  while (entries[formatDateToYYYYMMDD(checkDate)]) {
     streak++;
     checkDate.setDate(checkDate.getDate() - 1);
   }

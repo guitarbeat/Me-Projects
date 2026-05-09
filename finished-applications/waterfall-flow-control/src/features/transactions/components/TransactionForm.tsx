@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Transaction } from '@/types';
 import { Button } from '@/components/ui/button';
+import { formatDateToYYYYMMDD } from '@/lib';
 import {
   Dialog,
   DialogContent,
@@ -41,7 +42,7 @@ export const TransactionForm = ({
   const isMobile = useIsMobile();
   const [formData, setFormData] = useState<TransactionFormData>({
     name: '',
-    date: new Date().toISOString().split('T')[0],
+    date: formatDateToYYYYMMDD(new Date()),
     person: '',
     inflow: '',
     outflow: '',
@@ -50,7 +51,7 @@ export const TransactionForm = ({
   const resetForm = () => {
     setFormData({
       name: '',
-      date: new Date().toISOString().split('T')[0],
+      date: formatDateToYYYYMMDD(new Date()),
       person: '',
       inflow: '',
       outflow: '',

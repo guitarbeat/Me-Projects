@@ -1,5 +1,6 @@
 import { useState, memo } from 'react';
 import { Transaction } from '@/types';
+import { formatDateToYYYYMMDD } from '@/lib';
 import {
   Table,
   TableBody,
@@ -123,7 +124,7 @@ export const DataTable = memo(
     const safeTransactions = transactions || [];
     const [newTransaction, setNewTransaction] = useState({
       name: '',
-      date: new Date().toISOString().split('T')[0],
+      date: formatDateToYYYYMMDD(new Date()),
       person: '',
       inflow: '',
       outflow: '',
@@ -148,7 +149,7 @@ export const DataTable = memo(
 
       setNewTransaction({
         name: '',
-        date: new Date().toISOString().split('T')[0],
+        date: formatDateToYYYYMMDD(new Date()),
         person: '',
         inflow: '',
         outflow: '',
@@ -159,7 +160,7 @@ export const DataTable = memo(
     const handleCancelAdd = () => {
       setNewTransaction({
         name: '',
-        date: new Date().toISOString().split('T')[0],
+        date: formatDateToYYYYMMDD(new Date()),
         person: '',
         inflow: '',
         outflow: '',

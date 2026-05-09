@@ -4,6 +4,7 @@ import {
   adjustMonth,
   formatDate,
   monthNames,
+  formatDateToYYYYMMDD,
 } from './dateUtils';
 
 describe('dateUtils', () => {
@@ -100,6 +101,23 @@ describe('dateUtils', () => {
     it('should handle single digit days', () => {
       expect(formatDate('2024-03-01')).toBe('Mar 1');
       expect(formatDate('2024-09-09')).toBe('Sep 9');
+    });
+  });
+
+  describe('formatDateToYYYYMMDD', () => {
+    it('should format dates correctly', () => {
+      const date = new Date(2024, 0, 15); // Jan 15, 2024
+      expect(formatDateToYYYYMMDD(date)).toBe('2024-01-15');
+    });
+
+    it('should pad single digits', () => {
+      const date = new Date(2024, 2, 5); // Mar 5, 2024
+      expect(formatDateToYYYYMMDD(date)).toBe('2024-03-05');
+    });
+
+    it('should handle two digits correctly', () => {
+      const date = new Date(2024, 10, 20); // Nov 20, 2024
+      expect(formatDateToYYYYMMDD(date)).toBe('2024-11-20');
     });
   });
 });

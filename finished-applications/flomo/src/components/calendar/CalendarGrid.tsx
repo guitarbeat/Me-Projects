@@ -2,6 +2,14 @@ import { useState, useCallback, useMemo, memo } from 'react';
 import { WeekdayHeaders } from './WeekdayHeaders';
 import type { FloEntries } from '@/types/calendar';
 
+// Helper to manually format dates to YYYY-MM-DD instead of using
+// new Date(...).toISOString().split('T')[0] which is slow and can have timezone issues
+const formatDateStr = (year: number, month: number, day: number): string => {
+  const mm = String(month + 1).padStart(2, '0');
+  const dd = String(day).padStart(2, '0');
+  return `${year}-${mm}-${dd}`;
+};
+
 interface CalendarGridProps {
   currentDate: Date;
   floEntries: FloEntries;
@@ -33,13 +41,16 @@ export const CalendarGrid = memo(
       (
         day: number
       ): { isStreak: boolean; hasLeft: boolean; hasRight: boolean } => {
-        const dateStr = new Date(year, month, day).toISOString().split('T')[0];
-        const prevDateStr = new Date(year, month, day - 1)
-          .toISOString()
-          .split('T')[0];
-        const nextDateStr = new Date(year, month, day + 1)
-          .toISOString()
-          .split('T')[0];
+        // Optimization: avoid slow string instantiation via toISOString in rendering loop
+        const dateStr = formatDateStr(year, month, day);
+
+        // Handle month boundaries for prev/next strings correctly by passing through Date constructor
+        // Date constructor automatically normalizes 0 and -1 days to previous month
+        const prevDate = new Date(year, month, day - 1);
+        const prevDateStr = formatDateStr(prevDate.getFullYear(), prevDate.getMonth(), prevDate.getDate());
+
+        const nextDate = new Date(year, month, day + 1);
+        const nextDateStr = formatDateStr(nextDate.getFullYear(), nextDate.getMonth(), nextDate.getDate());
 
         const isCurrent = !!floEntries[dateStr];
         const hasPrev = !!floEntries[prevDateStr];
@@ -79,7 +90,8 @@ export const CalendarGrid = memo(
 
       // Days of the month
       for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = new Date(year, month, day).toISOString().split('T')[0];
+        // Optimization: prevent 30+ toISOString() calls on each render
+        const dateStr = formatDateStr(year, month, day);
         const isFloDay = !!floEntries[dateStr];
         const isToday = isCurrentMonth && day === today.getDate();
         const streak = isPartOfStreak(day);

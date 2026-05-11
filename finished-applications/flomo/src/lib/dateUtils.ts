@@ -56,3 +56,27 @@ export const getDaysUntilDate = (dateStr: string): number => {
     (nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
   );
 };
+
+/**
+ * High-performance formatter to get YYYY-MM-DD from year, month (0-11), and day.
+ * Avoids the overhead and timezone shift bugs of `new Date(...).toISOString().split('T')[0]`.
+ */
+export const formatDateComponents = (
+  year: number,
+  month: number, // 0-based
+  day: number
+): string => {
+  const m = month + 1;
+  return `${year}-${m < 10 ? '0' + m : m}-${day < 10 ? '0' + day : day}`;
+};
+
+/**
+ * High-performance formatter to get local YYYY-MM-DD from a Date object.
+ */
+export const toLocalDateString = (date: Date = new Date()): string => {
+  return formatDateComponents(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate()
+  );
+};

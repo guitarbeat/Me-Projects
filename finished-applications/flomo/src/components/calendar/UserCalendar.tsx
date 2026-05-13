@@ -2,7 +2,7 @@ import { memo, useMemo, useState, useCallback, useRef, useEffect } from 'react';
 import { CalendarHeader } from './CalendarHeader';
 import { WeekdayHeaders } from './WeekdayHeaders';
 import { CalendarDay } from './CalendarDay';
-import { getDaysInMonth } from '@/lib/dateUtils';
+import { getDaysInMonth, toLocalDateString } from '@/lib/dateUtils';
 import { cn } from '@/lib/utils';
 import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 import { hapticSelection, hapticSuccess } from '@/lib/haptics';
@@ -190,13 +190,11 @@ export const UserCalendar = memo(
 
       // Toggle all days in range
       for (let day = start; day <= end; day++) {
-        const dateStr = new Date(
+        const dateStr = toLocalDateString(new Date(
           currentDate.getFullYear(),
           currentDate.getMonth(),
           day
-        )
-          .toISOString()
-          .split('T')[0];
+        ));
         const isFloDay = !!floEntriesRef.current[dateStr];
         onToggleDay(day, isFloDay);
       }
@@ -225,13 +223,11 @@ export const UserCalendar = memo(
           return;
         }
 
-        const dateStr = new Date(
+        const dateStr = toLocalDateString(new Date(
           currentDate.getFullYear(),
           currentDate.getMonth(),
           day
-        )
-          .toISOString()
-          .split('T')[0];
+        ));
 
         // Trigger appropriate haptic
         if (isFloDay) {
@@ -380,15 +376,13 @@ export const UserCalendar = memo(
                 );
               }
 
-              const dateStr = new Date(
+              const dateStr = toLocalDateString(new Date(
                 currentDate.getFullYear(),
                 currentDate.getMonth(),
                 day
-              )
-                .toISOString()
-                .split('T')[0];
+              ));
               const isFloDay = !!floEntries[dateStr];
-              const today = new Date().toISOString().split('T')[0];
+              const today = toLocalDateString(new Date());
               const isToday = dateStr === today;
               const justToggled = lastToggledDay === dateStr;
               const inMultiSelectRange = isDayInMultiSelectRange(day);

@@ -20,6 +20,7 @@ import {
   TransactionFormData,
 } from './TransactionFormFields';
 import { useIsMobile } from '@/hooks/useMobile';
+import { toLocalDateString } from '@/lib/dateUtils';
 import { Plus } from 'lucide-react';
 import {
   Tooltip,
@@ -41,7 +42,7 @@ export const TransactionForm = ({
   const isMobile = useIsMobile();
   const [formData, setFormData] = useState<TransactionFormData>({
     name: '',
-    date: new Date().toISOString().split('T')[0],
+    date: toLocalDateString(new Date()),
     person: '',
     inflow: '',
     outflow: '',
@@ -50,7 +51,7 @@ export const TransactionForm = ({
   const resetForm = () => {
     setFormData({
       name: '',
-      date: new Date().toISOString().split('T')[0],
+      date: toLocalDateString(new Date()),
       person: '',
       inflow: '',
       outflow: '',

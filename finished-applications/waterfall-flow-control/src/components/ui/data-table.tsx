@@ -28,6 +28,7 @@ import type {
 } from '@/features/transactions/hooks/useTransactionFilters';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Plus, Check, X, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
+import { toLocalDateString } from '@/lib/dateUtils';
 import { cn } from '@/lib/utils';
 
 export type DataTableVariant = 'default' | 'editable' | 'condensed';
@@ -123,7 +124,7 @@ export const DataTable = memo(
     const safeTransactions = transactions || [];
     const [newTransaction, setNewTransaction] = useState({
       name: '',
-      date: new Date().toISOString().split('T')[0],
+      date: toLocalDateString(new Date()),
       person: '',
       inflow: '',
       outflow: '',
@@ -148,7 +149,7 @@ export const DataTable = memo(
 
       setNewTransaction({
         name: '',
-        date: new Date().toISOString().split('T')[0],
+        date: toLocalDateString(new Date()),
         person: '',
         inflow: '',
         outflow: '',
@@ -159,7 +160,7 @@ export const DataTable = memo(
     const handleCancelAdd = () => {
       setNewTransaction({
         name: '',
-        date: new Date().toISOString().split('T')[0],
+        date: toLocalDateString(new Date()),
         person: '',
         inflow: '',
         outflow: '',

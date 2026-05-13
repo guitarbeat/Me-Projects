@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, memo } from 'react';
 import { WeekdayHeaders } from './WeekdayHeaders';
+import { toLocalDateString } from '@/lib/dateUtils';
 import type { FloEntries } from '@/types/calendar';
 
 interface CalendarGridProps {
@@ -33,13 +34,9 @@ export const CalendarGrid = memo(
       (
         day: number
       ): { isStreak: boolean; hasLeft: boolean; hasRight: boolean } => {
-        const dateStr = new Date(year, month, day).toISOString().split('T')[0];
-        const prevDateStr = new Date(year, month, day - 1)
-          .toISOString()
-          .split('T')[0];
-        const nextDateStr = new Date(year, month, day + 1)
-          .toISOString()
-          .split('T')[0];
+        const dateStr = toLocalDateString(new Date(year, month, day));
+        const prevDateStr = toLocalDateString(new Date(year, month, day - 1));
+        const nextDateStr = toLocalDateString(new Date(year, month, day + 1));
 
         const isCurrent = !!floEntries[dateStr];
         const hasPrev = !!floEntries[prevDateStr];
@@ -79,7 +76,7 @@ export const CalendarGrid = memo(
 
       // Days of the month
       for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = new Date(year, month, day).toISOString().split('T')[0];
+        const dateStr = toLocalDateString(new Date(year, month, day));
         const isFloDay = !!floEntries[dateStr];
         const isToday = isCurrentMonth && day === today.getDate();
         const streak = isPartOfStreak(day);

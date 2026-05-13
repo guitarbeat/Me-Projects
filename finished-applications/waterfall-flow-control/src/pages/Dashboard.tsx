@@ -12,6 +12,7 @@ import {
   formatCurrency,
 } from '@/features/transactions';
 import { useCSVImport, exportToCSV } from '@/features/csv-import';
+import { toLocalDateString } from '@/lib/dateUtils';
 import { ChartSelector } from '@/features/charts';
 import { SearchAndSort } from '@/components/dashboard/SearchAndSort';
 import { ChartsSection } from '@/components/dashboard/ChartsSection';
@@ -149,7 +150,7 @@ const Dashboard = () => {
   const handleExportCSV = useCallback(() => {
     exportToCSV(
       transactions,
-      `transactions-${new Date().toISOString().split('T')[0]}.csv`
+      `transactions-${toLocalDateString(new Date())}.csv`
     );
     toast.success('Transactions exported to CSV');
   }, [transactions]);

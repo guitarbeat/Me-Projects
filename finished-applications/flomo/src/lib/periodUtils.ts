@@ -10,6 +10,8 @@ interface PeriodInsights {
   streak: number;
 }
 
+import { formatLocalYYYYMMDD } from './dateUtils';
+
 /**
  * Calculate insights from period entries
  */
@@ -80,11 +82,11 @@ export const calculatePeriodInsights = (
   yesterday.setDate(yesterday.getDate() - 1);
 
   let streak = 0;
-  const checkDate = allDates.includes(today.toISOString().split('T')[0])
+  const checkDate = allDates.includes(formatLocalYYYYMMDD(today))
     ? today
     : yesterday;
 
-  while (entries[checkDate.toISOString().split('T')[0]]) {
+  while (entries[formatLocalYYYYMMDD(checkDate)]) {
     streak++;
     checkDate.setDate(checkDate.getDate() - 1);
   }

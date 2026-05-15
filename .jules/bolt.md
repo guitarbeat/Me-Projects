@@ -1,0 +1,3 @@
+## 2024-03-24 - Avoid toISOString() for Local YYYY-MM-DD
+**Learning:** `new Date(...).toISOString().split('T')[0]` is highly inefficient in React render loops (~60% slower than manual string building) and introduces subtle timezone bugs because `toISOString()` converts to UTC before outputting the string, which can push local midnight dates to the previous day depending on the user's timezone.
+**Action:** Always use manual string formatting (e.g., `getFullYear`, `getMonth() + 1`, `getDate()`) with zero-padding when you specifically need a local `YYYY-MM-DD` date string, especially inside large loops like calendar grids.

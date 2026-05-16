@@ -9,6 +9,15 @@ interface CalendarGridProps {
   disabled?: boolean;
 }
 
+// Helper to format local date quickly without timezone bugs of toISOString
+const formatDate = (y: number, m: number, d: number) => {
+  const date = new Date(y, m, d);
+  const yy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+};
+
 export const CalendarGrid = memo(
   ({
     currentDate,
@@ -33,13 +42,9 @@ export const CalendarGrid = memo(
       (
         day: number
       ): { isStreak: boolean; hasLeft: boolean; hasRight: boolean } => {
-        const dateStr = new Date(year, month, day).toISOString().split('T')[0];
-        const prevDateStr = new Date(year, month, day - 1)
-          .toISOString()
-          .split('T')[0];
-        const nextDateStr = new Date(year, month, day + 1)
-          .toISOString()
-          .split('T')[0];
+        const dateStr = formatDate(year, month, day);
+        const prevDateStr = formatDate(year, month, day - 1);
+        const nextDateStr = formatDate(year, month, day + 1);
 
         const isCurrent = !!floEntries[dateStr];
         const hasPrev = !!floEntries[prevDateStr];
@@ -79,7 +84,7 @@ export const CalendarGrid = memo(
 
       // Days of the month
       for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = new Date(year, month, day).toISOString().split('T')[0];
+        const dateStr = formatDate(year, month, day);
         const isFloDay = !!floEntries[dateStr];
         const isToday = isCurrentMonth && day === today.getDate();
         const streak = isPartOfStreak(day);

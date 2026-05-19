@@ -116,6 +116,17 @@ export const UserCalendar = memo(
       () => getDaysInMonth(currentDate),
       [currentDate]
     );
+
+    // Performance Optimization: Lift `today` calculation outside of the rendering loop.
+    // Instead of creating a Date object and generating a string on every day rendered,
+    // this handles it once and avoids time-zone shift bugs with toISOString().
+    const todayStr = useMemo(() => {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }, []);
     // Handle double-tap on header to jump to today
     const handleHeaderDoubleTap = useCallback(() => {
       const now = Date.now();
@@ -380,16 +391,16 @@ export const UserCalendar = memo(
                 );
               }
 
-              const dateStr = new Date(
-                currentDate.getFullYear(),
-                currentDate.getMonth(),
-                day
-              )
-                .toISOString()
-                .split('T')[0];
+              // Performance Optimization: Manual string construction avoids costly
+              // Date object instantiation and prevents timezone offset bugs
+              // from using toISOString() within local rendering contexts.
+              const year = currentDate.getFullYear();
+              const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+              const dayStr = String(day).padStart(2, '0');
+              const dateStr = `${year}-${month}-${dayStr}`;
+
               const isFloDay = !!floEntries[dateStr];
-              const today = new Date().toISOString().split('T')[0];
-              const isToday = dateStr === today;
+              const isToday = dateStr === todayStr;
               const justToggled = lastToggledDay === dateStr;
               const inMultiSelectRange = isDayInMultiSelectRange(day);
               const isFocused = focusedDay === day;

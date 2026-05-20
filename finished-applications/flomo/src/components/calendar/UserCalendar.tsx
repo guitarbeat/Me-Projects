@@ -17,6 +17,9 @@ interface UserCalendarProps {
   showTodayButton?: boolean;
 }
 
+// Fast zero-padding for date formatting
+const pad = (n: number) => String(n).padStart(2, '0');
+
 export const UserCalendar = memo(
   ({
     currentDate,
@@ -190,13 +193,7 @@ export const UserCalendar = memo(
 
       // Toggle all days in range
       for (let day = start; day <= end; day++) {
-        const dateStr = new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth(),
-          day
-        )
-          .toISOString()
-          .split('T')[0];
+        const dateStr = `${currentDate.getFullYear()}-${pad(currentDate.getMonth() + 1)}-${pad(day)}`;
         const isFloDay = !!floEntriesRef.current[dateStr];
         onToggleDay(day, isFloDay);
       }
@@ -225,13 +222,7 @@ export const UserCalendar = memo(
           return;
         }
 
-        const dateStr = new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth(),
-          day
-        )
-          .toISOString()
-          .split('T')[0];
+        const dateStr = `${currentDate.getFullYear()}-${pad(currentDate.getMonth() + 1)}-${pad(day)}`;
 
         // Trigger appropriate haptic
         if (isFloDay) {
@@ -369,7 +360,12 @@ export const UserCalendar = memo(
               margin: 'calc(-1 * var(--space-2xs))',
             }}
           >
-            {daysInMonth.map((day, index) => {
+            {(() => {
+              // Pre-calculate today's date string once per render
+              const now = new Date();
+              const todayStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+
+              return daysInMonth.map((day, index) => {
               if (day === null) {
                 return (
                   <div
@@ -380,16 +376,9 @@ export const UserCalendar = memo(
                 );
               }
 
-              const dateStr = new Date(
-                currentDate.getFullYear(),
-                currentDate.getMonth(),
-                day
-              )
-                .toISOString()
-                .split('T')[0];
+              const dateStr = `${currentDate.getFullYear()}-${pad(currentDate.getMonth() + 1)}-${pad(day)}`;
               const isFloDay = !!floEntries[dateStr];
-              const today = new Date().toISOString().split('T')[0];
-              const isToday = dateStr === today;
+              const isToday = dateStr === todayStr;
               const justToggled = lastToggledDay === dateStr;
               const inMultiSelectRange = isDayInMultiSelectRange(day);
               const isFocused = focusedDay === day;
@@ -412,7 +401,8 @@ export const UserCalendar = memo(
                   onKeyDown={handleKeyDown}
                 />
               );
-            })}
+              });
+            })()}
           </div>
         </div>
       </div>

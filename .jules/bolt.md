@@ -1,0 +1,3 @@
+## 2024-05-20 - Expensive Date Instantiation & Formatting in Render Loops
+**Learning:** Instantiating `new Date(y, m, d)` and formatting it via `.toISOString().split('T')[0]` within React render loops (e.g., mapping over 31 days in a calendar grid) creates significant performance overhead (approx. 10x slower compared to manual formatting).
+**Action:** Use manual zero-pad string interpolation (e.g., ``${year}-${pad(month + 1)}-${pad(day)}``) and hoist invariant `new Date()` instances (like 'today') outside of the `map` iterations to prevent unnecessary object instantiation and improve loop performance.

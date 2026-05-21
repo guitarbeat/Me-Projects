@@ -2,6 +2,14 @@ import React, { useMemo, memo } from 'react';
 import { AppConfig, DayData } from '../types';
 import DayCell from './DayCell';
 
+const pad = (num: number) => (num < 10 ? '0' + num : num.toString());
+
+// Helper for fast, timezone-safe local date formatting
+// Faster than toISOString().split('T')[0] and prevents UTC timezone shifts
+const formatDateLocal = (date: Date): string => {
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+
 interface YearGridProps {
   config: AppConfig;
   className?: string;
@@ -103,7 +111,7 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
         // Fill days
         const current = new Date(startDate);
         while (current <= endDate) {
-          const dateKey = current.toISOString().split('T')[0];
+          const dateKey = formatDateLocal(current);
           const count = activityMap[dateKey] || 0;
           const intensity = calculateIntensity(count);
           
@@ -413,7 +421,7 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
               key={i}
               filled={item.filled}
               active={item.active}
-              selected={selectedDate === (item.date ? item.date.toISOString().split('T')[0] : null)}
+              selected={selectedDate === (item.date ? formatDateLocal(item.date) : null)}
               label={item.label}
               item={item}
               index={i}
@@ -424,7 +432,7 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
               dotSize={dotSize}
               onClick={() => {
                 if (item.date && onSelectDate) {
-                  onSelectDate(item.date.toISOString().split('T')[0]);
+                  onSelectDate(formatDateLocal(item.date));
                 }
               }}
             />

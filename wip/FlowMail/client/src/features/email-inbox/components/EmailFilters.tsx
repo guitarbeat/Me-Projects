@@ -10,11 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export interface EmailFilterOptions {
   sender?: string;
@@ -78,9 +74,7 @@ export function EmailFilters({ onFilterChange, activeFilters }: EmailFiltersProp
                 id="filter-sender"
                 placeholder="Filter by sender name or email"
                 value={localFilters.sender || ''}
-                onChange={(e) =>
-                  setLocalFilters({ ...localFilters, sender: e.target.value })
-                }
+                onChange={(e) => setLocalFilters({ ...localFilters, sender: e.target.value })}
                 className="mt-1.5"
               />
             </div>
@@ -93,9 +87,7 @@ export function EmailFilters({ onFilterChange, activeFilters }: EmailFiltersProp
                 id="filter-subject"
                 placeholder="Filter by subject"
                 value={localFilters.subject || ''}
-                onChange={(e) =>
-                  setLocalFilters({ ...localFilters, subject: e.target.value })
-                }
+                onChange={(e) => setLocalFilters({ ...localFilters, subject: e.target.value })}
                 className="mt-1.5"
               />
             </div>

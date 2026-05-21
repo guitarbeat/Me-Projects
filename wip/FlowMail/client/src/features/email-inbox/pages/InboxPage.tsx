@@ -27,10 +27,13 @@ export default function InboxPage() {
   // Filter emails based on active filters
   const filteredEmails = useMemo(() => {
     if (!emails.length) return [];
-    
+
     return emails.filter((email) => {
-      if (filters.sender && !email.sender.toLowerCase().includes(filters.sender.toLowerCase()) &&
-          !email.senderEmail.toLowerCase().includes(filters.sender.toLowerCase())) {
+      if (
+        filters.sender &&
+        !email.sender.toLowerCase().includes(filters.sender.toLowerCase()) &&
+        !email.senderEmail.toLowerCase().includes(filters.sender.toLowerCase())
+      ) {
         return false;
       }
       if (filters.subject && !email.subject.toLowerCase().includes(filters.subject.toLowerCase())) {
@@ -67,7 +70,8 @@ export default function InboxPage() {
             <div>
               <p className="app-kicker">Inbox</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight">
-                {filteredEmails.length} email{filteredEmails.length === 1 ? '' : 's'} ready for triage
+                {filteredEmails.length} email{filteredEmails.length === 1 ? '' : 's'} ready for
+                triage
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--app-text-secondary)]">
                 Swipe through the queue, then keep any emotional or strategic follow-up in the
@@ -90,7 +94,7 @@ export default function InboxPage() {
 
         <div className="mb-4 flex items-center justify-between gap-3">
           <EmailFilters onFilterChange={setFilters} activeFilters={filters} />
-          
+
           <div className="flex items-center gap-2 rounded-lg border border-[var(--app-panel-border)] p-1">
             <Button
               size="sm"
@@ -187,7 +191,8 @@ export default function InboxPage() {
           <h3 className="text-base font-semibold text-[var(--app-text)]">Shortcuts</h3>
           <div className="mt-4 space-y-3">
             <div className="app-shell-panel-soft px-4 py-3 text-sm text-[var(--app-text-secondary)]">
-              <strong>Cards:</strong> Swipe left/right or use arrow keys. Press A/D for quick actions.
+              <strong>Cards:</strong> Swipe left/right or use arrow keys. Press A/D for quick
+              actions.
             </div>
             <div className="app-shell-panel-soft px-4 py-3 text-sm text-[var(--app-text-secondary)]">
               <strong>List:</strong> Select multiple emails for bulk actions.

@@ -118,9 +118,7 @@ export default function Settings() {
       toast({
         title: 'Connection failed',
         description:
-          error instanceof Error
-            ? error.message
-            : 'Please check your credentials and try again.',
+          error instanceof Error ? error.message : 'Please check your credentials and try again.',
         variant: 'destructive',
       });
     },
@@ -232,8 +230,8 @@ export default function Settings() {
                 <p className="text-sm font-medium text-[var(--app-text)]">Journal route</p>
               </div>
               <p className="mt-2 text-sm leading-6 text-[var(--app-text-secondary)]">
-                Reflection preferences now persist directly inside FlowMail with no separate
-                journal codepath to maintain.
+                Reflection preferences now persist directly inside FlowMail with no separate journal
+                codepath to maintain.
               </p>
             </div>
           </div>
@@ -349,7 +347,8 @@ export default function Settings() {
                     void fetch('/api/seed', { method: 'POST' })
                       .then(async (response) => {
                         if (!response.ok) {
-                          const errorMessage = (await response.text()) || 'Failed to seed demo emails.';
+                          const errorMessage =
+                            (await response.text()) || 'Failed to seed demo emails.';
                           throw new Error(errorMessage);
                         }
 
@@ -363,8 +362,7 @@ export default function Settings() {
                       .catch((error: unknown) => {
                         toast({
                           title: 'Unable to add demo emails',
-                          description:
-                            error instanceof Error ? error.message : 'Please try again.',
+                          description: error instanceof Error ? error.message : 'Please try again.',
                           variant: 'destructive',
                         });
                       });
@@ -399,7 +397,9 @@ export default function Settings() {
                 ))}
               </ol>
               {selectedGuide.note ? (
-                <p className="mt-3 text-xs text-[var(--app-text-secondary)]">{selectedGuide.note}</p>
+                <p className="mt-3 text-xs text-[var(--app-text-secondary)]">
+                  {selectedGuide.note}
+                </p>
               ) : null}
             </div>
           ) : (

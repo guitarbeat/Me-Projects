@@ -1,6 +1,6 @@
 /**
  * Architecture Verification Tests
- * 
+ *
  * These tests validate the modular architecture of FlowMail,
  * ensuring features are properly isolated and follow the
  * plug-and-play pattern.
@@ -34,13 +34,17 @@ const FeatureConfigSchema = z.object({
   standalone: z.boolean().optional(),
   routes: z.array(RouteConfigSchema),
   navigation: z.array(NavigationItemSchema),
-  api: z.object({
-    endpoints: z.array(z.string()),
-  }).optional(),
-  storage: z.object({
-    type: z.enum(['localStorage', 'database']),
-    key: z.string().optional(),
-  }).optional(),
+  api: z
+    .object({
+      endpoints: z.array(z.string()),
+    })
+    .optional(),
+  storage: z
+    .object({
+      type: z.enum(['localStorage', 'database']),
+      key: z.string().optional(),
+    })
+    .optional(),
   capabilities: z.array(z.string()).optional(),
   dependencies: z.array(z.string()),
 });
@@ -53,13 +57,13 @@ describe('Feature Configurations', () => {
   describe('Email Inbox Feature', () => {
     it('should have valid configuration', async () => {
       const { emailInboxFeature } = await import('../features/email-inbox');
-      
+
       const result = FeatureConfigSchema.safeParse(emailInboxFeature);
-      
+
       if (!result.success) {
         console.error('Validation errors:', result.error.format());
       }
-      
+
       expect(result.success).toBe(true);
     });
 
@@ -89,13 +93,13 @@ describe('Feature Configurations', () => {
   describe('Journal Feature', () => {
     it('should have valid configuration', async () => {
       const { journalFeature } = await import('../features/journal');
-      
+
       const result = FeatureConfigSchema.safeParse(journalFeature);
-      
+
       if (!result.success) {
         console.error('Validation errors:', result.error.format());
       }
-      
+
       expect(result.success).toBe(true);
     });
 
@@ -125,13 +129,13 @@ describe('Feature Configurations', () => {
   describe('Year Grid Feature', () => {
     it('should have valid configuration', async () => {
       const { yearGridFeature } = await import('../features/year-grid');
-      
+
       const result = FeatureConfigSchema.safeParse(yearGridFeature);
-      
+
       if (!result.success) {
         console.error('Validation errors:', result.error.format());
       }
-      
+
       expect(result.success).toBe(true);
     });
 
@@ -163,11 +167,7 @@ describe('Feature Configurations', () => {
       const { journalFeature } = await import('../features/journal');
       const { yearGridFeature } = await import('../features/year-grid');
 
-      const ids = [
-        emailInboxFeature.id,
-        journalFeature.id,
-        yearGridFeature.id,
-      ];
+      const ids = [emailInboxFeature.id, journalFeature.id, yearGridFeature.id];
 
       const uniqueIds = new Set(ids);
       expect(uniqueIds.size).toBe(ids.length);
@@ -184,9 +184,9 @@ describe('Feature Configurations', () => {
         ...yearGridFeature.routes,
       ];
 
-      const paths = allRoutes.map(r => r.path);
+      const paths = allRoutes.map((r) => r.path);
       const uniquePaths = new Set(paths);
-      
+
       // Note: '/' and '/inbox' might be duplicates, which is acceptable for home route
       // We check that there are no unexpected duplicates
       expect(uniquePaths.size).toBeGreaterThan(0);
@@ -272,7 +272,7 @@ describe('Feature Exports', () => {
         downloadTextFile,
         copyTextToClipboard,
       } = await import('../features/journal');
-      
+
       expect(buildExportData).toBeDefined();
       expect(buildEmotionSummary).toBeDefined();
       expect(buildCsv).toBeDefined();
@@ -335,8 +335,8 @@ describe('Feature Integration', () => {
   describe('Route Registration', () => {
     it('should have valid route paths in email-inbox', async () => {
       const { emailInboxFeature } = await import('../features/email-inbox');
-      
-      emailInboxFeature.routes.forEach(route => {
+
+      emailInboxFeature.routes.forEach((route) => {
         expect(route.path).toBeDefined();
         expect(route.path).toMatch(/^\//); // Should start with /
         expect(route.component).toBeDefined();
@@ -345,8 +345,8 @@ describe('Feature Integration', () => {
 
     it('should have valid route paths in journal', async () => {
       const { journalFeature } = await import('../features/journal');
-      
-      journalFeature.routes.forEach(route => {
+
+      journalFeature.routes.forEach((route) => {
         expect(route.path).toBeDefined();
         expect(route.path).toMatch(/^\//); // Should start with /
         expect(route.component).toBeDefined();
@@ -355,9 +355,9 @@ describe('Feature Integration', () => {
 
     it('should have route components that match exported components', async () => {
       const { emailInboxFeature, InboxPage, LaterPage } = await import('../features/email-inbox');
-      
-      const componentNames = emailInboxFeature.routes.map(r => r.component);
-      
+
+      const componentNames = emailInboxFeature.routes.map((r) => r.component);
+
       // Verify that the components mentioned in routes are actually exported
       if (componentNames.includes('InboxPage')) {
         expect(InboxPage).toBeDefined();
@@ -371,8 +371,8 @@ describe('Feature Integration', () => {
   describe('Navigation Items', () => {
     it('should have valid navigation items in email-inbox', async () => {
       const { emailInboxFeature } = await import('../features/email-inbox');
-      
-      emailInboxFeature.navigation.forEach(nav => {
+
+      emailInboxFeature.navigation.forEach((nav) => {
         expect(nav.path).toBeDefined();
         expect(nav.path).toMatch(/^\//); // Should start with /
         expect(nav.label).toBeDefined();
@@ -383,8 +383,8 @@ describe('Feature Integration', () => {
 
     it('should have valid navigation items in journal', async () => {
       const { journalFeature } = await import('../features/journal');
-      
-      journalFeature.navigation.forEach(nav => {
+
+      journalFeature.navigation.forEach((nav) => {
         expect(nav.path).toBeDefined();
         expect(nav.path).toMatch(/^\//); // Should start with /
         expect(nav.label).toBeDefined();
@@ -404,9 +404,9 @@ describe('Feature Integration', () => {
         ...yearGridFeature.navigation,
       ];
 
-      const orders = allNavItems.map(nav => nav.order);
+      const orders = allNavItems.map((nav) => nav.order);
       const uniqueOrders = new Set(orders);
-      
+
       // Each navigation item should have a unique order
       expect(uniqueOrders.size).toBe(orders.length);
     });
@@ -443,10 +443,10 @@ describe('Feature Integration', () => {
     it('should not break when a feature is not imported', async () => {
       // This test verifies that features are truly independent
       // by only importing one feature at a time
-      
+
       const emailInbox = await import('../features/email-inbox');
       expect(emailInbox.emailInboxFeature).toBeDefined();
-      
+
       // Journal and year-grid are not imported, but email-inbox should still work
       expect(emailInbox.InboxPage).toBeDefined();
     });

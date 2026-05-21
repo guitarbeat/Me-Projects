@@ -143,7 +143,7 @@ export function AppShell({ children }: AppShellProps) {
   return (
     <div className="min-h-screen bg-[var(--app-background)] text-[var(--app-text)]">
       <CommandPalette isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
-      
+
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-4 sm:px-6 lg:px-8">
         <motion.header
           className="app-shell-panel mb-6 overflow-hidden px-5 py-5 sm:px-7 sm:py-6"
@@ -175,11 +175,11 @@ export function AppShell({ children }: AppShellProps) {
                     onClick={() => setIsSearchOpen(true)}
                   >
                     <div className="flex items-center gap-2">
-                        <Search className="h-3.5 w-3.5" />
-                        Search everything...
+                      <Search className="h-3.5 w-3.5" />
+                      Search everything...
                     </div>
                     <kbd className="pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-[var(--app-background)] px-1.5 font-mono text-[10px] font-medium opacity-100">
-                        <span className="text-xs">⌘</span>K
+                      <span className="text-xs">⌘</span>K
                     </kbd>
                   </Button>
 
@@ -190,7 +190,7 @@ export function AppShell({ children }: AppShellProps) {
                     className="shrink-0 rounded-full border-[var(--app-panel-border)] bg-white/70 dark:bg-white/5 sm:hidden"
                     onClick={() => setIsSearchOpen(true)}
                   >
-                     <Search className="h-4 w-4" />
+                    <Search className="h-4 w-4" />
                   </Button>
 
                   <Button

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Archive, CheckSquare, Clock, Trash2 } from 'lucide-react';
+import type { Email } from '@shared/schema';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -15,7 +16,6 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
-import type { Email } from '@shared/schema';
 
 interface BulkActionsProps {
   emails: Email[];
@@ -38,7 +38,7 @@ export function BulkActions({ emails, selectedIds, onSelectionChange }: BulkActi
       queryClient.invalidateQueries({ queryKey: ['/api/emails/status/inbox'] });
       queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
       onSelectionChange(new Set());
-      
+
       const action = variables.status === 'archived' ? 'archived' : 'moved to later';
       toast({
         title: 'Success',
@@ -62,7 +62,7 @@ export function BulkActions({ emails, selectedIds, onSelectionChange }: BulkActi
       queryClient.invalidateQueries({ queryKey: ['/api/emails/status/inbox'] });
       queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
       onSelectionChange(new Set());
-      
+
       toast({
         title: 'Success',
         description: `${ids.length} email${ids.length === 1 ? '' : 's'} deleted`,
@@ -106,9 +106,7 @@ export function BulkActions({ emails, selectedIds, onSelectionChange }: BulkActi
             aria-label="Select all emails"
           />
           <span className="text-sm text-[var(--app-text-secondary)]">
-            {selectedIds.size > 0
-              ? `${selectedIds.size} selected`
-              : 'Select all'}
+            {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Select all'}
           </span>
         </div>
 
@@ -149,14 +147,19 @@ export function BulkActions({ emails, selectedIds, onSelectionChange }: BulkActi
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {selectedIds.size} email{selectedIds.size === 1 ? '' : 's'}?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Delete {selectedIds.size} email{selectedIds.size === 1 ? '' : 's'}?
+            </AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. The selected emails will be permanently deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

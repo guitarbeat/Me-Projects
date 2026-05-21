@@ -1,0 +1,3 @@
+## 2024-05-18 - Optimized Swipe Animation Performance
+**Learning:** During swipe animations in a layered card stack (like the Inbox queue), background cards that are visually static will still re-render on every animation frame if the parent passes down continuously changing swipe-related state, even if only the top card truly uses those values.
+**Action:** Extract static or computationally expensive helpers (e.g. `getAvatarColor`, `getInitials`) outside the component to prevent recreating them on each render. Wrap the inner card component in `React.memo` and memoize derived props to prevent unnecessary updates to inactive cards in the stack.

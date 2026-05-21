@@ -32,19 +32,32 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
     fontFamily,
     fontSize = 10, // Default for safety
     colors,
-    transparentBg
+    transparentBg,
   } = config;
 
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const monthNames = [
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
+  ];
   const dayNamesShort = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  
-  const dayLabels = isMondayFirst 
-    ? ['Mon', '', 'Wed', '', 'Fri', '', ''] 
+
+  const dayLabels = isMondayFirst
+    ? ['Mon', '', 'Wed', '', 'Fri', '', '']
     : ['', 'Mon', '', 'Wed', '', 'Fri', ''];
-  
-  const vDayLabels = isMondayFirst 
-    ? ['M','T','W','T','F','S','S'] 
-    : ['S','M','T','W','T','F','S'];
+
+  const vDayLabels = isMondayFirst
+    ? ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+    : ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
   // Dynamic Dimensions based on font size
   const DAY_LABEL_WIDTH = Math.ceil(fontSize * 2.5); // Approx width for "Mon"
@@ -64,16 +77,18 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
       }
 
       const year = currentDate.getFullYear();
-      const isLeap = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+      const isLeap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
       const totalDays = isLeap ? 366 : 365;
       const startOfYear = new Date(year, 0, 1);
-      
+
       // Normalize date to start of day for comparison
-      const currentDayOfYear = Math.floor((currentDate.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24));
+      const currentDayOfYear = Math.floor(
+        (currentDate.getTime() - startOfYear.getTime()) / (1000 * 60 * 60 * 24)
+      );
 
       if (granularity === 'day') {
         const daysArr: DayData[] = [];
-        
+
         // Intensity and Label helpers
         const calculateIntensity = (c: number) => {
           if (c === 0) return 0;
@@ -85,7 +100,11 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
         };
 
         const getDayLabel = (d: Date, c: number) => {
-          const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+          const dateStr = d.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          });
           return `${dateStr}: ${c} items`;
         };
 
@@ -106,7 +125,7 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
           const dateKey = current.toISOString().split('T')[0];
           const count = activityMap[dateKey] || 0;
           const intensity = calculateIntensity(count);
-          
+
           items.push({
             date: new Date(current),
             dayOfWeek: current.getDay(),
@@ -124,7 +143,7 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
         // Assign week indices
         let currentWeek = 0;
         const startDay = isMondayFirst ? (startDate.getDay() + 6) % 7 : startDate.getDay();
-        
+
         items.forEach((item, idx) => {
           const day = isMondayFirst ? (item.dayOfWeek! + 6) % 7 : item.dayOfWeek!;
           if (idx > 0 && day === 0) {
@@ -134,14 +153,14 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
         });
 
         return { dataItems: items, startDayOffset: startDay, year };
-      } 
-      
+      }
+
       if (granularity === 'week') {
         const weeksArr: DayData[] = [];
         const totalWeeks = 53;
         const currentWeekIdx = Math.floor(currentDayOfYear / 7);
 
-        for(let i=0; i < totalWeeks; i++) {
+        for (let i = 0; i < totalWeeks; i++) {
           weeksArr.push({
             filled: i <= currentWeekIdx,
             active: i === currentWeekIdx,
@@ -154,8 +173,8 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
       if (granularity === 'month') {
         const monthsArr: DayData[] = [];
         const currentMonthIdx = currentDate.getMonth();
-        
-        for(let i=0; i < 12; i++) {
+
+        for (let i = 0; i < 12; i++) {
           monthsArr.push({
             filled: i <= currentMonthIdx,
             active: i === currentMonthIdx,
@@ -165,7 +184,7 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
         return { dataItems: monthsArr, startDayOffset: 0, year };
       }
     } catch (e) {
-      console.error("Error generating grid data", e);
+      console.error('Error generating grid data', e);
     }
     return { dataItems: [], startDayOffset: 0, year: new Date().getFullYear() };
   }, [date, granularity, isMondayFirst]);
@@ -181,11 +200,11 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
     const foundMonths = new Set<number>();
 
     dataItems.forEach((d, i) => {
-        if (d.month !== undefined && !foundMonths.has(d.month)) {
-            foundMonths.add(d.month);
-            // Store the linear grid index (independent of mode/size)
-            indices[d.month] = i + startDayOffset;
-        }
+      if (d.month !== undefined && !foundMonths.has(d.month)) {
+        foundMonths.add(d.month);
+        // Store the linear grid index (independent of mode/size)
+        indices[d.month] = i + startDayOffset;
+      }
     });
     return indices;
   }, [dataItems, startDayOffset, granularity]);
@@ -193,14 +212,13 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
   const monthPositions = useMemo(() => {
     if (granularity !== 'day') return [];
 
-    return monthVisualIndices.map(gridIndex => {
-        if (mode === 'horizontal') {
-            const col = Math.floor(gridIndex / 7);
-            return col * (dotSize + gap);
-        } else {
-            const row = Math.floor(gridIndex / 7);
-            return row * (dotSize + gap);
-        }
+    return monthVisualIndices.map((gridIndex) => {
+      if (mode === 'horizontal') {
+        const col = Math.floor(gridIndex / 7);
+        return col * (dotSize + gap);
+      }
+      const row = Math.floor(gridIndex / 7);
+      return row * (dotSize + gap);
     });
   }, [monthVisualIndices, mode, dotSize, gap, granularity]);
 
@@ -208,7 +226,7 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
   const containerStyle: React.CSSProperties & Record<string, any> = {
     backgroundColor: transparentBg ? 'transparent' : colors.bg,
     color: colors.text,
-    fontFamily: fontFamily,
+    fontFamily,
     position: 'relative',
     overflow: 'hidden',
     // Inject CSS variables for DayCell
@@ -235,29 +253,31 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
   };
 
   // --- Render ---
-  
+
   // 1. DAY VIEW
   if (granularity === 'day') {
     return (
-      <div 
+      <div
         ref={domRef}
         className={`p-12 box-border shadow-2xl inline-block ${className}`}
         style={containerStyle}
       >
         {showYearLabel && <div style={watermarkStyle}>{year}</div>}
-        
+
         <ContentWrapper>
-          <div className={`flex ${mode === 'horizontal' ? 'flex-col' : 'flex-row'}`} style={{ gap: `${gap * 2}px` }}>
-            
+          <div
+            className={`flex ${mode === 'horizontal' ? 'flex-col' : 'flex-row'}`}
+            style={{ gap: `${gap * 2}px` }}
+          >
             {mode === 'horizontal' && (
               <>
                 {showMonths && (
-                  <div 
-                    className="relative w-full" 
-                    style={{ 
+                  <div
+                    className="relative w-full"
+                    style={{
                       height: `${MONTH_LABEL_HEIGHT}px`,
                       marginBottom: `${gap}px`,
-                      marginLeft: showDays ? `${DAY_LABEL_WIDTH + (gap * 2)}px` : '0px'
+                      marginLeft: showDays ? `${DAY_LABEL_WIDTH + gap * 2}px` : '0px',
                     }}
                   >
                     {monthNames.map((m, i) => (
@@ -271,31 +291,41 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
                     ))}
                   </div>
                 )}
-                
+
                 <div className="flex" style={{ gap: `${gap * 2}px` }}>
                   {showDays && (
-                    <div 
+                    <div
                       className="grid"
-                      style={{ 
+                      style={{
                         width: `${DAY_LABEL_WIDTH}px`,
                         gap: `${gap}px`,
-                        gridTemplateRows: `repeat(7, ${dotSize}px)` 
+                        gridTemplateRows: `repeat(7, ${dotSize}px)`,
                       }}
                     >
                       {dayLabels.map((d, i) => (
-                        <div key={i} className="text-right flex items-center justify-end" style={{ height: `${dotSize}px`, fontSize: `${fontSize}px` }}>{d}</div>
+                        <div
+                          key={i}
+                          className="text-right flex items-center justify-end"
+                          style={{ height: `${dotSize}px`, fontSize: `${fontSize}px` }}
+                        >
+                          {d}
+                        </div>
                       ))}
                     </div>
                   )}
-                  
-                  <div style={{
-                    display: 'grid',
-                    gap: `${gap}px`,
-                    gridTemplateColumns: `repeat(53, ${dotSize}px)`,
-                    gridTemplateRows: `repeat(7, ${dotSize}px)`,
-                    gridAutoFlow: 'column',
-                  }}>
-                    {Array.from({ length: startDayOffset }).map((_, i) => <div key={`empty-${i}`} />)}
+
+                  <div
+                    style={{
+                      display: 'grid',
+                      gap: `${gap}px`,
+                      gridTemplateColumns: `repeat(53, ${dotSize}px)`,
+                      gridTemplateRows: `repeat(7, ${dotSize}px)`,
+                      gridAutoFlow: 'column',
+                    }}
+                  >
+                    {Array.from({ length: startDayOffset }).map((_, i) => (
+                      <div key={`empty-${i}`} />
+                    ))}
                     {dataItems.map((day, i) => (
                       <DayCell
                         key={i}
@@ -319,11 +349,11 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
             {mode === 'vertical' && (
               <>
                 {showMonths && (
-                  <div 
-                    className="relative" 
-                    style={{ 
-                        width: `${MONTH_LABEL_WIDTH}px`,
-                        marginTop: showDays ? `${DAY_LABEL_HEIGHT + gap}px` : '0px'
+                  <div
+                    className="relative"
+                    style={{
+                      width: `${MONTH_LABEL_WIDTH}px`,
+                      marginTop: showDays ? `${DAY_LABEL_HEIGHT + gap}px` : '0px',
                     }}
                   >
                     {monthNames.map((m, i) => (
@@ -337,32 +367,42 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
                     ))}
                   </div>
                 )}
-                
+
                 <div>
                   {showDays && (
-                    <div 
+                    <div
                       className="grid"
-                      style={{ 
+                      style={{
                         gap: `${gap}px`,
                         marginBottom: `${gap}px`,
-                        gridTemplateColumns: `repeat(7, ${dotSize}px)`
+                        gridTemplateColumns: `repeat(7, ${dotSize}px)`,
                       }}
                     >
                       {vDayLabels.map((d, i) => (
-                        <div key={i} className="text-center flex items-end justify-center" style={{ height: `${DAY_LABEL_HEIGHT}px`, fontSize: `${fontSize}px` }}>{d}</div>
+                        <div
+                          key={i}
+                          className="text-center flex items-end justify-center"
+                          style={{ height: `${DAY_LABEL_HEIGHT}px`, fontSize: `${fontSize}px` }}
+                        >
+                          {d}
+                        </div>
                       ))}
                     </div>
                   )}
-                  
-                  <div style={{
-                    display: 'grid',
-                    gap: `${gap}px`,
-                    gridTemplateColumns: `repeat(7, ${dotSize}px)`,
-                    gridTemplateRows: `repeat(53, ${dotSize}px)`,
-                    gridAutoFlow: 'row',
-                  }}>
-                     {Array.from({ length: startDayOffset }).map((_, i) => <div key={`empty-${i}`} />)}
-                     {dataItems.map((day, i) => (
+
+                  <div
+                    style={{
+                      display: 'grid',
+                      gap: `${gap}px`,
+                      gridTemplateColumns: `repeat(7, ${dotSize}px)`,
+                      gridTemplateRows: `repeat(53, ${dotSize}px)`,
+                      gridAutoFlow: 'row',
+                    }}
+                  >
+                    {Array.from({ length: startDayOffset }).map((_, i) => (
+                      <div key={`empty-${i}`} />
+                    ))}
+                    {dataItems.map((day, i) => (
                       <DayCell
                         key={i}
                         filled={day.filled}
@@ -381,7 +421,6 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
                 </div>
               </>
             )}
-
           </div>
         </ContentWrapper>
       </div>
@@ -399,13 +438,13 @@ const YearGrid: React.FC<YearGridProps> = React.memo(({ config, className, domRe
   };
 
   return (
-    <div 
+    <div
       ref={domRef}
       className={`p-12 box-border shadow-2xl inline-block ${className}`}
       style={containerStyle}
     >
       {showYearLabel && <div style={watermarkStyle}>{year}</div>}
-      
+
       <ContentWrapper>
         <div style={gridStyle}>
           {dataItems.map((item, i) => (

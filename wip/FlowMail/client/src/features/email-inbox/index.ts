@@ -24,12 +24,7 @@ export const emailInboxFeature = {
     { path: '/later', label: 'Later', icon: 'Clock', order: 2 },
   ],
   api: {
-    endpoints: [
-      '/api/emails',
-      '/api/emails/status/:status',
-      '/api/emails/:id',
-      '/api/stats',
-    ],
+    endpoints: ['/api/emails', '/api/emails/status/:status', '/api/emails/:id', '/api/stats'],
   },
   dependencies: ['@tanstack/react-query', 'framer-motion'],
 };

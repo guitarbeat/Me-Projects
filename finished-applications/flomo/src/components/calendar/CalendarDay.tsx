@@ -114,6 +114,23 @@ export const CalendarDay = memo(
         )}
       </DayElement>
     );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.day === nextProps.day &&
+      prevProps.isFloDay === nextProps.isFloDay &&
+      prevProps.isToday === nextProps.isToday &&
+      prevProps.readOnly === nextProps.readOnly &&
+      prevProps.inMultiSelectRange === nextProps.inMultiSelectRange &&
+      prevProps.justToggled === nextProps.justToggled &&
+      prevProps.tabIndex === nextProps.tabIndex &&
+      // currentDate is an object, compare year and month (which is all that matters for rendering a specific day)
+      prevProps.currentDate.getFullYear() === nextProps.currentDate.getFullYear() &&
+      prevProps.currentDate.getMonth() === nextProps.currentDate.getMonth() &&
+      // Function props are expected to be stable from parent, but we check them anyway
+      prevProps.onToggle === nextProps.onToggle &&
+      prevProps.onKeyDown === nextProps.onKeyDown
+    );
   }
 );
 

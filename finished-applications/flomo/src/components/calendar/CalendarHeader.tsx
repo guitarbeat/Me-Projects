@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { GradientButton, Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, CalendarDays } from 'lucide-react';
 import { monthNames } from '@/lib/dateUtils';
@@ -12,7 +13,7 @@ interface CalendarHeaderProps {
   readOnly?: boolean;
 }
 
-export const CalendarHeader = ({
+export const CalendarHeader = memo(({
   currentDate,
   onNavigate,
   onJumpToToday,
@@ -102,4 +103,6 @@ export const CalendarHeader = ({
       )}
     </div>
   );
-};
+});
+
+CalendarHeader.displayName = 'CalendarHeader';

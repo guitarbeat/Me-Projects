@@ -1,0 +1,4 @@
+## 2026-02-15 - Unvalidated URL State Synchronization
+**Vulnerability:** The application directly reflected URL parameters (`key`, `scale`, `bpm`, `inst`) into the global application state via `useUrlSync` without any validation. This allowed an attacker to inject invalid or malicious values, potentially causing client-side crashes (DoS) or unexpected application behavior.
+**Learning:** React applications that sync state with URLs often trust `window.location.search` implicitly. Developers assume users will only use the UI to generate URLs, but URLs are user input and must be treated as untrusted.
+**Prevention:** Always implement a validation layer (e.g., Zod schemas or custom type guards) when parsing URL parameters before updating the application state. Treat URL params as untrusted external input.

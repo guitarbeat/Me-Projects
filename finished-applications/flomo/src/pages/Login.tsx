@@ -552,11 +552,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
               New here? Enter a username to get started, then choose a password.
             </p>
           )}
-          {false && !matchingUser && username.length >= 2 && !showPasswordField && (
-            <p className="text-xs text-muted-foreground text-center animate-fade-in">
-              New here? Just enter a username to get started! 🌸
-            </p>
-          )}
 
           {/* Matching user hint */}
           {matchingUser && buttonState === 'idle' && !showPasswordField && (
@@ -569,11 +564,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
           {showPasswordField && (
             <p className="text-xs text-muted-foreground text-center animate-fade-in">
               Use a password to continue. New accounts create it here; existing accounts enter it here.
-            </p>
-          )}
-          {false && showPasswordField && (
-            <p className="text-xs text-muted-foreground text-center animate-fade-in">
-              This account has a password set 🔐
             </p>
           )}
 
@@ -605,13 +595,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
           <p className="text-center text-sm text-muted-foreground font-quicksand mt-4 animate-hint-entrance">
             <span className="gentle-breathe inline-block">
               First time here? Enter a username to get started, then choose a password.
-            </span>
-          </p>
-        )}
-        {false && userProfiles.length === 0 && (
-          <p className="text-center text-sm text-muted-foreground font-quicksand mt-4 animate-hint-entrance">
-            <span className="gentle-breathe inline-block">
-              First time here? Enter a username to get started! 🌸
             </span>
           </p>
         )}

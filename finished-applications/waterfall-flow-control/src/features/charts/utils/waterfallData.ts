@@ -42,7 +42,9 @@ export const processWaterfallData = (
   const sortedTransactions = [...data].sort((a, b) => {
     if (a.amount > 0 && b.amount <= 0) return -1;
     if (a.amount <= 0 && b.amount > 0) return 1;
-    return new Date(a.date).getTime() - new Date(b.date).getTime();
+    // Optimize date sorting by using string comparison for ISO dates
+    // This is significantly faster than parsing Date objects
+    return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
   });
 
   let runningTotal = 0;

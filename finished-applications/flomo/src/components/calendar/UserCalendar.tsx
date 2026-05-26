@@ -188,15 +188,13 @@ export const UserCalendar = memo(
       const start = Math.min(multiSelectStart, multiSelectEnd);
       const end = Math.max(multiSelectStart, multiSelectEnd);
 
+      const year = currentDate.getFullYear();
+      const monthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
+
       // Toggle all days in range
       for (let day = start; day <= end; day++) {
-        const dateStr = new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth(),
-          day
-        )
-          .toISOString()
-          .split('T')[0];
+        const dayStr = String(day).padStart(2, '0');
+        const dateStr = `${year}-${monthStr}-${dayStr}`;
         const isFloDay = !!floEntriesRef.current[dateStr];
         onToggleDay(day, isFloDay);
       }
@@ -225,13 +223,10 @@ export const UserCalendar = memo(
           return;
         }
 
-        const dateStr = new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth(),
-          day
-        )
-          .toISOString()
-          .split('T')[0];
+        const year = currentDate.getFullYear();
+        const monthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
+        const dayStr = String(day).padStart(2, '0');
+        const dateStr = `${year}-${monthStr}-${dayStr}`;
 
         // Trigger appropriate haptic
         if (isFloDay) {
@@ -369,32 +364,39 @@ export const UserCalendar = memo(
               margin: 'calc(-1 * var(--space-2xs))',
             }}
           >
-            {daysInMonth.map((day, index) => {
-              if (day === null) {
+            {(() => {
+              // Pre-calculate common values outside the map loop
+              const year = currentDate.getFullYear();
+              const monthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
+
+              // Calculate today manually to avoid timezone shifting
+              const todayObj = new Date();
+              const todayYear = todayObj.getFullYear();
+              const todayMonthStr = String(todayObj.getMonth() + 1).padStart(2, '0');
+              const todayDayStr = String(todayObj.getDate()).padStart(2, '0');
+              const todayStr = `${todayYear}-${todayMonthStr}-${todayDayStr}`;
+
+              return daysInMonth.map((day, index) => {
+                if (day === null) {
+                  return (
+                    <div
+                      key={`empty-${index}`}
+                      className="aspect-square"
+                      role="presentation"
+                    />
+                  );
+                }
+
+                const dayStr = String(day).padStart(2, '0');
+                const dateStr = `${year}-${monthStr}-${dayStr}`;
+
+                const isFloDay = !!floEntries[dateStr];
+                const isToday = dateStr === todayStr;
+                const justToggled = lastToggledDay === dateStr;
+                const inMultiSelectRange = isDayInMultiSelectRange(day);
+                const isFocused = focusedDay === day;
+
                 return (
-                  <div
-                    key={`empty-${index}`}
-                    className="aspect-square"
-                    role="presentation"
-                  />
-                );
-              }
-
-              const dateStr = new Date(
-                currentDate.getFullYear(),
-                currentDate.getMonth(),
-                day
-              )
-                .toISOString()
-                .split('T')[0];
-              const isFloDay = !!floEntries[dateStr];
-              const today = new Date().toISOString().split('T')[0];
-              const isToday = dateStr === today;
-              const justToggled = lastToggledDay === dateStr;
-              const inMultiSelectRange = isDayInMultiSelectRange(day);
-              const isFocused = focusedDay === day;
-
-              return (
                 <CalendarDay
                   key={dateStr}
                   day={day}
@@ -411,8 +413,9 @@ export const UserCalendar = memo(
                   tabIndex={isFocused ? 0 : -1}
                   onKeyDown={handleKeyDown}
                 />
-              );
-            })}
+                );
+              });
+            })()}
           </div>
         </div>
       </div>

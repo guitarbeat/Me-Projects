@@ -26,6 +26,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { getLocalISODate } from '@/lib/utils';
 
 interface TransactionFormProps {
   onAdd: (transaction: Omit<Transaction, 'id'>) => void;
@@ -41,7 +42,7 @@ export const TransactionForm = ({
   const isMobile = useIsMobile();
   const [formData, setFormData] = useState<TransactionFormData>({
     name: '',
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalISODate(),
     person: '',
     inflow: '',
     outflow: '',
@@ -50,7 +51,7 @@ export const TransactionForm = ({
   const resetForm = () => {
     setFormData({
       name: '',
-      date: new Date().toISOString().split('T')[0],
+      date: getLocalISODate(),
       person: '',
       inflow: '',
       outflow: '',

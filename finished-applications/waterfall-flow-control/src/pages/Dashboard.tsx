@@ -32,6 +32,7 @@ import {
 } from '@/components/ui';
 import { AmbientBackground } from '@/components/ui/ambient-background';
 import { ChevronDown } from 'lucide-react';
+import { getLocalISODate } from '@/lib/utils';
 
 const EditableTransactionTable = lazy(() =>
   import('@/components/ui/data-table').then(m => ({ default: m.DataTable }))
@@ -149,7 +150,7 @@ const Dashboard = () => {
   const handleExportCSV = useCallback(() => {
     exportToCSV(
       transactions,
-      `transactions-${new Date().toISOString().split('T')[0]}.csv`
+      `transactions-${getLocalISODate()}.csv`
     );
     toast.success('Transactions exported to CSV');
   }, [transactions]);

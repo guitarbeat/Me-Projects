@@ -1,4 +1,5 @@
 import type { Transaction } from '@/types';
+import { getLocalISODate } from '@/lib/utils';
 
 const generateId = () => crypto.randomUUID();
 
@@ -6,7 +7,7 @@ const generateId = () => crypto.randomUUID();
 const getDate = (daysAgo: number): string => {
   const date = new Date();
   date.setDate(date.getDate() - daysAgo);
-  return date.toISOString().split('T')[0];
+  return getLocalISODate(date);
 };
 
 export const createSampleTransactions = (): Transaction[] => {

@@ -1,0 +1,4 @@
+💡 What: Replaced usages of `new Date().toISOString().split('T')[0]` with a new utility function `getLocalISODate()` which formats the date manually in the local timezone.
+🎯 Why: `new Date().toISOString().split('T')[0]` has a significant performance overhead due to string parsing, intermediate array allocation, and also converts the date to UTC which can lead to timezone shift bugs where it returns tomorrow's or yesterday's date based on local time. This provides better performance and guarantees local dates are returned correctly.
+📊 Impact: Minor speed improvement and elimination of a class of timezone shift bugs when initiating forms or parsing transactions for CSV export.
+🔬 Measurement: No new test regressions exist. Verified UI interactions and CSV exports to make sure they function exactly as intended but with improved correctness.

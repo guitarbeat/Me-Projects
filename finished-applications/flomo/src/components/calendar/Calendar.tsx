@@ -8,6 +8,7 @@ import { usePeriodTracking } from '@/hooks/usePeriodTracking';
 import { useCalendarNavigation } from '@/hooks/useCalendarNavigation';
 import { useFloSharing } from '@/hooks/useFloSharing';
 import { useSharedCalendar } from '@/hooks/useSharedCalendar';
+import { formatLocalDate } from '@/lib/dateUtils';
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
@@ -175,13 +176,9 @@ export const Calendar = () => {
       if (!user) {
         return;
       }
-      const dateStr = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        day
-      )
-        .toISOString()
-        .split('T')[0];
+      // ⚡ Bolt: Use formatLocalDate to avoid toISOString timezone bugs and object creation overhead
+      const tempDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+      const dateStr = formatLocalDate(tempDate);
       await toggleFloDay(dateStr, !isCurrentlyFloDay);
 
       // Mark first day logged for onboarding

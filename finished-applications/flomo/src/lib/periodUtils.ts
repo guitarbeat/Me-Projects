@@ -2,6 +2,8 @@
  * Utilities for period tracking insights and pattern recognition
  */
 
+import { formatLocalDate } from './dateUtils';
+
 interface PeriodInsights {
   daysThisMonth: number;
   totalDays: number;
@@ -80,11 +82,12 @@ export const calculatePeriodInsights = (
   yesterday.setDate(yesterday.getDate() - 1);
 
   let streak = 0;
-  const checkDate = allDates.includes(today.toISOString().split('T')[0])
+  // ⚡ Bolt: Opt for formatLocalDate instead of toISOString for performance and timezone safety
+  const checkDate = allDates.includes(formatLocalDate(today))
     ? today
     : yesterday;
 
-  while (entries[checkDate.toISOString().split('T')[0]]) {
+  while (entries[formatLocalDate(checkDate)]) {
     streak++;
     checkDate.setDate(checkDate.getDate() - 1);
   }

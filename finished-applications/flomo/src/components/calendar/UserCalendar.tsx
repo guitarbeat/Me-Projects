@@ -116,6 +116,14 @@ export const UserCalendar = memo(
       () => getDaysInMonth(currentDate),
       [currentDate]
     );
+
+
+    // Calculate current month strings once
+    const currentYearStr = currentDate.getFullYear().toString();
+    const currentMonthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
+
+    const todayDate = new Date();
+    const todayStr = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
     // Handle double-tap on header to jump to today
     const handleHeaderDoubleTap = useCallback(() => {
       const now = Date.now();
@@ -190,13 +198,7 @@ export const UserCalendar = memo(
 
       // Toggle all days in range
       for (let day = start; day <= end; day++) {
-        const dateStr = new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth(),
-          day
-        )
-          .toISOString()
-          .split('T')[0];
+        const dateStr = `${currentYearStr}-${currentMonthStr}-${String(day).padStart(2, '0')}`;
         const isFloDay = !!floEntriesRef.current[dateStr];
         onToggleDay(day, isFloDay);
       }
@@ -210,7 +212,8 @@ export const UserCalendar = memo(
       multiSelectStart,
       multiSelectEnd,
       onToggleDay,
-      currentDate,
+      currentYearStr,
+      currentMonthStr,
     ]); // Removed floEntries dependency
 
     const handleDayClick = useCallback(
@@ -225,13 +228,7 @@ export const UserCalendar = memo(
           return;
         }
 
-        const dateStr = new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth(),
-          day
-        )
-          .toISOString()
-          .split('T')[0];
+        const dateStr = `${currentYearStr}-${currentMonthStr}-${String(day).padStart(2, '0')}`;
 
         // Trigger appropriate haptic
         if (isFloDay) {
@@ -250,7 +247,8 @@ export const UserCalendar = memo(
         onToggleDay,
         isMultiSelectMode,
         handleMultiSelectConfirm,
-        currentDate,
+        currentYearStr,
+        currentMonthStr,
       ]
     );
 
@@ -380,16 +378,9 @@ export const UserCalendar = memo(
                 );
               }
 
-              const dateStr = new Date(
-                currentDate.getFullYear(),
-                currentDate.getMonth(),
-                day
-              )
-                .toISOString()
-                .split('T')[0];
+              const dateStr = `${currentYearStr}-${currentMonthStr}-${String(day).padStart(2, '0')}`;
               const isFloDay = !!floEntries[dateStr];
-              const today = new Date().toISOString().split('T')[0];
-              const isToday = dateStr === today;
+              const isToday = dateStr === todayStr;
               const justToggled = lastToggledDay === dateStr;
               const inMultiSelectRange = isDayInMultiSelectRange(day);
               const isFocused = focusedDay === day;

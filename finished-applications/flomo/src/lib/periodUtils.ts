@@ -80,11 +80,17 @@ export const calculatePeriodInsights = (
   yesterday.setDate(yesterday.getDate() - 1);
 
   let streak = 0;
-  const checkDate = allDates.includes(today.toISOString().split('T')[0])
+
+  // Faster local date formatting to avoid new Date() parsing overhead in loops
+  const formatLocalDate = (d: Date): string => {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  };
+
+  const checkDate = allDates.includes(formatLocalDate(today))
     ? today
     : yesterday;
 
-  while (entries[checkDate.toISOString().split('T')[0]]) {
+  while (entries[formatLocalDate(checkDate)]) {
     streak++;
     checkDate.setDate(checkDate.getDate() - 1);
   }

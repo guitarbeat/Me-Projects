@@ -17,7 +17,7 @@ import { ChartSelector, ChartsSection } from '@/features/charts';
 import { PullToRefreshIndicator } from '@/components/PullToRefresh';
 import { MobileTransactionList } from '@/features/transactions';
 import { CSVMappingDialog } from '@/features/csv-import';
-import { VerticalSplit } from '@/components/ui/vertical-split';
+import { VerticalSplit } from '@/components/vertical-split';
 import {
   Loading,
   Center,

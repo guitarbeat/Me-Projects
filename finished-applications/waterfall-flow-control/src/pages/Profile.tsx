@@ -18,22 +18,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useToast } from '@/hooks/useToast';
+import { toast } from 'sonner';
 import { ArrowLeft, Trash2 } from 'lucide-react';
 
 const TRANSACTIONS_KEY = 'fin_transactions';
 const CHARTS_KEY = 'fin_charts';
 
 export default function Profile() {
-  const { toast } = useToast();
   const navigate = useNavigate();
 
   const handleClearData = () => {
     localStorage.removeItem(TRANSACTIONS_KEY);
     localStorage.removeItem(CHARTS_KEY);
 
-    toast({
-      title: 'Data cleared',
+    toast.success('Data cleared', {
       description: 'All transactions and charts have been deleted.',
     });
 

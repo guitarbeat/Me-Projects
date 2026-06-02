@@ -1,5 +1,5 @@
 import { useState, memo } from 'react';
-import { Transaction } from '@/types';
+import { Transaction } from '../types';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';

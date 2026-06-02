@@ -1,5 +1,5 @@
 import { useState, memo } from 'react';
-import { Transaction } from '@/types';
+import { Transaction } from '../types';
 import {
   Table,
   TableBody,
@@ -17,15 +17,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { TransactionRow } from './TransactionRow';
 import {
-  TransactionRow,
   persons,
   formatCurrency,
-} from '@/features/transactions';
+} from '../utils/transactionUtils';
 import type {
   SortBy,
   SortOrder,
-} from '@/features/transactions/hooks/useTransactionFilters';
+} from '../hooks/useTransactionFilters';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Plus, Check, X, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';

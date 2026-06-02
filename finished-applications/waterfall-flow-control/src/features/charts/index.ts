@@ -2,12 +2,7 @@
 export { SankeyChart } from './components/SankeyChart';
 export { WaterfallChart } from './components/WaterfallChart';
 export { ChartSelector } from './components/ChartSelector';
-export { SankeyEmptyState, SankeyLegend } from './components/SankeyComponents';
-export {
-  CustomTooltip,
-  Legend,
-  EmptyState,
-} from './components/WaterfallComponents';
+export { ChartsSection } from './components/ChartsSection';
 
 // Utils
 export {

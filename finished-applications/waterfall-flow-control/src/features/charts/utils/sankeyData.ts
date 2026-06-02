@@ -1,4 +1,4 @@
-import { Transaction } from '@/types';
+import type { Transaction } from '@/features/transactions';
 
 export interface SankeyNode {
   id: string;

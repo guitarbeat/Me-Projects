@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Transaction, Chart } from '@/types';
-import { createSampleTransactions } from '@/data/sampleTransactions';
+import type { Transaction, Chart } from '../types';
+import { createSampleTransactions } from '../data/sampleTransactions';
 
 const TRANSACTIONS_KEY = 'fin_transactions';
 const CHARTS_KEY = 'fin_charts';

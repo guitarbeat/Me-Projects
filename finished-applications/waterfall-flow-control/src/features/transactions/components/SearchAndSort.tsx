@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import type {
   SortBy,
   SortOrder,
-} from '@/features/transactions/hooks/useTransactionFilters';
+} from '../hooks/useTransactionFilters';
 
 interface SearchAndSortProps {
   searchQuery: string;

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, BarChart3, Folder } from 'lucide-react';
-import { Chart } from '@/types';
+import { Chart } from '@/features/transactions';
 
 interface ChartSelectorProps {
   charts: Chart[];

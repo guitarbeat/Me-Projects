@@ -4,11 +4,28 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import { Suspense, lazy } from 'react';
+import { Suspense, lazy, ReactNode } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { persistQueryClient } from '@tanstack/react-query-persist-client';
 import { createSyncStoragePersister } from '@tanstack/query-sync-storage-persister';
-import { AnimatePresence } from 'framer-motion';
-import { PageTransition } from '@/components/PageTransition';
+
+const PageTransition = ({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) => (
+  <motion.div
+    initial={{ opacity: 0, y: 8 }}
+    animate={{ opacity: 1, y: 0 }}
+    exit={{ opacity: 0, y: -8 }}
+    transition={{ duration: 0.25, ease: 'easeOut' }}
+    className={className}
+  >
+    {children}
+  </motion.div>
+);
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Profile = lazy(() => import('./pages/Profile'));

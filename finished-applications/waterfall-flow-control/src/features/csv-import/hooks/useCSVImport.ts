@@ -1,7 +1,7 @@
 import { useState, useCallback } from 'react';
 import { importCSVFile, parseCSVWithMapping } from '../utils/csvUtils';
 import { toast } from 'sonner';
-import type { Transaction } from '@/types';
+import type { Transaction } from '@/features/transactions';
 import type { FieldMapping, ImportOptions } from '../types';
 
 /**

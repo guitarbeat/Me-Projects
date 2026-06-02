@@ -3,13 +3,13 @@ import { Button } from '@/components/ui/button';
 import { BarChart3 } from 'lucide-react';
 import { Loading, Stagger } from '@/components/ui';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
-import type { Transaction } from '@/types';
+import type { Transaction } from '@/features/transactions';
 
 const WaterfallChart = lazy(() =>
-  import('@/features/charts').then(m => ({ default: m.WaterfallChart }))
+  import('./WaterfallChart').then(m => ({ default: m.WaterfallChart }))
 );
 const SankeyChart = lazy(() =>
-  import('@/features/charts').then(m => ({ default: m.SankeyChart }))
+  import('./SankeyChart').then(m => ({ default: m.SankeyChart }))
 );
 
 interface ChartsSectionProps {

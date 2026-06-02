@@ -61,7 +61,6 @@ export {
   EmptySearch,
   EmptyError,
 } from './empty-state';
-export { DataTable, type DataTableVariant } from './data-table';
 
 // Typography
 export {

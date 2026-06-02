@@ -1,4 +1,4 @@
-import { Transaction } from '@/types';
+import type { Transaction } from '@/features/transactions';
 
 export const generateCSVContent = (transactions: Transaction[]): string => {
   const headers = ['Date', 'Name', 'Person', 'Inflow', 'Outflow', 'Enabled'];

@@ -1,5 +1,5 @@
 import { useState, memo } from 'react';
-import { Transaction } from '@/types';
+import { Transaction } from '../types';
 import { Button } from '@/components/ui/button';
 import { TransactionForm } from './TransactionForm';
 import { EmptyTransactions } from '@/components/ui/empty-state';

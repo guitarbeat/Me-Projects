@@ -4,17 +4,16 @@ import { toast } from 'sonner';
 
 import { useIsMobile } from '@/hooks/useMobile';
 import { usePullToRefresh } from '@/hooks/usePullToRefresh';
-import { useTransactions } from '@/hooks/useTransactions';
 import {
+  useTransactions,
   useTransactionFilters,
   useTransactionStats,
   type SortBy,
   formatCurrency,
+  SearchAndSort,
 } from '@/features/transactions';
 import { useCSVImport, exportToCSV } from '@/features/csv-import';
-import { ChartSelector } from '@/features/charts';
-import { SearchAndSort } from '@/components/dashboard/SearchAndSort';
-import { ChartsSection } from '@/components/dashboard/ChartsSection';
+import { ChartSelector, ChartsSection } from '@/features/charts';
 import { PullToRefreshIndicator } from '@/components/PullToRefresh';
 import { MobileTransactionList } from '@/features/transactions';
 import { CSVMappingDialog } from '@/features/csv-import';
@@ -34,7 +33,7 @@ import { AmbientBackground } from '@/components/ui/ambient-background';
 import { ChevronDown } from 'lucide-react';
 
 const EditableTransactionTable = lazy(() =>
-  import('@/components/ui/data-table').then(m => ({ default: m.DataTable }))
+  import('@/features/transactions').then(m => ({ default: m.DataTable }))
 );
 
 /**

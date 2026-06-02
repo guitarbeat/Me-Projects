@@ -1,9 +1,8 @@
-import { lazy, Suspense, useState, useMemo, useCallback } from 'react';
+import { lazy, Suspense, useState, useMemo, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 import { useIsMobile } from '@/hooks/useMobile';
-import { usePullToRefresh } from '@/hooks/usePullToRefresh';
 import {
   useTransactions,
   useTransactionFilters,
@@ -14,7 +13,6 @@ import {
 } from '@/features/transactions';
 import { useCSVImport, exportToCSV } from '@/features/csv-import';
 import { ChartSelector, ChartsSection } from '@/features/charts';
-import { PullToRefreshIndicator } from '@/components/PullToRefresh';
 import { MobileTransactionList } from '@/features/transactions';
 import { CSVMappingDialog } from '@/features/csv-import';
 import { VerticalSplit } from '@/components/vertical-split';
@@ -127,11 +125,7 @@ const Dashboard = () => {
     toast.success('Transactions refreshed');
   }, [refetch]);
 
-  const { scrollRef, isPulling, isRefreshing, pullDistance, threshold } =
-    usePullToRefresh({
-      onRefresh: handleRefresh,
-      enabled: isMobile,
-    });
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const handleSort = useCallback(
     (col: SortBy) => {
@@ -209,14 +203,6 @@ const Dashboard = () => {
   const bottomPanel = useMemo(
     () => (
       <ScrollArea ref={scrollRef} className="h-full">
-        {isMobile && (
-          <PullToRefreshIndicator
-            isPulling={isPulling}
-            isRefreshing={isRefreshing}
-            pullDistance={pullDistance}
-            threshold={threshold}
-          />
-        )}
         <div className="p-4 space-y-4">
           <SearchAndSort
             searchQuery={searchQuery}
@@ -263,10 +249,6 @@ const Dashboard = () => {
     [
       scrollRef,
       isMobile,
-      isPulling,
-      isRefreshing,
-      pullDistance,
-      threshold,
       searchQuery,
       setSearchQuery,
       sortBy,

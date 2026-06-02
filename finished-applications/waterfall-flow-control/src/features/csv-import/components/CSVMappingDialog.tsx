@@ -14,17 +14,17 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertCircle, CheckCircle2, RotateCcw } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
-import { FieldMapping, ImportOptions, FieldKey } from '../types';
+import { CSVFieldMapping, CSVImportOptions, CSVFieldKey } from '../types';
 import { FIELD_CONFIG, REQUIRED_FIELDS } from '../utils/fieldConfig';
 import { autoDetectMapping } from '../utils/autoDetection';
-import { FieldMappingCard } from './FieldMappingCard';
-import { DataPreviewTable } from './DataPreviewTable';
+import { CSVFieldMapper } from './CSVFieldMapper';
+import { CSVPreviewTable } from './CSVPreviewTable';
 
 interface CSVMappingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   csvData: string[][];
-  onConfirm: (mapping: FieldMapping, options: ImportOptions) => void;
+  onConfirm: (mapping: CSVFieldMapping, options: CSVImportOptions) => void;
 }
 
 export function CSVMappingDialog({
@@ -35,7 +35,7 @@ export function CSVMappingDialog({
 }: CSVMappingDialogProps) {
   const [skipFirstRow, setSkipFirstRow] = useState(true);
   const [enableAllByDefault, setEnableAllByDefault] = useState(true);
-  const [mapping, setMapping] = useState<FieldMapping>({
+  const [mapping, setMapping] = useState<CSVFieldMapping>({
     date: null,
     name: null,
     person: null,
@@ -90,7 +90,7 @@ export function CSVMappingDialog({
     return messages;
   }, [mapping]);
 
-  const handleMappingChange = (field: FieldKey, value: number | null) => {
+  const handleMappingChange = (field: CSVFieldKey, value: number | null) => {
     setMapping(prev => ({ ...prev, [field]: value }));
   };
 
@@ -196,8 +196,8 @@ export function CSVMappingDialog({
                     Field Mapping
                   </h3>
                   <div className="space-y-3">
-                    {(Object.keys(FIELD_CONFIG) as FieldKey[]).map(field => (
-                      <FieldMappingCard
+                    {(Object.keys(FIELD_CONFIG) as CSVFieldKey[]).map(field => (
+                      <CSVFieldMapper
                         key={field}
                         field={field}
                         mapping={mapping}
@@ -245,7 +245,7 @@ export function CSVMappingDialog({
                 Showing first {previewData.length} of {totalRows} rows
               </p>
             </div>
-            <DataPreviewTable previewData={previewData} mapping={mapping} />
+            <CSVPreviewTable previewData={previewData} mapping={mapping} />
           </div>
         </div>
 

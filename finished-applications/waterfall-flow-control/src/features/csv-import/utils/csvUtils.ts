@@ -1,4 +1,5 @@
 import type { Transaction } from '@/features/transactions';
+import type { CSVFieldMapping, CSVImportOptions } from '../types';
 
 export const generateCSVContent = (transactions: Transaction[]): string => {
   const headers = ['Date', 'Name', 'Person', 'Inflow', 'Outflow', 'Enabled'];
@@ -80,24 +81,11 @@ export const parseCSVToArray = (csvText: string): string[][] => {
   return result;
 };
 
-interface FieldMapping {
-  date: number | null;
-  name: number | null;
-  person: number | null;
-  inflow: number | null;
-  outflow: number | null;
-  enabled: number | null;
-}
-
-interface ImportOptions {
-  skipFirstRow: boolean;
-  enableAllByDefault: boolean;
-}
 
 export const parseCSVWithMapping = (
   csvData: string[][],
-  mapping: FieldMapping,
-  options: ImportOptions
+  mapping: CSVFieldMapping,
+  options: CSVImportOptions
 ): Omit<Transaction, 'id' | 'balance'>[] => {
   const transactions: Omit<Transaction, 'id' | 'balance'>[] = [];
   const startIndex = options.skipFirstRow ? 1 : 0;

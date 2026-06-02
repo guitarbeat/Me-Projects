@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { Transaction, Chart } from '../types';
-import { createSampleTransactions } from '../data/sampleTransactions';
+import type { Transaction, TransactionChart } from '../types';
 
 const TRANSACTIONS_KEY = 'fin_transactions';
 const CHARTS_KEY = 'fin_charts';
@@ -10,7 +9,7 @@ const generateId = () => crypto.randomUUID();
 
 export const useTransactions = (chartId?: string | null) => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [charts, setCharts] = useState<Chart[]>([]);
+  const [charts, setCharts] = useState<TransactionChart[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -21,14 +20,13 @@ export const useTransactions = (chartId?: string | null) => {
       // Check if first visit - seed sample data
       const firstVisitComplete = localStorage.getItem(FIRST_VISIT_KEY);
       if (!firstVisitComplete) {
-        const sampleData = createSampleTransactions();
-        localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(sampleData));
+        localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify([]));
         localStorage.setItem(FIRST_VISIT_KEY, 'true');
       }
 
       // Load charts
       const storedCharts = localStorage.getItem(CHARTS_KEY);
-      const allCharts: Chart[] = storedCharts ? JSON.parse(storedCharts) : [];
+      const allCharts: TransactionChart[] = storedCharts ? JSON.parse(storedCharts) : [];
       setCharts(allCharts);
 
       // Load transactions
@@ -60,7 +58,7 @@ export const useTransactions = (chartId?: string | null) => {
     localStorage.setItem(TRANSACTIONS_KEY, JSON.stringify(allTransactions));
   };
 
-  const saveCharts = (allCharts: Chart[]) => {
+  const saveCharts = (allCharts: TransactionChart[]) => {
     localStorage.setItem(CHARTS_KEY, JSON.stringify(allCharts));
   };
 
@@ -149,14 +147,14 @@ export const useTransactions = (chartId?: string | null) => {
 
   const createChart = useCallback(
     async (name: string): Promise<string | null> => {
-      const chart: Chart = {
+      const chart: TransactionChart = {
         id: generateId(),
         name,
         created_at: new Date().toISOString(),
       };
 
       const storedCharts = localStorage.getItem(CHARTS_KEY);
-      const allCharts: Chart[] = storedCharts ? JSON.parse(storedCharts) : [];
+      const allCharts: TransactionChart[] = storedCharts ? JSON.parse(storedCharts) : [];
       allCharts.push(chart);
       saveCharts(allCharts);
 

@@ -1,7 +1,7 @@
 import { Calendar, FileText, User, Hash, ToggleLeft } from 'lucide-react';
-import { FieldConfig, FieldKey } from '../types';
+import { CSVFieldConfig, CSVFieldKey } from '../types';
 
-export const FIELD_CONFIG: Record<FieldKey, FieldConfig> = {
+export const FIELD_CONFIG: Record<CSVFieldKey, CSVFieldConfig> = {
   date: {
     label: 'Date',
     icon: Calendar,
@@ -89,4 +89,4 @@ export const FIELD_CONFIG: Record<FieldKey, FieldConfig> = {
   },
 };
 
-export const REQUIRED_FIELDS: FieldKey[] = ['date', 'name', 'person'];
+export const REQUIRED_FIELDS: CSVFieldKey[] = ['date', 'name', 'person'];

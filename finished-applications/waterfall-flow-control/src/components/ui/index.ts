@@ -1,5 +1,5 @@
 // Layout
-export { VerticalSplit, type Detent } from '../vertical-split';
+export { SplitLayout, type Detent } from '../split-layout';
 export { CollapsibleSection } from './collapsible-section';
 export { AmbientBackground } from './ambient-background';
 export { Sparkline, SparklineBar } from './sparkline';
@@ -15,12 +15,7 @@ export {
   surfaceVariants,
 } from './surface';
 export { Currency, currencyVariants } from './currency';
-export {
-  EmptyState,
-  EmptyTransactions,
-  EmptySearch,
-  EmptyError,
-} from './empty-state';
+export { EmptyState } from './empty-state';
 
 // Typography
 export {

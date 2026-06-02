@@ -7,31 +7,29 @@ import {
   useTransactions,
   useTransactionFilters,
   useTransactionStats,
-  type SortBy,
+  type TransactionSortBy,
   formatCurrency,
-  SearchAndSort,
+  TransactionFilters,
 } from '@/features/transactions';
 import { useCSVImport, exportToCSV } from '@/features/csv-import';
-import { ChartSelector, ChartsSection } from '@/features/charts';
+import { CashFlowChartSelector, CashFlowCharts } from '@/features/charts';
 import { MobileTransactionList } from '@/features/transactions';
 import { CSVMappingDialog } from '@/features/csv-import';
-import { VerticalSplit } from '@/components/vertical-split';
+import { SplitLayout } from '@/components/split-layout';
 import {
   Loading,
   Center,
   Body,
   Heading,
-  Button,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-  ScrollArea,
+  AmbientBackground,
 } from '@/components/ui';
-import { AmbientBackground } from '@/components/ui/ambient-background';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChevronDown } from 'lucide-react';
 
 const EditableTransactionTable = lazy(() =>
-  import('@/features/transactions').then(m => ({ default: m.DataTable }))
+  import('@/features/transactions').then(m => ({ default: m.TransactionTable }))
 );
 
 /**
@@ -128,7 +126,7 @@ const Dashboard = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const handleSort = useCallback(
-    (col: SortBy) => {
+    (col: TransactionSortBy) => {
       if (col === sortBy) {
         toggleSortOrder();
       } else {
@@ -173,7 +171,7 @@ const Dashboard = () => {
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-72 p-0" align="center">
-          <ChartSelector
+          <CashFlowChartSelector
             charts={charts}
             selectedChartId={selectedChartId}
             onSelectChart={setSelectedChartId}
@@ -193,7 +191,7 @@ const Dashboard = () => {
   const topPanel = useMemo(
     () => (
       <div className="h-full overflow-auto p-4">
-        <ChartsSection enabledTransactions={enabledTransactions} />
+        <CashFlowCharts enabledTransactions={enabledTransactions} />
       </div>
     ),
     [enabledTransactions]
@@ -204,7 +202,7 @@ const Dashboard = () => {
     () => (
       <ScrollArea ref={scrollRef} className="h-full">
         <div className="p-4 space-y-4">
-          <SearchAndSort
+          <TransactionFilters
             searchQuery={searchQuery}
             onSearchChange={setSearchQuery}
             sortBy={sortBy}
@@ -287,7 +285,7 @@ const Dashboard = () => {
     <div className="h-screen bg-background flex flex-col overflow-hidden relative">
       <AmbientBackground mood={financialMood} />
 
-      <VerticalSplit
+      <SplitLayout
         topView={topPanel}
         bottomView={bottomPanel}
         topTitle="Charts"

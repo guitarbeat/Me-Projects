@@ -4,21 +4,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, BarChart3, Folder } from 'lucide-react';
-import { Chart } from '@/features/transactions';
+import { TransactionChart } from '@/features/transactions';
 
-interface ChartSelectorProps {
-  charts: Chart[];
+interface CashFlowChartSelectorProps {
+  charts: TransactionChart[];
   selectedChartId: string | null;
   onSelectChart: (chartId: string | null) => void;
   onCreateChart: (name: string) => void;
 }
 
-export const ChartSelector = ({
+export const CashFlowChartSelector = ({
   charts,
   selectedChartId,
   onSelectChart,
   onCreateChart,
-}: ChartSelectorProps) => {
+}: CashFlowChartSelectorProps) => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [newChartName, setNewChartName] = useState('');
 

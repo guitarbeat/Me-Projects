@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import {
-  ChartData,
+  WaterfallChartData,
   processWaterfallData,
   calculateChartBounds,
   formatCurrency,
@@ -86,7 +86,7 @@ const EmptyState = () => (
 );
 
 interface WaterfallChartProps {
-  data: ChartData[];
+  data: WaterfallChartData[];
   chartMode: 'detailed' | 'summary';
 }
 
@@ -176,7 +176,7 @@ export const WaterfallChart = memo(
         expenses.forEach(e => {
           if (!expenseOrder.includes(e.name)) expenseOrder.push(e.name);
         });
-        const summaryData: ChartData[] = [];
+        const summaryData: WaterfallChartData[] = [];
         if (income.length > 0) {
           summaryData.push({
             name: 'Total Income',

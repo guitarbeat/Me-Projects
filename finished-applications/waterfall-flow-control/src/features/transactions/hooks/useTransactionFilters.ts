@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import type { Transaction } from '../types';
 
-export type SortBy =
+export type TransactionSortBy =
   | 'date'
   | 'amount'
   | 'name'
@@ -9,7 +9,7 @@ export type SortBy =
   | 'inflow'
   | 'outflow'
   | 'balance';
-export type SortOrder = 'asc' | 'desc';
+export type TransactionSortOrder = 'asc' | 'desc';
 
 /**
  * Hook to manage transaction filtering and sorting
@@ -17,8 +17,8 @@ export type SortOrder = 'asc' | 'desc';
 export const useTransactionFilters = (transactions: Transaction[]) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
-  const [sortBy, setSortBy] = useState<SortBy>('date');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [sortBy, setSortBy] = useState<TransactionSortBy>('date');
+  const [sortOrder, setSortOrder] = useState<TransactionSortOrder>('desc');
 
   // Debounce search query updates
   useEffect(() => {

@@ -23,14 +23,14 @@ import {
   formatCurrency,
 } from '../utils/transactionUtils';
 import type {
-  SortBy,
-  SortOrder,
+  TransactionSortBy,
+  TransactionSortOrder,
 } from '../hooks/useTransactionFilters';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Plus, Check, X, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-export type DataTableVariant = 'default' | 'editable' | 'condensed';
+export type TransactionTableVariant = 'default' | 'editable' | 'condensed';
 
 /** Sortable column header with arrow indicators */
 const SortableHead = ({
@@ -41,11 +41,11 @@ const SortableHead = ({
   onSort,
   className,
 }: {
-  column: SortBy;
+  column: TransactionSortBy;
   label: string;
-  currentSort?: SortBy;
-  sortOrder?: SortOrder;
-  onSort?: (col: SortBy) => void;
+  currentSort?: TransactionSortBy;
+  sortOrder?: TransactionSortOrder;
+  onSort?: (col: TransactionSortBy) => void;
   className?: string;
 }) => {
   const isActive = currentSort === column;
@@ -88,12 +88,12 @@ const SortableHead = ({
   );
 };
 
-interface DataTableProps {
+interface TransactionTableProps {
   transactions: Transaction[];
-  variant?: DataTableVariant;
-  sortBy?: SortBy;
-  sortOrder?: SortOrder;
-  onSort?: (column: SortBy) => void;
+  variant?: TransactionTableVariant;
+  sortBy?: TransactionSortBy;
+  sortOrder?: TransactionSortOrder;
+  onSort?: (column: TransactionSortBy) => void;
   onToggle: (id: string, currentEnabled: boolean) => void;
   onDelete: (id: string) => void;
   onAdd?: (transaction: Omit<Transaction, 'id'>) => void;
@@ -104,7 +104,7 @@ interface DataTableProps {
   maxHeight?: string;
 }
 
-export const DataTable = memo(
+export const TransactionTable = memo(
   ({
     transactions = [],
     variant = 'default',
@@ -116,7 +116,7 @@ export const DataTable = memo(
     onAdd,
     onUpdate,
     maxHeight = 'max-h-96',
-  }: DataTableProps) => {
+  }: TransactionTableProps) => {
     const [showAddRow, setShowAddRow] = useState(false);
 
     // Safety check for undefined transactions
@@ -435,4 +435,4 @@ export const DataTable = memo(
   }
 );
 
-DataTable.displayName = 'DataTable';
+TransactionTable.displayName = 'TransactionTable';

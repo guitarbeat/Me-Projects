@@ -1,4 +1,4 @@
-export interface FieldMapping {
+export interface CSVFieldMapping {
   date: number | null;
   name: number | null;
   person: number | null;
@@ -7,12 +7,12 @@ export interface FieldMapping {
   enabled: number | null;
 }
 
-export interface ImportOptions {
+export interface CSVImportOptions {
   skipFirstRow: boolean;
   enableAllByDefault: boolean;
 }
 
-export interface FieldConfig {
+export interface CSVFieldConfig {
   label: string;
   icon: any;
   description: string;
@@ -22,4 +22,4 @@ export interface FieldConfig {
   dataType: 'date' | 'text' | 'number' | 'boolean';
 }
 
-export type FieldKey = keyof FieldMapping;
+export type CSVFieldKey = keyof CSVFieldMapping;

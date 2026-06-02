@@ -1,7 +1,7 @@
 // Components
 export { CSVMappingDialog } from './components/CSVMappingDialog';
-export { DataPreviewTable } from './components/DataPreviewTable';
-export { FieldMappingCard } from './components/FieldMappingCard';
+export { CSVPreviewTable } from './components/CSVPreviewTable';
+export { CSVFieldMapper } from './components/CSVFieldMapper';
 
 // Hooks
 export { useCSVImport } from './hooks/useCSVImport';
@@ -18,8 +18,8 @@ export { FIELD_CONFIG, REQUIRED_FIELDS } from './utils/fieldConfig';
 
 // Types
 export type {
-  FieldMapping,
-  ImportOptions,
-  FieldConfig,
-  FieldKey,
+  CSVFieldMapping,
+  CSVImportOptions,
+  CSVFieldConfig,
+  CSVFieldKey,
 } from './types';

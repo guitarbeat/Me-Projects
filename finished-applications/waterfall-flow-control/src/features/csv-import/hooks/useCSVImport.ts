@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { importCSVFile, parseCSVWithMapping } from '../utils/csvUtils';
 import { toast } from 'sonner';
 import type { Transaction } from '@/features/transactions';
-import type { FieldMapping, ImportOptions } from '../types';
+import type { CSVFieldMapping, CSVImportOptions } from '../types';
 
 /**
  * Hook to manage CSV import workflow
@@ -40,7 +40,7 @@ export const useCSVImport = (
   );
 
   const handleCSVMappingConfirm = useCallback(
-    async (mapping: FieldMapping, options: ImportOptions) => {
+    async (mapping: CSVFieldMapping, options: CSVImportOptions) => {
       if (!pendingCSVData) return;
 
       try {

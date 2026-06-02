@@ -2,7 +2,7 @@ import { useState, memo } from 'react';
 import { Transaction } from '../types';
 import { Button } from '@/components/ui/button';
 import { TransactionForm } from './TransactionForm';
-import { EmptyTransactions } from '@/components/ui/empty-state';
+import { EmptyState } from '@/components/ui/empty-state';
 import { Plus } from 'lucide-react';
 import { useIsMobile } from '@/hooks/useMobile';
 import { MobileTransactionItem } from './MobileTransactionItem';
@@ -27,7 +27,22 @@ export const MobileTransactionList = memo(
     if (transactions.length === 0) {
       return (
         <div className="space-y-4 py-4">
-          <EmptyTransactions onAction={() => setShowAddForm(true)} />
+          <EmptyState
+            icon="chart"
+            title="No transactions yet"
+            description="Start tracking your finances by adding your first transaction"
+            variant="primary"
+            action={
+              <Button
+                onClick={() => setShowAddForm(true)}
+                size="sm"
+                className="gap-2 shadow-lg hover:shadow-xl transition-all"
+              >
+                <Plus className="h-4 w-4" />
+                Add Transaction
+              </Button>
+            }
+          />
 
           <TransactionForm
             open={showAddForm}

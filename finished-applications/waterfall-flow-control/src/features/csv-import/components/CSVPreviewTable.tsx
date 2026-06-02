@@ -1,24 +1,24 @@
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { FieldMapping, FieldKey } from '../types';
+import { CSVFieldMapping, CSVFieldKey } from '../types';
 import { FIELD_CONFIG } from '../utils/fieldConfig';
 
-interface DataPreviewTableProps {
+interface CSVPreviewTableProps {
   previewData: string[][];
-  mapping: FieldMapping;
+  mapping: CSVFieldMapping;
 }
 
-export function DataPreviewTable({
+export function CSVPreviewTable({
   previewData,
   mapping,
-}: DataPreviewTableProps) {
+}: CSVPreviewTableProps) {
   return (
     <div className="flex-1 overflow-auto">
       <div className="min-w-max">
         <table className="w-full divide-y divide-border">
           <thead className="bg-muted sticky top-0 z-10">
             <tr>
-              {(Object.keys(FIELD_CONFIG) as FieldKey[]).map(field => {
+              {(Object.keys(FIELD_CONFIG) as CSVFieldKey[]).map(field => {
                 const config = FIELD_CONFIG[field];
                 const Icon = config.icon;
                 const isMapped = mapping[field] !== null;
@@ -56,7 +56,7 @@ export function DataPreviewTable({
                 key={rowIndex}
                 className="hover:bg-muted/30 transition-colors"
               >
-                {(Object.keys(FIELD_CONFIG) as FieldKey[]).map(field => {
+                {(Object.keys(FIELD_CONFIG) as CSVFieldKey[]).map(field => {
                   const colIndex = mapping[field];
                   const value = colIndex !== null ? row[colIndex] : null;
 

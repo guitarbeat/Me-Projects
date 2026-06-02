@@ -1,4 +1,4 @@
-import { FieldMapping, FieldKey } from '../types';
+import { CSVFieldMapping, CSVFieldKey } from '../types';
 import { FIELD_CONFIG } from './fieldConfig';
 
 // Detect if a value looks like a date
@@ -86,7 +86,7 @@ function analyzeColumnData(
 export function autoDetectMapping(
   csvData: string[][],
   skipFirstRow: boolean
-): FieldMapping {
+): CSVFieldMapping {
   if (csvData.length === 0) {
     return {
       date: null,
@@ -99,7 +99,7 @@ export function autoDetectMapping(
   }
 
   const headers = csvData[0].map(h => h.toLowerCase().trim());
-  const mapping: FieldMapping = {
+  const mapping: CSVFieldMapping = {
     date: null,
     name: null,
     person: null,
@@ -110,7 +110,7 @@ export function autoDetectMapping(
 
   // First pass: Match by header names
   headers.forEach((header, index) => {
-    (Object.keys(FIELD_CONFIG) as FieldKey[]).forEach(fieldKey => {
+    (Object.keys(FIELD_CONFIG) as CSVFieldKey[]).forEach(fieldKey => {
       const config = FIELD_CONFIG[fieldKey];
 
       // Check if header matches any detection pattern

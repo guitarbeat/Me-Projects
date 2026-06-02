@@ -9,22 +9,22 @@ import {
 } from '@/components/ui/select';
 import { Check, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { FieldKey, FieldMapping } from '../types';
+import { CSVFieldKey, CSVFieldMapping } from '../types';
 import { FIELD_CONFIG } from '../utils/fieldConfig';
 
-interface FieldMappingCardProps {
-  field: FieldKey;
-  mapping: FieldMapping;
+interface CSVFieldMapperProps {
+  field: CSVFieldKey;
+  mapping: CSVFieldMapping;
   columnOptions: { value: number; label: string; preview: string }[];
-  onMappingChange: (field: FieldKey, value: number | null) => void;
+  onMappingChange: (field: CSVFieldKey, value: number | null) => void;
 }
 
-export function FieldMappingCard({
+export function CSVFieldMapper({
   field,
   mapping,
   columnOptions,
   onMappingChange,
-}: FieldMappingCardProps) {
+}: CSVFieldMapperProps) {
   const config = FIELD_CONFIG[field];
   const Icon = config.icon;
   const isMapped = mapping[field] !== null;

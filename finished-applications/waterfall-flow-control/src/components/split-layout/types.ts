@@ -7,7 +7,7 @@ export interface SplitSettings {
   magneticStrength: number;
 }
 
-export interface VerticalSplitProps {
+export interface SplitLayoutProps {
   topView: ReactNode;
   bottomView: ReactNode;
   topTitle?: string;

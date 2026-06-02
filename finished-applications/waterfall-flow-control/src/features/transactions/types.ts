@@ -13,7 +13,7 @@ export interface Transaction {
   balance?: number;
 }
 
-export interface Chart {
+export interface TransactionChart {
   id: string;
   name: string;
   created_at: string;

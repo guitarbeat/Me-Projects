@@ -1,8 +1,8 @@
 // Components
 export { SankeyChart } from './components/SankeyChart';
 export { WaterfallChart } from './components/WaterfallChart';
-export { ChartSelector } from './components/ChartSelector';
-export { ChartsSection } from './components/ChartsSection';
+export { CashFlowChartSelector } from './components/CashFlowChartSelector';
+export { CashFlowCharts } from './components/CashFlowCharts';
 
 // Utils
 export {
@@ -20,7 +20,7 @@ export {
   calculateChartBounds,
   formatCurrency,
   formatShortDate,
-  type ChartData,
+  type WaterfallChartData,
   type WaterfallDataPoint,
 } from './utils/waterfallData';
 export { COLORS, getPersonColor } from './utils/waterfallUtils';

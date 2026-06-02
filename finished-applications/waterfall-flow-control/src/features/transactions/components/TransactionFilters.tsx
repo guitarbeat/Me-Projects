@@ -13,21 +13,21 @@ import { Search, ArrowUpDown, X } from 'lucide-react';
 import { useIsMobile } from '@/hooks/useMobile';
 import { cn } from '@/lib/utils';
 import type {
-  SortBy,
-  SortOrder,
+  TransactionSortBy,
+  TransactionSortOrder,
 } from '../hooks/useTransactionFilters';
 
-interface SearchAndSortProps {
+interface TransactionFiltersProps {
   searchQuery: string;
   onSearchChange: (value: string) => void;
-  sortBy: SortBy;
-  onSortByChange: (value: SortBy) => void;
-  sortOrder: SortOrder;
+  sortBy: TransactionSortBy;
+  onSortByChange: (value: TransactionSortBy) => void;
+  sortOrder: TransactionSortOrder;
   onToggleSortOrder: () => void;
   resultCount: number;
 }
 
-export const SearchAndSort = memo(
+export const TransactionFilters = memo(
   ({
     searchQuery,
     onSearchChange,
@@ -36,7 +36,7 @@ export const SearchAndSort = memo(
     sortOrder,
     onToggleSortOrder,
     resultCount,
-  }: SearchAndSortProps) => {
+  }: TransactionFiltersProps) => {
     const isMobile = useIsMobile();
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -173,4 +173,4 @@ export const SearchAndSort = memo(
   }
 );
 
-SearchAndSort.displayName = 'SearchAndSort';
+TransactionFilters.displayName = 'TransactionFilters';

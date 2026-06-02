@@ -1,13 +1,13 @@
 import { ReactNode, memo } from 'react';
 import { cn } from '@/lib/utils';
-import { VerticalSplitProps } from './types';
+import { SplitLayoutProps } from './types';
 import { useSplitState } from './useSplitState';
 import { LeftControls, RightControls } from './DragBarControls';
 import { DragHandle } from './DragHandle';
 import { SnapIndicators } from './SnapIndicators';
 import { nearestSnapPercent } from './utils';
 
-export const VerticalSplit = memo(
+export const SplitLayout = memo(
   ({
     topView,
     bottomView,
@@ -21,7 +21,7 @@ export const VerticalSplit = memo(
     onProfile,
     exportDisabled = false,
     centerSlot,
-  }: VerticalSplitProps) => {
+  }: SplitLayoutProps) => {
     const {
       top,
       drag,
@@ -199,4 +199,4 @@ export const VerticalSplit = memo(
   }
 );
 
-VerticalSplit.displayName = 'VerticalSplit';
+SplitLayout.displayName = 'SplitLayout';

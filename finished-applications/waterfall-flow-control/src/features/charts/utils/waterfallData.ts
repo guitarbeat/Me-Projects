@@ -1,4 +1,4 @@
-export interface ChartData {
+export interface WaterfallChartData {
   name: string;
   date: string;
   amount: number;
@@ -37,7 +37,7 @@ export const formatShortDate = (dateString: string): string => {
 };
 
 export const processWaterfallData = (
-  data: ChartData[]
+  data: WaterfallChartData[]
 ): WaterfallDataPoint[] => {
   const sortedTransactions = [...data].sort((a, b) => {
     if (a.amount > 0 && b.amount <= 0) return -1;

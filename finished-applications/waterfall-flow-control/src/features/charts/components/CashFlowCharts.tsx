@@ -12,7 +12,7 @@ const SankeyChart = lazy(() =>
   import('./SankeyChart').then(m => ({ default: m.SankeyChart }))
 );
 
-interface ChartsSectionProps {
+interface CashFlowChartsProps {
   enabledTransactions: Transaction[];
 }
 
@@ -35,8 +35,8 @@ const ChartModeToggle = ({
   </Button>
 );
 
-export const ChartsSection = memo(
-  ({ enabledTransactions }: ChartsSectionProps) => {
+export const CashFlowCharts = memo(
+  ({ enabledTransactions }: CashFlowChartsProps) => {
     const [sankeyMode, setSankeyMode] = useState<'detailed' | 'summary'>(
       'detailed'
     );
@@ -125,4 +125,4 @@ export const ChartsSection = memo(
   }
 );
 
-ChartsSection.displayName = 'ChartsSection';
+CashFlowCharts.displayName = 'CashFlowCharts';

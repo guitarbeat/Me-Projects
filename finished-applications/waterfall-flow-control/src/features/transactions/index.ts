@@ -4,14 +4,13 @@ export {
 } from './components/TransactionForm';
 export { TransactionRow } from './components/TransactionRow';
 export { MobileTransactionList } from './components/MobileTransactionList';
-export { SearchAndSort } from './components/SearchAndSort';
-export { DataTable, type DataTableVariant } from './components/DataTable';
+export { TransactionFilters } from './components/TransactionFilters';
+export { TransactionTable, type TransactionTableVariant } from './components/TransactionTable';
 
-// Hooks
 export {
   useTransactionFilters,
-  type SortBy,
-  type SortOrder,
+  type TransactionSortBy,
+  type TransactionSortOrder,
 } from './hooks/useTransactionFilters';
 export { useTransactionStats } from './hooks/useTransactionStats';
 export { useTransactions } from './hooks/useTransactions';
@@ -21,7 +20,7 @@ export {
 } from './hooks/useFinancialInsights';
 
 // Types
-export type { Transaction, Chart } from './types';
+export type { Transaction, TransactionChart } from './types';
 
 // Utils
 export {

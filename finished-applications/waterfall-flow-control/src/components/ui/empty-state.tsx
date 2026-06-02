@@ -3,7 +3,6 @@ import {
   AlertCircle,
   FileX,
   Inbox,
-  Plus,
   Search,
   TrendingUp,
   LucideIcon,
@@ -12,14 +11,10 @@ import {
 } from 'lucide-react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 import { Surface } from '@/components/ui/surface';
 import { Heading, Body } from '@/components/ui/text';
 import { TypewriterText } from '@/components/ui/typewriter-text';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
-// ============================================
-// EMPTY STATE COMPONENT
-// ============================================
 
 const emptyStateVariants = cva('text-center', {
   variants: {
@@ -88,21 +83,13 @@ const iconMap = {
 
 type IconType = keyof typeof iconMap;
 
-// Decorative sparkle positions for the animated illustration
 const sparklePositions = [
   { top: '-8px', right: '-8px', delay: 'sparkle-delay-1' },
   { top: '50%', left: '-12px', delay: 'sparkle-delay-2' },
   { bottom: '-6px', right: '20%', delay: 'sparkle-delay-3' },
 ];
 
-interface EmptyStateAction {
-  label: string;
-  onClick: () => void;
-  icon?: LucideIcon;
-  variant?: 'default' | 'secondary' | 'outline' | 'ghost' | 'success' | 'glass';
-}
-
-interface EmptyStateProps
+export interface EmptyStateProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, 'title'>,
     VariantProps<typeof emptyStateVariants> {
   /** Main heading text */
@@ -113,10 +100,10 @@ interface EmptyStateProps
   icon?: IconType | LucideIcon;
   /** Visual style variant */
   variant?: 'default' | 'error' | 'success' | 'primary';
-  /** Primary action button */
-  action?: EmptyStateAction;
-  /** Secondary action button */
-  secondaryAction?: EmptyStateAction;
+  /** Primary action button node */
+  action?: React.ReactNode;
+  /** Secondary action button node */
+  secondaryAction?: React.ReactNode;
   /** Whether to show decorative background pattern */
   showPattern?: boolean;
   /** Whether to use Surface wrapper (adds border and background) */
@@ -126,20 +113,12 @@ interface EmptyStateProps
 }
 
 /**
- * EmptyState - Unified empty state component
+ * EmptyState - Unified generic empty state component
  *
  * Uses Surface and typography primitives for consistent styling.
- * Supports multiple variants, sizes, and action buttons.
- *
- * @example
- * <EmptyState
- *   icon="chart"
- *   title="No transactions yet"
- *   description="Add your first transaction to get started"
- *   action={{ label: "Add Transaction", onClick: handleAdd }}
- * />
+ * Supports multiple variants, sizes, and action button slots.
  */
-const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
+export const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
   (
     {
       title = 'No data available',
@@ -161,16 +140,12 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
     const prefersReducedMotion = useReducedMotion();
     const shouldAnimate = animated && !prefersReducedMotion;
 
-    // Resolve icon - either from map or use as custom component
     const Icon = typeof icon === 'string' ? iconMap[icon] : icon;
 
-    // Trigger button animation after typewriter completes
     const handleTypewriterComplete = React.useCallback(() => {
-      // Small delay before button bounces in
       setTimeout(() => setShowButton(true), 200);
     }, []);
 
-    // If not animating, show button immediately
     React.useEffect(() => {
       if (!shouldAnimate) {
         setShowButton(true);
@@ -187,7 +162,6 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
         )}
         {...props}
       >
-        {/* Decorative background pattern */}
         {showPattern && (
           <div className="absolute inset-0 opacity-[0.03] pointer-events-none">
             <div
@@ -201,7 +175,6 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
         )}
 
         <div className="relative flex flex-col items-center gap-4">
-          {/* Animated icon container with floating effect and sparkles */}
           <div
             className={cn(
               iconContainerVariants({ variant, size }),
@@ -210,7 +183,6 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
           >
             <Icon className={iconVariants({ variant, size })} />
 
-            {/* Decorative sparkles around the icon */}
             {shouldAnimate &&
               sparklePositions.map((pos, i) => (
                 <Star
@@ -230,7 +202,6 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
               ))}
           </div>
 
-          {/* Text content with typewriter effect */}
           <div className="space-y-2 max-w-sm">
             <Heading level={4} className="text-balance">
               {shouldAnimate && typeof title === 'string' ? (
@@ -261,7 +232,6 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
             </Body>
           </div>
 
-          {/* Actions with bouncy animation */}
           {(action || secondaryAction) && (
             <div
               className={cn(
@@ -270,34 +240,8 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
                 shouldAnimate && showButton && 'animate-bounce-in'
               )}
             >
-              {action && (
-                <Button
-                  onClick={action.onClick}
-                  variant={action.variant || 'default'}
-                  size={size === 'sm' ? 'sm' : 'lg'}
-                  className="gap-2 shadow-lg hover:shadow-xl transition-all"
-                >
-                  {action.icon ? (
-                    <action.icon className="h-4 w-4" />
-                  ) : (
-                    <Plus className="h-4 w-4" />
-                  )}
-                  {action.label}
-                </Button>
-              )}
-              {secondaryAction && (
-                <Button
-                  onClick={secondaryAction.onClick}
-                  variant={secondaryAction.variant || 'ghost'}
-                  size={size === 'sm' ? 'sm' : 'default'}
-                  className="gap-2"
-                >
-                  {secondaryAction.icon && (
-                    <secondaryAction.icon className="h-4 w-4" />
-                  )}
-                  {secondaryAction.label}
-                </Button>
-              )}
+              {action}
+              {secondaryAction}
             </div>
           )}
         </div>
@@ -325,61 +269,3 @@ const EmptyState = React.forwardRef<HTMLDivElement, EmptyStateProps>(
   }
 );
 EmptyState.displayName = 'EmptyState';
-
-// ============================================
-// PRESET EMPTY STATES
-// ============================================
-
-interface PresetEmptyStateProps
-  extends Omit<EmptyStateProps, 'icon' | 'title' | 'description'> {
-  onAction?: () => void;
-}
-
-/** Empty state for no transactions */
-const EmptyTransactions = ({ onAction, ...props }: PresetEmptyStateProps) => (
-  <EmptyState
-    icon="chart"
-    title="No transactions yet"
-    description="Start tracking your finances by adding your first transaction"
-    action={
-      onAction ? { label: 'Add Transaction', onClick: onAction } : undefined
-    }
-    variant="primary"
-    {...props}
-  />
-);
-
-/** Empty state for no search results */
-const EmptySearch = ({ onAction, ...props }: PresetEmptyStateProps) => (
-  <EmptyState
-    icon="search"
-    title="No results found"
-    description="Try adjusting your search or filters to find what you're looking for"
-    action={
-      onAction
-        ? { label: 'Clear Search', onClick: onAction, variant: 'outline' }
-        : undefined
-    }
-    {...props}
-  />
-);
-
-/** Empty state for errors */
-const EmptyError = ({ onAction, ...props }: PresetEmptyStateProps) => (
-  <EmptyState
-    icon="error"
-    title="Something went wrong"
-    description="We encountered an error loading your data. Please try again."
-    action={onAction ? { label: 'Try Again', onClick: onAction } : undefined}
-    variant="error"
-    {...props}
-  />
-);
-
-export {
-  EmptyState,
-  EmptyTransactions,
-  EmptySearch,
-  EmptyError,
-  emptyStateVariants,
-};

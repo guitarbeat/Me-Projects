@@ -188,15 +188,13 @@ export const UserCalendar = memo(
       const start = Math.min(multiSelectStart, multiSelectEnd);
       const end = Math.max(multiSelectStart, multiSelectEnd);
 
+      const year = currentDate.getFullYear();
+      const monthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
+
+      // ⚡ Bolt: Use manual formatting to avoid timezone shift bugs and improve performance
       // Toggle all days in range
       for (let day = start; day <= end; day++) {
-        const dateStr = new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth(),
-          day
-        )
-          .toISOString()
-          .split('T')[0];
+        const dateStr = `${year}-${monthStr}-${String(day).padStart(2, '0')}`;
         const isFloDay = !!floEntriesRef.current[dateStr];
         onToggleDay(day, isFloDay);
       }
@@ -225,13 +223,9 @@ export const UserCalendar = memo(
           return;
         }
 
-        const dateStr = new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth(),
-          day
-        )
-          .toISOString()
-          .split('T')[0];
+        const year = currentDate.getFullYear();
+        const monthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
+        const dateStr = `${year}-${monthStr}-${String(day).padStart(2, '0')}`;
 
         // Trigger appropriate haptic
         if (isFloDay) {
@@ -322,6 +316,12 @@ export const UserCalendar = memo(
       [currentDate]
     );
 
+    // ⚡ Bolt: Pre-calculate date strings outside the render loop for performance
+    const todayDate = new Date();
+    const todayStr = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
+    const currentYear = currentDate.getFullYear();
+    const currentMonthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
+
     return (
       <div ref={swipeRef} className="relative smooth-resize">
         {/* Multi-select mode indicator */}
@@ -380,16 +380,9 @@ export const UserCalendar = memo(
                 );
               }
 
-              const dateStr = new Date(
-                currentDate.getFullYear(),
-                currentDate.getMonth(),
-                day
-              )
-                .toISOString()
-                .split('T')[0];
+              const dateStr = `${currentYear}-${currentMonthStr}-${String(day).padStart(2, '0')}`;
               const isFloDay = !!floEntries[dateStr];
-              const today = new Date().toISOString().split('T')[0];
-              const isToday = dateStr === today;
+              const isToday = dateStr === todayStr;
               const justToggled = lastToggledDay === dateStr;
               const inMultiSelectRange = isDayInMultiSelectRange(day);
               const isFocused = focusedDay === day;

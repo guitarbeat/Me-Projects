@@ -189,14 +189,10 @@ export const UserCalendar = memo(
       const end = Math.max(multiSelectStart, multiSelectEnd);
 
       // Toggle all days in range
+      const currentYear = currentDate.getFullYear();
+      const currentMonthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
       for (let day = start; day <= end; day++) {
-        const dateStr = new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth(),
-          day
-        )
-          .toISOString()
-          .split('T')[0];
+        const dateStr = `${currentYear}-${currentMonthStr}-${String(day).padStart(2, '0')}`;
         const isFloDay = !!floEntriesRef.current[dateStr];
         onToggleDay(day, isFloDay);
       }
@@ -225,13 +221,9 @@ export const UserCalendar = memo(
           return;
         }
 
-        const dateStr = new Date(
-          currentDate.getFullYear(),
-          currentDate.getMonth(),
-          day
-        )
-          .toISOString()
-          .split('T')[0];
+        const currentYear = currentDate.getFullYear();
+        const currentMonthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
+        const dateStr = `${currentYear}-${currentMonthStr}-${String(day).padStart(2, '0')}`;
 
         // Trigger appropriate haptic
         if (isFloDay) {
@@ -369,50 +361,50 @@ export const UserCalendar = memo(
               margin: 'calc(-1 * var(--space-2xs))',
             }}
           >
-            {daysInMonth.map((day, index) => {
-              if (day === null) {
+            {(() => {
+              const currentYear = currentDate.getFullYear();
+              const currentMonthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
+              const now = new Date();
+              const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+              return daysInMonth.map((day, index) => {
+                if (day === null) {
+                  return (
+                    <div
+                      key={`empty-${index}`}
+                      className="aspect-square"
+                      role="presentation"
+                    />
+                  );
+                }
+
+                const dateStr = `${currentYear}-${currentMonthStr}-${String(day).padStart(2, '0')}`;
+                const isFloDay = !!floEntries[dateStr];
+                const isToday = dateStr === todayStr;
+                const justToggled = lastToggledDay === dateStr;
+                const inMultiSelectRange = isDayInMultiSelectRange(day);
+                const isFocused = focusedDay === day;
+
                 return (
-                  <div
-                    key={`empty-${index}`}
-                    className="aspect-square"
-                    role="presentation"
+                  <CalendarDay
+                    key={dateStr}
+                    day={day}
+                    currentDate={currentDate}
+                    isFloDay={isFloDay}
+                    isToday={isToday}
+                    readOnly={readOnly}
+                    onToggle={handleDayClick}
+                    onPressStart={handleDayPressStart}
+                    onPressEnd={handleDayPressEnd}
+                    onHover={handleDayHover}
+                    inMultiSelectRange={inMultiSelectRange}
+                    justToggled={justToggled}
+                    tabIndex={isFocused ? 0 : -1}
+                    onKeyDown={handleKeyDown}
                   />
                 );
-              }
-
-              const dateStr = new Date(
-                currentDate.getFullYear(),
-                currentDate.getMonth(),
-                day
-              )
-                .toISOString()
-                .split('T')[0];
-              const isFloDay = !!floEntries[dateStr];
-              const today = new Date().toISOString().split('T')[0];
-              const isToday = dateStr === today;
-              const justToggled = lastToggledDay === dateStr;
-              const inMultiSelectRange = isDayInMultiSelectRange(day);
-              const isFocused = focusedDay === day;
-
-              return (
-                <CalendarDay
-                  key={dateStr}
-                  day={day}
-                  currentDate={currentDate}
-                  isFloDay={isFloDay}
-                  isToday={isToday}
-                  readOnly={readOnly}
-                  onToggle={handleDayClick}
-                  onPressStart={handleDayPressStart}
-                  onPressEnd={handleDayPressEnd}
-                  onHover={handleDayHover}
-                  inMultiSelectRange={inMultiSelectRange}
-                  justToggled={justToggled}
-                  tabIndex={isFocused ? 0 : -1}
-                  onKeyDown={handleKeyDown}
-                />
-              );
-            })}
+              });
+            })()}
           </div>
         </div>
       </div>

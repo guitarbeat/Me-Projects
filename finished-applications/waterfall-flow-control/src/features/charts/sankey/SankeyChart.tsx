@@ -6,9 +6,9 @@ import {
   processSankeyData,
   getSankeyDimensions,
   SANKEY_CONFIG,
-} from '../utils/sankeyData';
-import { createColorScale } from '../utils/sankeyUtils';
-import { sankeyLinkPath } from '../utils/sankeyLinkPath';
+} from './utils/sankeyData';
+import { createColorScale } from './utils/sankeyUtils';
+import { sankeyLinkPath } from './utils/sankeyLinkPath';
 import { Button } from '@/components/ui/button';
 import {
   RotateCw,
@@ -17,7 +17,7 @@ import {
   Minimize,
   Download,
 } from 'lucide-react';
-import { exportSVGToPNG } from '../utils/chartExport';
+import { exportSVGToPNG } from '../../utils/chartExport';
 import { toast } from 'sonner';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 

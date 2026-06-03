@@ -2,7 +2,7 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
-interface StaggerProps {
+interface WaterfallStaggerProps {
   /** Delay between each child's animation in milliseconds */
   delay?: number;
   /** Base duration for each animation in milliseconds */
@@ -35,14 +35,14 @@ interface StaggerProps {
  *   <Surface>Card 3</Surface>
  * </Stagger>
  */
-export const Stagger = ({
+export const WaterfallStagger = ({
   delay = 50,
   duration = 400,
   animation = 'fade-up',
   className,
   children,
   animate = true,
-}: StaggerProps) => {
+}: WaterfallStaggerProps) => {
   const prefersReducedMotion = useReducedMotion();
 
   const animationClass = {
@@ -88,13 +88,13 @@ export const Stagger = ({
  *
  * Use when you need more control over individual items.
  */
-interface StaggerItemProps extends React.HTMLAttributes<HTMLDivElement> {
+interface WaterfallStaggerItemProps extends React.HTMLAttributes<HTMLDivElement> {
   index: number;
   delay?: number;
   animation?: 'fade-up' | 'fade-in' | 'scale-in';
 }
 
-export const StaggerItem = React.forwardRef<HTMLDivElement, StaggerItemProps>(
+export const WaterfallStaggerItem = React.forwardRef<HTMLDivElement, WaterfallStaggerItemProps>(
   (
     {
       index,
@@ -136,4 +136,4 @@ export const StaggerItem = React.forwardRef<HTMLDivElement, StaggerItemProps>(
     );
   }
 );
-StaggerItem.displayName = 'StaggerItem';
+WaterfallStaggerItem.displayName = 'WaterfallStaggerItem';

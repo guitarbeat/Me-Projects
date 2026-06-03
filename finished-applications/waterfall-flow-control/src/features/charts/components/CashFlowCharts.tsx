@@ -6,10 +6,10 @@ import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import type { Transaction } from '@/features/transactions';
 
 const WaterfallChart = lazy(() =>
-  import('./WaterfallChart').then(m => ({ default: m.WaterfallChart }))
+  import('../waterfall/WaterfallChart').then(m => ({ default: m.WaterfallChart }))
 );
 const SankeyChart = lazy(() =>
-  import('./SankeyChart').then(m => ({ default: m.SankeyChart }))
+  import('../sankey/SankeyChart').then(m => ({ default: m.SankeyChart }))
 );
 
 interface CashFlowChartsProps {

@@ -37,7 +37,7 @@ const stackVariants = cva('flex flex-col', {
   },
 });
 
-interface StackProps
+interface WaterfallStackProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof stackVariants> {}
 
@@ -50,7 +50,7 @@ interface StackProps
  *   <Child />
  * </Stack>
  */
-const Stack = React.forwardRef<HTMLDivElement, StackProps>(
+const WaterfallStack = React.forwardRef<HTMLDivElement, WaterfallStackProps>(
   ({ className, gap, align, justify, children, ...props }, ref) => (
     <div
       ref={ref}
@@ -61,7 +61,7 @@ const Stack = React.forwardRef<HTMLDivElement, StackProps>(
     </div>
   )
 );
-Stack.displayName = 'Stack';
+WaterfallStack.displayName = 'WaterfallStack';
 
 // ============================================
 // ROW (HORIZONTAL) COMPONENT
@@ -105,7 +105,7 @@ const rowVariants = cva('flex flex-row', {
   },
 });
 
-interface RowProps
+interface WaterfallRowProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof rowVariants> {}
 
@@ -118,7 +118,7 @@ interface RowProps
  *   <Button>Save</Button>
  * </Row>
  */
-const Row = React.forwardRef<HTMLDivElement, RowProps>(
+const WaterfallRow = React.forwardRef<HTMLDivElement, WaterfallRowProps>(
   ({ className, gap, align, justify, wrap, children, ...props }, ref) => (
     <div
       ref={ref}
@@ -129,13 +129,13 @@ const Row = React.forwardRef<HTMLDivElement, RowProps>(
     </div>
   )
 );
-Row.displayName = 'Row';
+WaterfallRow.displayName = 'WaterfallRow';
 
 // ============================================
 // CENTER COMPONENT
 // ============================================
 
-interface CenterProps extends React.HTMLAttributes<HTMLDivElement> {
+interface WaterfallCenterProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Make it full height of parent/viewport */
   full?: boolean;
 }
@@ -148,7 +148,7 @@ interface CenterProps extends React.HTMLAttributes<HTMLDivElement> {
  *   <LoadingSpinner />
  * </Center>
  */
-const Center = React.forwardRef<HTMLDivElement, CenterProps>(
+const WaterfallCenter = React.forwardRef<HTMLDivElement, WaterfallCenterProps>(
   ({ className, full, children, ...props }, ref) => (
     <div
       ref={ref}
@@ -163,13 +163,13 @@ const Center = React.forwardRef<HTMLDivElement, CenterProps>(
     </div>
   )
 );
-Center.displayName = 'Center';
+WaterfallCenter.displayName = 'WaterfallCenter';
 
 // ============================================
 // SPACER COMPONENT
 // ============================================
 
-interface SpacerProps {
+interface WaterfallSpacerProps {
   /** Size of the spacer */
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   /** Direction of spacing */
@@ -190,7 +190,7 @@ const spacerSizes = {
  * @example
  * <Spacer size="lg" />
  */
-const Spacer = ({ size = 'md', axis = 'vertical' }: SpacerProps) => (
+const WaterfallSpacer = ({ size = 'md', axis = 'vertical' }: WaterfallSpacerProps) => (
   <div
     className={cn(
       axis === 'vertical' ? `h-${spacerSizes[size]}` : `w-${spacerSizes[size]}`,
@@ -199,13 +199,13 @@ const Spacer = ({ size = 'md', axis = 'vertical' }: SpacerProps) => (
     aria-hidden="true"
   />
 );
-Spacer.displayName = 'Spacer';
+WaterfallSpacer.displayName = 'WaterfallSpacer';
 
 // ============================================
 // DIVIDER COMPONENT
 // ============================================
 
-interface DividerProps extends React.HTMLAttributes<HTMLDivElement> {
+interface WaterfallDividerProps extends React.HTMLAttributes<HTMLDivElement> {
   /** Orientation of the divider */
   orientation?: 'horizontal' | 'vertical';
   /** Label to show in the middle */
@@ -218,7 +218,7 @@ interface DividerProps extends React.HTMLAttributes<HTMLDivElement> {
  * @example
  * <Divider label="or" />
  */
-const Divider = React.forwardRef<HTMLDivElement, DividerProps>(
+const WaterfallDivider = React.forwardRef<HTMLDivElement, WaterfallDividerProps>(
   ({ className, orientation = 'horizontal', label, ...props }, ref) => {
     if (label) {
       return (
@@ -251,6 +251,6 @@ const Divider = React.forwardRef<HTMLDivElement, DividerProps>(
     );
   }
 );
-Divider.displayName = 'Divider';
+WaterfallDivider.displayName = 'WaterfallDivider';
 
-export { Stack, Row, Center, Spacer, Divider, stackVariants, rowVariants };
+export { WaterfallStack, WaterfallRow, WaterfallCenter, WaterfallSpacer, WaterfallDivider, stackVariants, rowVariants };

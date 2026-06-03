@@ -1,8 +1,10 @@
 import { useMemo } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Surface, Currency, Stagger, TextLabel } from '@/components/ui';
-import { Sparkline } from '@/components/ui/sparkline';
+import { WaterfallSurface as Surface } from '@/features/charts/waterfall/ui/WaterfallSurface';
+import { WaterfallCurrency as Currency } from '@/features/charts/waterfall/ui/WaterfallCurrency';
+import { WaterfallStagger as Stagger } from '@/features/charts/waterfall/ui/WaterfallStagger';
+import { WaterfallSparkline } from '@/features/charts/waterfall/ui/WaterfallSparkline';
 import { useIsMobile } from '@/hooks/useMobile';
 
 interface StatsCardsProps {
@@ -78,12 +80,12 @@ const StatCard = ({
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center justify-between gap-2">
-            <TextLabel className={cn('mb-1', isMobile && 'text-xs')}>
+            <div className={cn('text-sm font-medium text-muted-foreground mb-1', isMobile && 'text-xs')}>
               {label}
-            </TextLabel>
+            </div>
             {/* Sparkline trend - moved to header row for mobile */}
             {sparklineData && sparklineData.length >= 2 && (
-              <Sparkline
+              <WaterfallSparkline
                 data={sparklineData}
                 variant={sparklineVariant}
                 width={isMobile ? 40 : 48}

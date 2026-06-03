@@ -46,7 +46,7 @@ const surfaceVariants = cva(
   }
 );
 
-export interface SurfaceProps
+export interface WaterfallSurfaceProps
   extends React.HTMLAttributes<HTMLDivElement>,
     VariantProps<typeof surfaceVariants> {
   /** Animation stagger index for coordinated entry animations */
@@ -57,7 +57,7 @@ export interface SurfaceProps
   skeleton?: React.ReactNode;
 }
 
-const Surface = React.forwardRef<HTMLDivElement, SurfaceProps>(
+const WaterfallSurface = React.forwardRef<HTMLDivElement, WaterfallSurfaceProps>(
   (
     {
       className,
@@ -90,7 +90,7 @@ const Surface = React.forwardRef<HTMLDivElement, SurfaceProps>(
           style={animationStyle}
           {...props}
         >
-          {skeleton || <SurfaceSkeleton />}
+          {skeleton || <WaterfallSurfaceSkeleton />}
         </div>
       );
     }
@@ -112,10 +112,10 @@ const Surface = React.forwardRef<HTMLDivElement, SurfaceProps>(
     );
   }
 );
-Surface.displayName = 'Surface';
+WaterfallSurface.displayName = 'WaterfallSurface';
 
 // Default skeleton for Surface loading state
-const SurfaceSkeleton = () => (
+const WaterfallSurfaceSkeleton = () => (
   <div className="space-y-3">
     <div className="h-4 bg-muted/50 rounded w-1/3" />
     <div className="h-3 bg-muted/50 rounded w-2/3" />
@@ -124,7 +124,7 @@ const SurfaceSkeleton = () => (
 );
 
 // Surface subcomponents for structure
-const SurfaceHeader = React.forwardRef<
+const WaterfallSurfaceHeader = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
@@ -134,9 +134,9 @@ const SurfaceHeader = React.forwardRef<
     {...props}
   />
 ));
-SurfaceHeader.displayName = 'SurfaceHeader';
+WaterfallSurfaceHeader.displayName = 'WaterfallSurfaceHeader';
 
-const SurfaceTitle = React.forwardRef<
+const WaterfallSurfaceTitle = React.forwardRef<
   HTMLHeadingElement,
   React.HTMLAttributes<HTMLHeadingElement>
 >(({ className, ...props }, ref) => (
@@ -149,9 +149,9 @@ const SurfaceTitle = React.forwardRef<
     {...props}
   />
 ));
-SurfaceTitle.displayName = 'SurfaceTitle';
+WaterfallSurfaceTitle.displayName = 'WaterfallSurfaceTitle';
 
-const SurfaceDescription = React.forwardRef<
+const WaterfallSurfaceDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
@@ -161,17 +161,17 @@ const SurfaceDescription = React.forwardRef<
     {...props}
   />
 ));
-SurfaceDescription.displayName = 'SurfaceDescription';
+WaterfallSurfaceDescription.displayName = 'WaterfallSurfaceDescription';
 
-const SurfaceContent = React.forwardRef<
+const WaterfallSurfaceContent = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
   <div ref={ref} className={cn('pt-0', className)} {...props} />
 ));
-SurfaceContent.displayName = 'SurfaceContent';
+WaterfallSurfaceContent.displayName = 'WaterfallSurfaceContent';
 
-const SurfaceFooter = React.forwardRef<
+const WaterfallSurfaceFooter = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
 >(({ className, ...props }, ref) => (
@@ -181,14 +181,14 @@ const SurfaceFooter = React.forwardRef<
     {...props}
   />
 ));
-SurfaceFooter.displayName = 'SurfaceFooter';
+WaterfallSurfaceFooter.displayName = 'WaterfallSurfaceFooter';
 
 export {
-  Surface,
-  SurfaceHeader,
-  SurfaceTitle,
-  SurfaceDescription,
-  SurfaceContent,
-  SurfaceFooter,
+  WaterfallSurface,
+  WaterfallSurfaceHeader,
+  WaterfallSurfaceTitle,
+  WaterfallSurfaceDescription,
+  WaterfallSurfaceContent,
+  WaterfallSurfaceFooter,
   surfaceVariants,
 };

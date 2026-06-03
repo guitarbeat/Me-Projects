@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 // CURRENCY DISPLAY COMPONENT
 // ============================================
 
-const currencyVariants = cva(
+const waterfallCurrencyVariants = cva(
   'font-mono tabular-nums font-semibold transition-colors',
   {
     variants: {
@@ -37,9 +37,9 @@ const currencyVariants = cva(
   }
 );
 
-interface CurrencyProps
+interface WaterfallCurrencyProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children'>,
-    VariantProps<typeof currencyVariants> {
+    VariantProps<typeof waterfallCurrencyVariants> {
   /** The currency amount to display */
   value: number;
   /** Whether to animate the number changing */
@@ -63,11 +63,11 @@ interface CurrencyProps
  * Replaces AnimatedCurrency, AmountDisplay, and formatCurrency patterns.
  *
  * @example
- * <Currency value={1500} animated showTrend />
- * <Currency value={-500} variant="negative" size="lg" />
- * <Currency value={0} variant="muted" />
+ * <WaterfallCurrency value={1500} animated showTrend />
+ * <WaterfallCurrency value={-500} variant="negative" size="lg" />
+ * <WaterfallCurrency value={0} variant="muted" />
  */
-const Currency = React.forwardRef<HTMLDivElement, CurrencyProps>(
+const WaterfallCurrency = React.forwardRef<HTMLDivElement, WaterfallCurrencyProps>(
   (
     {
       value,
@@ -171,7 +171,7 @@ const Currency = React.forwardRef<HTMLDivElement, CurrencyProps>(
         ref={ref}
         className={cn(
           'flex items-center gap-1',
-          currencyVariants({ size, variant: colorVariant }),
+          waterfallCurrencyVariants({ size, variant: colorVariant }),
           className
         )}
         {...props}
@@ -192,6 +192,6 @@ const Currency = React.forwardRef<HTMLDivElement, CurrencyProps>(
     );
   }
 );
-Currency.displayName = 'Currency';
+WaterfallCurrency.displayName = 'WaterfallCurrency';
 
-export { Currency, currencyVariants };
+export { WaterfallCurrency, waterfallCurrencyVariants };

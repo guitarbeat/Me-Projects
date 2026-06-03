@@ -1,6 +1,6 @@
 // Components
-export { SankeyChart } from './components/SankeyChart';
-export { WaterfallChart } from './components/WaterfallChart';
+export { SankeyChart } from './sankey/SankeyChart';
+export { WaterfallChart } from './waterfall/WaterfallChart';
 export { CashFlowChartSelector } from './components/CashFlowChartSelector';
 export { CashFlowCharts } from './components/CashFlowCharts';
 
@@ -12,9 +12,9 @@ export {
   type SankeyNode,
   type SankeyLink,
   type SankeyData,
-} from './utils/sankeyData';
-export { createColorScale } from './utils/sankeyUtils';
-export { sankeyLinkPath } from './utils/sankeyLinkPath';
+} from './sankey/utils/sankeyData';
+export { createColorScale } from './sankey/utils/sankeyUtils';
+export { sankeyLinkPath } from './sankey/utils/sankeyLinkPath';
 export {
   processWaterfallData,
   calculateChartBounds,
@@ -22,5 +22,5 @@ export {
   formatShortDate,
   type WaterfallChartData,
   type WaterfallDataPoint,
-} from './utils/waterfallData';
-export { COLORS, getPersonColor } from './utils/waterfallUtils';
+} from './waterfall/utils/waterfallData';
+export { COLORS, getPersonColor } from './waterfall/utils/waterfallUtils';

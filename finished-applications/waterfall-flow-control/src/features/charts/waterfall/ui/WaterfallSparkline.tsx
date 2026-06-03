@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 
-interface SparklineProps {
+interface WaterfallSparklineProps {
   data: number[];
   width?: number;
   height?: number;
@@ -17,7 +17,7 @@ interface SparklineProps {
  *
  * Lightweight, animated, and accessible mini visualization.
  */
-export const Sparkline = ({
+export const WaterfallSparkline = ({
   data,
   width = 60,
   height = 24,
@@ -25,7 +25,7 @@ export const Sparkline = ({
   showArea = true,
   animated = true,
   className,
-}: SparklineProps) => {
+}: WaterfallSparklineProps) => {
   const prefersReducedMotion = useReducedMotion();
   const shouldAnimate = animated && !prefersReducedMotion;
 
@@ -144,7 +144,7 @@ export const Sparkline = ({
 /**
  * SparklineBar - Tiny bar chart variant
  */
-interface SparklineBarProps {
+interface WaterfallSparklineBarProps {
   data: number[];
   width?: number;
   height?: number;
@@ -152,13 +152,13 @@ interface SparklineBarProps {
   className?: string;
 }
 
-export const SparklineBar = ({
+export const WaterfallSparklineBar = ({
   data,
   width = 48,
   height = 20,
   variant = 'neutral',
   className,
-}: SparklineBarProps) => {
+}: WaterfallSparklineBarProps) => {
   const prefersReducedMotion = useReducedMotion();
 
   const bars = useMemo(() => {

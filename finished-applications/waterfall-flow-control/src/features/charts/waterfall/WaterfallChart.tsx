@@ -16,8 +16,9 @@ import {
   processWaterfallData,
   calculateChartBounds,
   formatCurrency,
-} from '../utils/waterfallData';
-import { getPersonColor } from '../utils/waterfallUtils';
+} from './utils/waterfallData';
+import { exportSVGToPNG } from '../../utils/chartExport';
+import { getPersonColor } from './utils/waterfallUtils';
 import { toast } from 'sonner';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useIsMobile } from '@/hooks/useMobile';

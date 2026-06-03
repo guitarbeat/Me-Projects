@@ -1,10 +1,10 @@
 import { useMemo } from 'react';
 import { TrendingUp, TrendingDown, DollarSign, LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { WaterfallSurface as Surface } from '@/features/charts/waterfall/ui/WaterfallSurface';
-import { WaterfallCurrency as Currency } from '@/features/charts/waterfall/ui/WaterfallCurrency';
-import { WaterfallStagger as Stagger } from '@/features/charts/waterfall/ui/WaterfallStagger';
-import { WaterfallSparkline } from '@/features/charts/waterfall/ui/WaterfallSparkline';
+import { WaterfallSurface as Surface } from '@/features/waterfall/ui/WaterfallSurface';
+import { WaterfallCurrency as Currency } from '@/features/waterfall/ui/WaterfallCurrency';
+import { WaterfallStagger as Stagger } from '@/features/waterfall/ui/WaterfallStagger';
+import { WaterfallSparkline } from '@/features/waterfall/ui/WaterfallSparkline';
 import { useIsMobile } from '@/hooks/useMobile';
 
 interface StatsCardsProps {

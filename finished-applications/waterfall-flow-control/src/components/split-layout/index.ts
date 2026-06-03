@@ -1,2 +1,2 @@
 export { SplitLayout } from './SplitLayout';
-export type { Detent, SplitLayoutProps } from './types';
+export type { SplitLayoutProps, SplitSettings, Detent } from './SplitLayout';

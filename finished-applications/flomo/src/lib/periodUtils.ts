@@ -80,11 +80,17 @@ export const calculatePeriodInsights = (
   yesterday.setDate(yesterday.getDate() - 1);
 
   let streak = 0;
-  const checkDate = allDates.includes(today.toISOString().split('T')[0])
+
+  // ⚡ Bolt Optimization: Use manual local date formatting
+  // Avoids creating Date objects inside the loop and prevents timezone shift bugs
+  const pad = (num: number) => (num < 10 ? '0' + num : num.toString());
+  const formatDateLocal = (d: Date): string => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+  const checkDate = allDates.includes(formatDateLocal(today))
     ? today
     : yesterday;
 
-  while (entries[checkDate.toISOString().split('T')[0]]) {
+  while (entries[formatDateLocal(checkDate)]) {
     streak++;
     checkDate.setDate(checkDate.getDate() - 1);
   }

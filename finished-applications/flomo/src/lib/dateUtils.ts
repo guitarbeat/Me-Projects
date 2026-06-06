@@ -44,6 +44,14 @@ export const adjustMonth = (date: Date, direction: 'prev' | 'next'): Date => {
   return newDate;
 };
 
+// Fast local date formatter without timezone bugs of toISOString
+export const formatLocalDateToYYYYMMDD = (date: Date): string => {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
+
 export const formatDate = (dateStr: string): string => {
   const date = new Date(dateStr);
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });

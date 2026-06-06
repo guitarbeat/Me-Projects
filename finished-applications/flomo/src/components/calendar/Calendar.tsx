@@ -20,6 +20,7 @@ import { SharedCalendarDialog } from '@/components/sharing/SharedCalendarDialog'
 import { SharedUsersList } from '@/components/sharing/SharedUsersList';
 import { KeyboardShortcutsHelp } from '@/components/feedback/KeyboardShortcutsHelp';
 import { CalendarSkeleton } from './CalendarSkeleton';
+import { formatLocalDateToYYYYMMDD } from '@/lib/dateUtils';
 import { calculatePeriodInsights, getInsightMessage } from '@/lib/periodUtils';
 import {
   Eye,
@@ -175,13 +176,9 @@ export const Calendar = () => {
       if (!user) {
         return;
       }
-      const dateStr = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        day
-      )
-        .toISOString()
-        .split('T')[0];
+      const dateStr = formatLocalDateToYYYYMMDD(
+        new Date(currentDate.getFullYear(), currentDate.getMonth(), day)
+      );
       await toggleFloDay(dateStr, !isCurrentlyFloDay);
 
       // Mark first day logged for onboarding

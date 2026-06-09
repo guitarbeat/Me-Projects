@@ -2,6 +2,9 @@ import { memo, useMemo } from 'react';
 import { Sparkles, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
 interface CalendarDayProps {
   day: number;
   currentDate: Date;
@@ -37,14 +40,15 @@ export const CalendarDay = memo(
     const DayElement = readOnly ? 'div' : 'button';
 
     // Memoize date formatting to avoid recalculation on every render
+    // Performance optimization: Avoid toLocaleDateString object allocation overhead
     const ariaLabel = useMemo(() => {
       const fullDate = new Date(
         currentDate.getFullYear(),
         currentDate.getMonth(),
         day
       );
-      const weekday = fullDate.toLocaleDateString('en-US', { weekday: 'long' });
-      const month = fullDate.toLocaleDateString('en-US', { month: 'long' });
+      const weekday = WEEKDAYS[fullDate.getDay()];
+      const month = MONTHS[fullDate.getMonth()];
       return `${weekday}, ${month} ${day}, ${fullDate.getFullYear()}${isFloDay ? ', Period logged' : ''}`;
     }, [currentDate, day, isFloDay]);
 

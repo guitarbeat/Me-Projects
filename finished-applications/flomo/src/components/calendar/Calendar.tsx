@@ -74,9 +74,9 @@ export const Calendar = () => {
     enabled: true,
   });
 
-  // Period insights
-  const insights = calculatePeriodInsights(floEntries, currentDate);
-  const insightMessage = getInsightMessage(insights);
+  // ⚡ Bolt: Memoize period insights calculation to prevent expensive recalculations on every render
+  const insights = useMemo(() => calculatePeriodInsights(floEntries, currentDate), [floEntries, currentDate]);
+  const insightMessage = useMemo(() => getInsightMessage(insights), [insights]);
 
   // Privacy state - stored in localStorage only (no DB column yet)
   const [isPrivate, setIsPrivate] = useState<boolean>(() => {

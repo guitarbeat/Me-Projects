@@ -18,6 +18,10 @@ interface CalendarDayProps {
   onKeyDown?: (e: React.KeyboardEvent, day: number) => void;
 }
 
+// ⚡ Bolt Optimization: Hoist static arrays outside the component to prevent reallocation on every render
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
 export const CalendarDay = memo(
   ({
     day,
@@ -36,6 +40,9 @@ export const CalendarDay = memo(
   }: CalendarDayProps) => {
     const DayElement = readOnly ? 'div' : 'button';
 
+    // ⚡ Bolt Optimization: Replaced slow Date.prototype.toLocaleDateString() with O(1) array lookups.
+    // toLocaleDateString invokes the browser's Intl formatting APIs, which are extremely slow and block the main thread
+    // when executed inside a grid/loop for 28-31 elements on every month navigation render.
     // Memoize date formatting to avoid recalculation on every render
     const ariaLabel = useMemo(() => {
       const fullDate = new Date(
@@ -43,8 +50,8 @@ export const CalendarDay = memo(
         currentDate.getMonth(),
         day
       );
-      const weekday = fullDate.toLocaleDateString('en-US', { weekday: 'long' });
-      const month = fullDate.toLocaleDateString('en-US', { month: 'long' });
+      const weekday = WEEKDAYS[fullDate.getDay()];
+      const month = MONTHS[fullDate.getMonth()];
       return `${weekday}, ${month} ${day}, ${fullDate.getFullYear()}${isFloDay ? ', Period logged' : ''}`;
     }, [currentDate, day, isFloDay]);
 

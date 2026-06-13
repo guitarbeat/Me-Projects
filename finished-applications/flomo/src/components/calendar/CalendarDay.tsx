@@ -2,6 +2,10 @@ import { memo, useMemo } from 'react';
 import { Sparkles, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// ⚡ Bolt: Pre-computed arrays for date formatting to avoid expensive toLocaleDateString calls
+const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
 interface CalendarDayProps {
   day: number;
   currentDate: Date;
@@ -43,8 +47,9 @@ export const CalendarDay = memo(
         currentDate.getMonth(),
         day
       );
-      const weekday = fullDate.toLocaleDateString('en-US', { weekday: 'long' });
-      const month = fullDate.toLocaleDateString('en-US', { month: 'long' });
+      // ⚡ Bolt: Replaced expensive toLocaleDateString with array lookup
+      const weekday = WEEKDAYS[fullDate.getDay()];
+      const month = MONTHS[fullDate.getMonth()];
       return `${weekday}, ${month} ${day}, ${fullDate.getFullYear()}${isFloDay ? ', Period logged' : ''}`;
     }, [currentDate, day, isFloDay]);
 

@@ -18,6 +18,9 @@ interface CalendarDayProps {
   onKeyDown?: (e: React.KeyboardEvent, day: number) => void;
 }
 
+const weekdayFormatter = new Intl.DateTimeFormat('en-US', { weekday: 'long' });
+const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long' });
+
 export const CalendarDay = memo(
   ({
     day,
@@ -43,8 +46,10 @@ export const CalendarDay = memo(
         currentDate.getMonth(),
         day
       );
-      const weekday = fullDate.toLocaleDateString('en-US', { weekday: 'long' });
-      const month = fullDate.toLocaleDateString('en-US', { month: 'long' });
+      // ⚡ Bolt: Use cached Intl.DateTimeFormat instances instead of toLocaleDateString
+      // inside loops/lists for better performance
+      const weekday = weekdayFormatter.format(fullDate);
+      const month = monthFormatter.format(fullDate);
       return `${weekday}, ${month} ${day}, ${fullDate.getFullYear()}${isFloDay ? ', Period logged' : ''}`;
     }, [currentDate, day, isFloDay]);
 

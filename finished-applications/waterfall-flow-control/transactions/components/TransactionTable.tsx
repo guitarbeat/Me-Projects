@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { TransactionRow } from './TransactionRow';
+import { formatLocalIsoDate } from '../utils/transactionUtils';
 import {
   persons,
   formatCurrency,
@@ -123,7 +124,7 @@ export const TransactionTable = memo(
     const safeTransactions = transactions || [];
     const [newTransaction, setNewTransaction] = useState({
       name: '',
-      date: new Date().toISOString().split('T')[0],
+      date: formatLocalIsoDate(new Date()),
       person: '',
       inflow: '',
       outflow: '',
@@ -148,7 +149,7 @@ export const TransactionTable = memo(
 
       setNewTransaction({
         name: '',
-        date: new Date().toISOString().split('T')[0],
+        date: formatLocalIsoDate(new Date()),
         person: '',
         inflow: '',
         outflow: '',
@@ -159,7 +160,7 @@ export const TransactionTable = memo(
     const handleCancelAdd = () => {
       setNewTransaction({
         name: '',
-        date: new Date().toISOString().split('T')[0],
+        date: formatLocalIsoDate(new Date()),
         person: '',
         inflow: '',
         outflow: '',

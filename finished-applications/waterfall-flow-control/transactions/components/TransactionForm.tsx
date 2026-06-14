@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/drawer';
 import { useIsMobile } from '@/hooks/useMobile';
 import { Plus } from 'lucide-react';
+import { formatLocalIsoDate } from '../utils/transactionUtils';
 import {
   Tooltip,
   TooltipContent,
@@ -188,7 +189,7 @@ export const TransactionForm = ({
   const isMobile = useIsMobile();
   const [formData, setFormData] = useState<TransactionFormData>({
     name: '',
-    date: new Date().toISOString().split('T')[0],
+    date: formatLocalIsoDate(new Date()),
     person: '',
     inflow: '',
     outflow: '',
@@ -197,7 +198,7 @@ export const TransactionForm = ({
   const resetForm = () => {
     setFormData({
       name: '',
-      date: new Date().toISOString().split('T')[0],
+      date: formatLocalIsoDate(new Date()),
       person: '',
       inflow: '',
       outflow: '',

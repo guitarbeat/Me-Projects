@@ -18,6 +18,13 @@ interface CalendarDayProps {
   onKeyDown?: (e: React.KeyboardEvent, day: number) => void;
 }
 
+// ⚡ Bolt Performance Optimization:
+// Cache Intl.DateTimeFormat instances outside the component.
+// Recreating these instances or using toLocaleDateString inside rendered components
+// (especially in a grid like a calendar) causes severe performance overhead.
+const weekdayFormatter = new Intl.DateTimeFormat('en-US', { weekday: 'long' });
+const monthFormatter = new Intl.DateTimeFormat('en-US', { month: 'long' });
+
 export const CalendarDay = memo(
   ({
     day,
@@ -43,8 +50,8 @@ export const CalendarDay = memo(
         currentDate.getMonth(),
         day
       );
-      const weekday = fullDate.toLocaleDateString('en-US', { weekday: 'long' });
-      const month = fullDate.toLocaleDateString('en-US', { month: 'long' });
+      const weekday = weekdayFormatter.format(fullDate);
+      const month = monthFormatter.format(fullDate);
       return `${weekday}, ${month} ${day}, ${fullDate.getFullYear()}${isFloDay ? ', Period logged' : ''}`;
     }, [currentDate, day, isFloDay]);
 

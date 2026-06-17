@@ -37,14 +37,17 @@ export const CalendarDay = memo(
     const DayElement = readOnly ? 'div' : 'button';
 
     // Memoize date formatting to avoid recalculation on every render
+    // Use fast array lookups instead of slow toLocaleDateString
     const ariaLabel = useMemo(() => {
       const fullDate = new Date(
         currentDate.getFullYear(),
         currentDate.getMonth(),
         day
       );
-      const weekday = fullDate.toLocaleDateString('en-US', { weekday: 'long' });
-      const month = fullDate.toLocaleDateString('en-US', { month: 'long' });
+      const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const weekday = WEEKDAYS[fullDate.getDay()];
+      const month = MONTHS[fullDate.getMonth()];
       return `${weekday}, ${month} ${day}, ${fullDate.getFullYear()}${isFloDay ? ', Period logged' : ''}`;
     }, [currentDate, day, isFloDay]);
 

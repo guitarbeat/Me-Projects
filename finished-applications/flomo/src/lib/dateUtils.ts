@@ -44,9 +44,21 @@ export const adjustMonth = (date: Date, direction: 'prev' | 'next'): Date => {
   return newDate;
 };
 
+const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 export const formatDate = (dateStr: string): string => {
+  // Fast path for YYYY-MM-DD (exactly 10 chars)
+  if (dateStr.length === 10) {
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
+      return `${SHORT_MONTHS[m]} ${d}`;
+    }
+  }
+  // Fallback
   const date = new Date(dateStr);
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `${SHORT_MONTHS[date.getMonth()]} ${date.getDate()}`;
 };
 
 export const getDaysUntilDate = (dateStr: string): number => {

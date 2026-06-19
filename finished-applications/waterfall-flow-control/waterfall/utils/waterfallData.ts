@@ -28,7 +28,19 @@ export const formatCurrency = (value: number): string => {
   return `$${Math.abs(value).toLocaleString()}`;
 };
 
+// Fast lookup for month abbreviations to avoid slow toLocaleDateString formatting
+const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 export const formatShortDate = (dateString: string): string => {
+  // Fast path for YYYY-MM-DD format (significantly faster than Date parsing)
+  if (dateString.length === 10) {
+    const parts = dateString.split('-');
+    if (parts.length === 3) {
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
+      return `${SHORT_MONTHS[m]} ${d}`;
+    }
+  }
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', {
     month: 'short',

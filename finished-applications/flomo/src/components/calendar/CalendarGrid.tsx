@@ -9,8 +9,17 @@ interface CalendarGridProps {
   disabled?: boolean;
 }
 
-// Helper to format local date quickly without timezone bugs of toISOString
+// ⚡ Bolt: Helper to format local date quickly without timezone bugs of toISOString
+// Uses math/string concatenation to avoid expensive new Date() allocations in render loops
 const formatDate = (y: number, m: number, d: number) => {
+  // Fast path for normal days in the current month
+  if (d >= 1 && d <= 28) {
+    const mm = String(m + 1).padStart(2, '0');
+    const dd = String(d).padStart(2, '0');
+    return `${y}-${mm}-${dd}`;
+  }
+
+  // Fallback for days that might cross month boundaries (0, 29, 30, 31, 32)
   const date = new Date(y, m, d);
   const yy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, '0');

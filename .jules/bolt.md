@@ -4,3 +4,6 @@
 ## 2026-06-17 - [Date Formatting Overhead]
 **Learning:** `Date.prototype.toLocaleDateString()` has severe performance overhead (~25-100x slower) compared to array lookups and simple string splitting. Using it inside frequently rendered components (like Calendar grids) causes unnecessary main-thread blocking.
 **Action:** Prefer pre-computed array lookups for weekdays/months when formatting dates locally, especially in loops.
+## 2026-06-21 - [React Memoization De-optimization with Inline Defaults]
+**Learning:** When destructuring props in a \`React.memo\` component, setting an inline default object (e.g., \`{ activityMap = {} }\`) creates a new reference on every render when the prop is omitted. If this prop is used in a dependency array (like \`useMemo\`), it completely breaks memoization and forces expensive calculations to re-run.
+**Action:** Always declare empty default objects or arrays as constants *outside* the component definition (e.g., \`const EMPTY_MAP = {};\`) to maintain stable references across renders.

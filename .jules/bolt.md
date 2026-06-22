@@ -4,3 +4,7 @@
 ## 2026-06-17 - [Date Formatting Overhead]
 **Learning:** `Date.prototype.toLocaleDateString()` has severe performance overhead (~25-100x slower) compared to array lookups and simple string splitting. Using it inside frequently rendered components (like Calendar grids) causes unnecessary main-thread blocking.
 **Action:** Prefer pre-computed array lookups for weekdays/months when formatting dates locally, especially in loops.
+
+## 2024-05-22 - [Performance: Fast Date Sorting]
+**Learning:** To optimize JavaScript performance, prefer direct string comparison (e.g., `a.date < b.date ? -1 : a.date > b.date ? 1 : 0`) over parsing into `Date` objects when sorting arrays by ISO 8601 formatted date strings.
+**Action:** Always use string comparison for standard YYYY-MM-DD format sorting instead of `new Date().getTime()`, as it avoids significant object allocation overhead.

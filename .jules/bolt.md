@@ -4,3 +4,6 @@
 ## 2026-06-17 - [Date Formatting Overhead]
 **Learning:** `Date.prototype.toLocaleDateString()` has severe performance overhead (~25-100x slower) compared to array lookups and simple string splitting. Using it inside frequently rendered components (like Calendar grids) causes unnecessary main-thread blocking.
 **Action:** Prefer pre-computed array lookups for weekdays/months when formatting dates locally, especially in loops.
+## 2024-06-24 - [Date Object Creation in Sort]
+**Learning:** Creating `Date` objects within the `sort` comparator (e.g., `new Date(a.date).getTime() - new Date(b.date).getTime()`) adds massive performance overhead. Since ISO 8601 strings sort lexicographically, this is completely unnecessary.
+**Action:** Compare date strings directly when they are formatted as ISO 8601 (YYYY-MM-DD), avoiding `new Date()` entirely inside sort loops.

@@ -4,3 +4,6 @@
 ## 2026-06-17 - [Date Formatting Overhead]
 **Learning:** `Date.prototype.toLocaleDateString()` has severe performance overhead (~25-100x slower) compared to array lookups and simple string splitting. Using it inside frequently rendered components (like Calendar grids) causes unnecessary main-thread blocking.
 **Action:** Prefer pre-computed array lookups for weekdays/months when formatting dates locally, especially in loops.
+## 2026-06-25 - Workspace Configuration Warning
+**Learning:** The me-projects monorepo defines workspaces in `package.json` but uses `pnpm`, which expects a `pnpm-workspace.yaml`. This causes `pnpm` warnings and makes workspace-level `pnpm run` commands fail or behave unexpectedly.
+**Action:** When running tests or linters in this monorepo, be prepared for `pnpm` workspace warnings and consider using `npm run` with the `--workspace` flag if `pnpm` scripts fail, or run commands directly in the subdirectories.

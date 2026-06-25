@@ -66,6 +66,15 @@ export const formatCurrency = (value: number): string => {
  * Format date strings for display
  */
 export const formatDate = (dateString: string): string => {
+  // Fast path for YYYY-MM-DD format (significantly faster than Date parsing)
+  if (dateString.length === 10) {
+    const parts = dateString.split('-');
+    if (parts.length === 3) {
+      const m = parseInt(parts[1], 10);
+      const d = parseInt(parts[2], 10);
+      return `${m}/${d}`;
+    }
+  }
   return new Date(dateString).toLocaleDateString('en-US', {
     month: 'numeric',
     day: 'numeric',

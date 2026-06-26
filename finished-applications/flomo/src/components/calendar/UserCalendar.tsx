@@ -320,7 +320,13 @@ export const UserCalendar = memo(
     const todayDate = new Date();
     const todayStr = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
     const currentYear = currentDate.getFullYear();
-    const currentMonthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const currentMonthIndex = currentDate.getMonth();
+    const currentMonthStr = String(currentMonthIndex + 1).padStart(2, '0');
+
+    // Calculate month properties once for the entire grid
+    const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const currentMonthName = MONTHS[currentMonthIndex];
+    const firstDayOfMonth = new Date(currentYear, currentMonthIndex, 1).getDay();
 
     return (
       <div ref={swipeRef} className="relative smooth-resize">
@@ -391,7 +397,9 @@ export const UserCalendar = memo(
                 <CalendarDay
                   key={dateStr}
                   day={day}
-                  currentDate={currentDate}
+                  year={currentYear}
+                  monthName={currentMonthName}
+                  firstDayOfMonth={firstDayOfMonth}
                   isFloDay={isFloDay}
                   isToday={isToday}
                   readOnly={readOnly}

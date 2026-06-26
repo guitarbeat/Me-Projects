@@ -8,3 +8,6 @@
 ## 2024-05-22 - [Performance: Fast Date Sorting]
 **Learning:** To optimize JavaScript performance, prefer direct string comparison (e.g., `a.date < b.date ? -1 : a.date > b.date ? 1 : 0`) over parsing into `Date` objects when sorting arrays by ISO 8601 formatted date strings.
 **Action:** Always use string comparison for standard YYYY-MM-DD format sorting instead of `new Date().getTime()`, as it avoids significant object allocation overhead.
+## 2026-06-26 - Hoisting loop invariants outside rendered components
+**Learning:** Instantiating `new Date()` inside a child component's `useMemo` block creates a severe performance bottleneck when that child is rendered in a loop (like a 30-day calendar grid), even if the `useMemo` dependencies are stable. Changing the internal computation of the child from `new Date(year, month, day)` to `new Date(year, month, 1)` doesn't fix the problem, as it still allocates one `Date` object *per instance*.
+**Action:** When a calculation is invariant across a loop (e.g., the first day of the month for all days in that month), hoist the calculation to the parent component and pass it down as a prop.

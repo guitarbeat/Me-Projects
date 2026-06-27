@@ -22,12 +22,12 @@ export const calculatePeriodInsights = (
     .sort();
 
   // Count days this month
-  const currentMonth = currentDate.getMonth();
-  const currentYear = currentDate.getFullYear();
-  const daysThisMonth = allDates.filter((date) => {
-    const d = new Date(date);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-  }).length;
+  const currentMonthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
+  const currentYearStr = String(currentDate.getFullYear());
+  const prefix = `${currentYearStr}-${currentMonthStr}-`;
+  const daysThisMonth = allDates.filter((date) =>
+    date.startsWith(prefix)
+  ).length;
 
   // Total days logged
   const totalDays = allDates.length;
@@ -80,13 +80,23 @@ export const calculatePeriodInsights = (
   yesterday.setDate(yesterday.getDate() - 1);
 
   let streak = 0;
-  const checkDate = allDates.includes(today.toISOString().split('T')[0])
-    ? today
-    : yesterday;
 
-  while (entries[checkDate.toISOString().split('T')[0]]) {
+  // ⚡ Bolt: Manual string formatting for today and yesterday to avoid toISOString timezone bugs and Date allocation overhead
+  const formatLocalDate = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  const todayStrLocal = formatLocalDate(today);
+  const checkDate = allDates.includes(todayStrLocal) ? today : yesterday;
+
+  let checkDateStr = formatLocalDate(checkDate);
+  while (entries[checkDateStr]) {
     streak++;
     checkDate.setDate(checkDate.getDate() - 1);
+    checkDateStr = formatLocalDate(checkDate);
   }
 
   return {

@@ -22,12 +22,11 @@ export const calculatePeriodInsights = (
     .sort();
 
   // Count days this month
+  // Optimization: Use string prefix matching instead of new Date() allocations
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
-  const daysThisMonth = allDates.filter((date) => {
-    const d = new Date(date);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-  }).length;
+  const prefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-`;
+  const daysThisMonth = allDates.filter((date) => date.startsWith(prefix)).length;
 
   // Total days logged
   const totalDays = allDates.length;

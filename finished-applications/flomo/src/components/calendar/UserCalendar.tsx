@@ -316,11 +316,13 @@ export const UserCalendar = memo(
       [currentDate]
     );
 
-    // ⚡ Bolt: Pre-calculate date strings outside the render loop for performance
+    // ⚡ Bolt: Pre-calculate date strings and firstDayOfMonth outside the render loop for performance
     const todayDate = new Date();
     const todayStr = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
     const currentYear = currentDate.getFullYear();
     const currentMonthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
+    // Hoist date allocation to prevent per-cell instantiation in CalendarDay
+    const firstDayOfMonth = useMemo(() => new Date(currentYear, currentDate.getMonth(), 1).getDay(), [currentYear, currentDate]);
 
     return (
       <div ref={swipeRef} className="relative smooth-resize">
@@ -392,6 +394,7 @@ export const UserCalendar = memo(
                   key={dateStr}
                   day={day}
                   currentDate={currentDate}
+                  firstDayOfMonth={firstDayOfMonth}
                   isFloDay={isFloDay}
                   isToday={isToday}
                   readOnly={readOnly}

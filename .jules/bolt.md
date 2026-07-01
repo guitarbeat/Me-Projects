@@ -8,3 +8,6 @@
 ## 2024-05-22 - [Performance: Fast Date Sorting]
 **Learning:** To optimize JavaScript performance, prefer direct string comparison (e.g., `a.date < b.date ? -1 : a.date > b.date ? 1 : 0`) over parsing into `Date` objects when sorting arrays by ISO 8601 formatted date strings.
 **Action:** Always use string comparison for standard YYYY-MM-DD format sorting instead of `new Date().getTime()`, as it avoids significant object allocation overhead.
+## 2024-12-05 - Hoisting Object Allocations out of Memoized React Loops
+**Learning:** In React, optimizing object instantiations (like `new Date()`) inside a child component's `useMemo` does not prevent per-instance allocation overhead when rendering a list of those components. The code might look optimized because it avoids `new Date()` *on re-renders*, but the initial render still allocates it N times (once per cell).
+**Action:** Always hoist invariant calculations (like finding the first day of the month) to the parent component or outside the component loop entirely for actual loop-level performance gains.

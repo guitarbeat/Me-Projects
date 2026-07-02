@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 interface CalendarDayProps {
   day: number;
   currentDate: Date;
+  firstDayOfWeek?: number;
   isFloDay: boolean;
   isToday: boolean;
   readOnly: boolean;
@@ -22,6 +23,7 @@ export const CalendarDay = memo(
   ({
     day,
     currentDate,
+    firstDayOfWeek,
     isFloDay,
     isToday,
     readOnly,
@@ -39,17 +41,20 @@ export const CalendarDay = memo(
     // Memoize date formatting to avoid recalculation on every render
     // Use fast array lookups instead of slow toLocaleDateString
     const ariaLabel = useMemo(() => {
-      const fullDate = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        day
-      );
       const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      const weekday = WEEKDAYS[fullDate.getDay()];
-      const month = MONTHS[fullDate.getMonth()];
-      return `${weekday}, ${month} ${day}, ${fullDate.getFullYear()}${isFloDay ? ', Period logged' : ''}`;
-    }, [currentDate, day, isFloDay]);
+
+      let weekdayIndex;
+      if (firstDayOfWeek !== undefined) {
+        weekdayIndex = (firstDayOfWeek + day - 1) % 7;
+      } else {
+        weekdayIndex = new Date(currentDate.getFullYear(), currentDate.getMonth(), day).getDay();
+      }
+
+      const weekday = WEEKDAYS[weekdayIndex];
+      const month = MONTHS[currentDate.getMonth()];
+      return `${weekday}, ${month} ${day}, ${currentDate.getFullYear()}${isFloDay ? ', Period logged' : ''}`;
+    }, [currentDate, day, firstDayOfWeek, isFloDay]);
 
     return (
       <DayElement

@@ -24,28 +24,29 @@ export const calculatePeriodInsights = (
   // Count days this month
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
-  const daysThisMonth = allDates.filter((date) => {
-    const d = new Date(date);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-  }).length;
+
+  // Optimize: Use string prefix matching instead of creating new Date() instances in loop
+  const prefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+  const daysThisMonth = allDates.filter((date) => date.startsWith(prefix)).length;
 
   // Total days logged
   const totalDays = allDates.length;
 
   // Find period starts (first day after a gap)
   const periodStarts: Date[] = [];
-  let lastDate: Date | null = null;
+  let lastDateMs: number | null = null;
 
   for (const dateStr of allDates) {
     const date = new Date(dateStr);
+    const dateMs = date.getTime();
     if (
-      !lastDate ||
-      (date.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24) > 7
+      lastDateMs === null ||
+      (dateMs - lastDateMs) / (1000 * 60 * 60 * 24) > 7
     ) {
       // Gap of more than 7 days = new period
       periodStarts.push(date);
     }
-    lastDate = date;
+    lastDateMs = dateMs;
   }
 
   // Calculate average cycle length
@@ -79,12 +80,22 @@ export const calculatePeriodInsights = (
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
+  // Helper to format local date without new Date(...).toISOString().split('T')[0] timezone shift bugs and overhead
+  const formatDateLocal = (date: Date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
   let streak = 0;
-  const checkDate = allDates.includes(today.toISOString().split('T')[0])
+  const todayStr = formatDateLocal(today);
+  const checkDate = allDates.includes(todayStr)
     ? today
     : yesterday;
 
-  while (entries[checkDate.toISOString().split('T')[0]]) {
+  // Optimize: Avoid allocating new Date objects and strings continuously in loop
+  while (entries[formatDateLocal(checkDate)]) {
     streak++;
     checkDate.setDate(checkDate.getDate() - 1);
   }

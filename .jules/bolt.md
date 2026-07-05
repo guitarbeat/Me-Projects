@@ -8,3 +8,6 @@
 ## 2024-05-22 - [Performance: Fast Date Sorting]
 **Learning:** To optimize JavaScript performance, prefer direct string comparison (e.g., `a.date < b.date ? -1 : a.date > b.date ? 1 : 0`) over parsing into `Date` objects when sorting arrays by ISO 8601 formatted date strings.
 **Action:** Always use string comparison for standard YYYY-MM-DD format sorting instead of `new Date().getTime()`, as it avoids significant object allocation overhead.
+## 2024-05-23 - [Performance: Hoisting useMemo dependencies to avoid per-instance object allocation]
+**Learning:** In React, passing an object like a `Date` to a child component that renders in a loop (like days in a month) forces you to either trigger re-renders or perform inner loop allocations (e.g., `new Date(year, month, day)`). Using `useMemo` inside the child component does not prevent the initial memory allocation overhead per instance when the parent renders.
+**Action:** Hoist the calculation of primitives (like `firstDayOfWeek` or `monthName`) to the parent component or loop level, and pass those primitives down. For calendar grids, use modulo arithmetic `(firstDayOfWeek + day - 1) % 7` instead of allocating a `Date` object for every day rendered.

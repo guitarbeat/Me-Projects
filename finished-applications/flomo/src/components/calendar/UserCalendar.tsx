@@ -322,6 +322,10 @@ export const UserCalendar = memo(
     const currentYear = currentDate.getFullYear();
     const currentMonthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
 
+    const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    const currentMonthName = MONTHS[currentDate.getMonth()];
+    const firstDayOfWeek = new Date(currentYear, currentDate.getMonth(), 1).getDay();
+
     return (
       <div ref={swipeRef} className="relative smooth-resize">
         {/* Multi-select mode indicator */}
@@ -391,7 +395,9 @@ export const UserCalendar = memo(
                 <CalendarDay
                   key={dateStr}
                   day={day}
-                  currentDate={currentDate}
+                  year={currentYear}
+                  monthName={currentMonthName}
+                  firstDayOfWeek={firstDayOfWeek}
                   isFloDay={isFloDay}
                   isToday={isToday}
                   readOnly={readOnly}

@@ -79,12 +79,16 @@ export const calculatePeriodInsights = (
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
+  // ⚡ Bolt: Manual UTC date formatting avoids toISOString string parsing overhead while maintaining exact UTC date semantics
+  const formatUTCDate = (d: Date) =>
+    `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+
   let streak = 0;
-  const checkDate = allDates.includes(today.toISOString().split('T')[0])
+  const checkDate = allDates.includes(formatUTCDate(today))
     ? today
     : yesterday;
 
-  while (entries[checkDate.toISOString().split('T')[0]]) {
+  while (entries[formatUTCDate(checkDate)]) {
     streak++;
     checkDate.setDate(checkDate.getDate() - 1);
   }

@@ -8,3 +8,6 @@
 ## 2024-05-22 - [Performance: Fast Date Sorting]
 **Learning:** To optimize JavaScript performance, prefer direct string comparison (e.g., `a.date < b.date ? -1 : a.date > b.date ? 1 : 0`) over parsing into `Date` objects when sorting arrays by ISO 8601 formatted date strings.
 **Action:** Always use string comparison for standard YYYY-MM-DD format sorting instead of `new Date().getTime()`, as it avoids significant object allocation overhead.
+## 2024-05-23 - [Timezone Shift & Performance: UTC Date Formatting]
+**Learning:** `new Date('YYYY-MM-DD')` inherently parses as UTC. Using `.getMonth()` on this object returns the *local* month, which causes time shift bugs depending on the user's timezone. Replacing this parsing with strict string prefix matching alters the logic because prefix matching has no timezone concept. Furthermore, using `toISOString().split('T')[0]` correctly fetches the UTC date but introduces significant overhead.
+**Action:** When optimizing date loops that require strict UTC semantics, replace `toISOString().split('T')[0]` with manual formatting using `.getUTCFullYear()`, `.getUTCMonth()`, and `.getUTCDate()`. Do not replace `new Date(date)` filtering with `.startsWith()` if the original logic relies on evaluating local time from a UTC-parsed date object, unless the intention is explicitly to fix a timezone bug.

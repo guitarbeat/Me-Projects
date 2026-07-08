@@ -38,17 +38,25 @@ export const CalendarDay = memo(
 
     // Memoize date formatting to avoid recalculation on every render
     // Use fast array lookups instead of slow toLocaleDateString
+    // ⚡ Bolt: Zero-allocation weekday calculation using modulo arithmetic
     const ariaLabel = useMemo(() => {
-      const fullDate = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        day
-      );
       const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      const weekday = WEEKDAYS[fullDate.getDay()];
-      const month = MONTHS[fullDate.getMonth()];
-      return `${weekday}, ${month} ${day}, ${fullDate.getFullYear()}${isFloDay ? ', Period logged' : ''}`;
+
+      const year = currentDate.getFullYear();
+      const month = MONTHS[currentDate.getMonth()];
+
+      // Calculate target weekday without new Date() allocations
+      const currentWeekday = currentDate.getDay();
+      const currentDateNum = currentDate.getDate();
+      let targetWeekday = (currentWeekday + day - currentDateNum) % 7;
+      if (targetWeekday < 0) {
+        targetWeekday += 7;
+      }
+
+      const weekday = WEEKDAYS[targetWeekday];
+
+      return `${weekday}, ${month} ${day}, ${year}${isFloDay ? ', Period logged' : ''}`;
     }, [currentDate, day, isFloDay]);
 
     return (

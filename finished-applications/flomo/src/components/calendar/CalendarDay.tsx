@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils';
 interface CalendarDayProps {
   day: number;
   currentDate: Date;
+  firstDayOfWeek: number;
   isFloDay: boolean;
   isToday: boolean;
   readOnly: boolean;
@@ -22,6 +23,7 @@ export const CalendarDay = memo(
   ({
     day,
     currentDate,
+    firstDayOfWeek,
     isFloDay,
     isToday,
     readOnly,
@@ -38,18 +40,15 @@ export const CalendarDay = memo(
 
     // Memoize date formatting to avoid recalculation on every render
     // Use fast array lookups instead of slow toLocaleDateString
+    // ⚡ Bolt: Use modulo arithmetic instead of allocating new Date() objects inside grid render path
     const ariaLabel = useMemo(() => {
-      const fullDate = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        day
-      );
       const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      const weekday = WEEKDAYS[fullDate.getDay()];
-      const month = MONTHS[fullDate.getMonth()];
-      return `${weekday}, ${month} ${day}, ${fullDate.getFullYear()}${isFloDay ? ', Period logged' : ''}`;
-    }, [currentDate, day, isFloDay]);
+      const weekdayIndex = (firstDayOfWeek + day - 1) % 7;
+      const weekday = WEEKDAYS[weekdayIndex < 0 ? weekdayIndex + 7 : weekdayIndex];
+      const month = MONTHS[currentDate.getMonth()];
+      return `${weekday}, ${month} ${day}, ${currentDate.getFullYear()}${isFloDay ? ', Period logged' : ''}`;
+    }, [currentDate, firstDayOfWeek, day, isFloDay]);
 
     return (
       <DayElement

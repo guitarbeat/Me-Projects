@@ -321,6 +321,7 @@ export const UserCalendar = memo(
     const todayStr = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
     const currentYear = currentDate.getFullYear();
     const currentMonthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const firstDayOfWeek = new Date(currentYear, currentDate.getMonth(), 1).getDay();
 
     return (
       <div ref={swipeRef} className="relative smooth-resize">
@@ -392,6 +393,7 @@ export const UserCalendar = memo(
                   key={dateStr}
                   day={day}
                   currentDate={currentDate}
+                  firstDayOfWeek={firstDayOfWeek}
                   isFloDay={isFloDay}
                   isToday={isToday}
                   readOnly={readOnly}

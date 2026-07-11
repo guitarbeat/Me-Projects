@@ -26,11 +26,7 @@ import { cn } from '@/lib/utils';
 import { hashPin } from '@/lib/security';
 
 export const AccessControlSettings: React.FC = () => {
-  const {
-    profile,
-    session,
-    refreshProfile,
-  } = useAuth();
+  const { profile, session, refreshProfile } = useAuth();
   const { toast } = useToast();
 
   // Combined access code state

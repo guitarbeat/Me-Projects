@@ -44,7 +44,20 @@ export const adjustMonth = (date: Date, direction: 'prev' | 'next'): Date => {
   return newDate;
 };
 
-const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const SHORT_MONTHS = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
 
 export const formatDate = (dateStr: string): string => {
   // Fast path for YYYY-MM-DD (exactly 10 chars)

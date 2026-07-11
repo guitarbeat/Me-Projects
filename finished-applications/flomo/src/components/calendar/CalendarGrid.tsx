@@ -11,6 +11,14 @@ interface CalendarGridProps {
 
 // Helper to format local date quickly without timezone bugs of toISOString
 const formatDate = (y: number, m: number, d: number) => {
+  // Fast path to avoid Date allocation overhead for non-boundary days
+  if (d >= 1 && d <= 28) {
+    const mm = String(m + 1).padStart(2, '0');
+    const dd = String(d).padStart(2, '0');
+    return `${y}-${mm}-${dd}`;
+  }
+
+  // Slow path for rollovers (e.g. day 0, day 29+, negative days)
   const date = new Date(y, m, d);
   const yy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, '0');

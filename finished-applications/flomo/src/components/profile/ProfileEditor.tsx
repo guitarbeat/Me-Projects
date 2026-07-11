@@ -867,9 +867,9 @@ export const ProfileEditor: React.FC<ProfileEditorProps> = ({
                 isPrivate:
                   (profile as typeof profile & { is_private?: boolean })
                     ?.is_private ?? false,
-                hasAccessCode:
-                  !!(profile as typeof profile & { pin_hash?: string | null })
-                    ?.pin_hash,
+                hasAccessCode: !!(
+                  profile as typeof profile & { pin_hash?: string | null }
+                )?.pin_hash,
               }}
               onScrollTo={(section) => {
                 const el = document.getElementById(`${section}-section`);

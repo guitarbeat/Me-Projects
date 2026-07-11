@@ -8,3 +8,6 @@
 ## 2024-05-22 - [Performance: Fast Date Sorting]
 **Learning:** To optimize JavaScript performance, prefer direct string comparison (e.g., `a.date < b.date ? -1 : a.date > b.date ? 1 : 0`) over parsing into `Date` objects when sorting arrays by ISO 8601 formatted date strings.
 **Action:** Always use string comparison for standard YYYY-MM-DD format sorting instead of `new Date().getTime()`, as it avoids significant object allocation overhead.
+## 2024-11-28 - Optimizing loop date instantiations without side effects
+**Learning:** Adding string concatenation fast-paths for local date strings in high-frequency rendering loops (e.g. 42-day calendar grids) is a safe and high-impact optimization to avoid JS GC thrashing, but bounds checking all variables (even seemingly unused ones like months) is critical for total safety.
+**Action:** When adding fast paths to date-formatting utilities, ensure bound checks exist for all variables (e.g., month 0-11) regardless of current localized assumptions in callers.

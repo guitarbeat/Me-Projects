@@ -22,7 +22,8 @@ export const LegacyPasswordUpgradeDialog: React.FC = () => {
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const isOpen = !!user && !!profile && !profile.has_custom_password;
-  const displayName = profile?.display_name || profile?.username || 'your account';
+  const displayName =
+    profile?.display_name || profile?.username || 'your account';
 
   useEffect(() => {
     if (!isOpen) {
@@ -104,8 +105,8 @@ export const LegacyPasswordUpgradeDialog: React.FC = () => {
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            Your PIN lock stays separate. This only upgrades your account sign-in
-            password.
+            Your PIN lock stays separate. This only upgrades your account
+            sign-in password.
           </p>
         </AlertDialogHeader>
 

@@ -109,7 +109,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const resolvedDisplayName =
       displayName ||
-      (typeof metadata.display_name === 'string' && metadata.display_name.trim()) ||
+      (typeof metadata.display_name === 'string' &&
+        metadata.display_name.trim()) ||
       (typeof metadata.first_name === 'string' && metadata.first_name.trim()) ||
       normalizedUsername;
 
@@ -567,9 +568,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const removeCustomPassword = async (): Promise<{ error: Error | null }> => {
     return {
-      error: new Error(
-        'Removing the account password is no longer supported.'
-      ),
+      error: new Error('Removing the account password is no longer supported.'),
     };
   };
 

@@ -568,7 +568,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
           {/* Password required hint */}
           {showPasswordField && (
             <p className="text-xs text-muted-foreground text-center animate-fade-in">
-              Use a password to continue. New accounts create it here; existing accounts enter it here.
+              Use a password to continue. New accounts create it here; existing
+              accounts enter it here.
             </p>
           )}
           {/* false && showPasswordField && (
@@ -604,7 +605,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
         {userProfiles.length === 0 && (
           <p className="text-center text-sm text-muted-foreground font-quicksand mt-4 animate-hint-entrance">
             <span className="gentle-breathe inline-block">
-              First time here? Enter a username to get started, then choose a password.
+              First time here? Enter a username to get started, then choose a
+              password.
             </span>
           </p>
         )}
@@ -632,4 +634,3 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
     </div>
   );
 };
-

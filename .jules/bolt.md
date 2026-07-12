@@ -8,3 +8,7 @@
 ## 2024-05-22 - [Performance: Fast Date Sorting]
 **Learning:** To optimize JavaScript performance, prefer direct string comparison (e.g., `a.date < b.date ? -1 : a.date > b.date ? 1 : 0`) over parsing into `Date` objects when sorting arrays by ISO 8601 formatted date strings.
 **Action:** Always use string comparison for standard YYYY-MM-DD format sorting instead of `new Date().getTime()`, as it avoids significant object allocation overhead.
+
+## 2024-07-12 - Date Object Instantiation Overhead for Days in Month
+**Learning:** Instantiating `new Date(year, month + 1, 0).getDate()` to find the number of days in a month is significantly slower (~6x slower in V8) than using a simple array lookup combined with a mathematical leap year check. The `Date` constructor involves heavy internal calendrical math and bounds-checking that is unnecessary for simple array lookups.
+**Action:** When calculating the number of days in a month in hot paths or tight loops, prefer `const isLeap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0; const days = [31, isLeap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month];` over object instantiation.

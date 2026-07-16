@@ -16,19 +16,23 @@ export const monthNames = [
 export const getDaysInMonth = (date: Date): (number | null)[] => {
   const year = date.getFullYear();
   const month = date.getMonth();
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const daysInMonth = lastDay.getDate();
-  const startingDayOfWeek = firstDay.getDay();
 
-  const days: (number | null)[] = [];
+  // Mathematical leap year check and constant lookup is much faster than new Date()
+  const isLeapYear = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  const daysInMonth = [31, isLeapYear ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month];
+
+  const startingDayOfWeek = new Date(year, month, 1).getDay();
+
+  // Pre-allocate array for better performance
+  const totalLength = startingDayOfWeek + daysInMonth;
+  const days: (number | null)[] = new Array(totalLength);
 
   for (let i = 0; i < startingDayOfWeek; i++) {
-    days.push(null);
+    days[i] = null;
   }
 
   for (let day = 1; day <= daysInMonth; day++) {
-    days.push(day);
+    days[startingDayOfWeek + day - 1] = day;
   }
 
   return days;

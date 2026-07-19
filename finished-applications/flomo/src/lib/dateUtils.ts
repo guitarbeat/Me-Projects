@@ -13,22 +13,28 @@ export const monthNames = [
   'December',
 ];
 
+const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
 export const getDaysInMonth = (date: Date): (number | null)[] => {
   const year = date.getFullYear();
   const month = date.getMonth();
   const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const daysInMonth = lastDay.getDate();
   const startingDayOfWeek = firstDay.getDay();
 
-  const days: (number | null)[] = [];
+  // ⚡ Bolt: Optimize calculating days in month to avoid allocating `new Date(year, month + 1, 0)`
+  const isLeap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  const daysInMonth = month === 1 && isLeap ? 29 : DAYS_IN_MONTH[month];
+
+  // ⚡ Bolt: Pre-allocate array to avoid dynamic `.push()` reallocations
+  const totalLength = startingDayOfWeek + daysInMonth;
+  const days: (number | null)[] = new Array(totalLength);
 
   for (let i = 0; i < startingDayOfWeek; i++) {
-    days.push(null);
+    days[i] = null;
   }
 
   for (let day = 1; day <= daysInMonth; day++) {
-    days.push(day);
+    days[startingDayOfWeek + day - 1] = day;
   }
 
   return days;

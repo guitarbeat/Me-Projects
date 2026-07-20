@@ -8,3 +8,6 @@
 ## 2024-05-22 - [Performance: Fast Date Sorting]
 **Learning:** To optimize JavaScript performance, prefer direct string comparison (e.g., `a.date < b.date ? -1 : a.date > b.date ? 1 : 0`) over parsing into `Date` objects when sorting arrays by ISO 8601 formatted date strings.
 **Action:** Always use string comparison for standard YYYY-MM-DD format sorting instead of `new Date().getTime()`, as it avoids significant object allocation overhead.
+## 2026-07-20 - [Date Allocation Overhead in Loops]
+**Learning:** Rendering calendar components (like CalendarGrid and CalendarDay) using repeated `new Date()` allocations inside loops or `useMemo` hooks per day causes significant main-thread blocking and garbage collection overhead.
+**Action:** When computing daily attributes (like weekday formatting), pass down the current month context, calculate the first day of the week once or use arithmetic modulo, and use fast array lookups instead of instantiating `new Date()` instances in loops.

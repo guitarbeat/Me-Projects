@@ -36,19 +36,25 @@ export const CalendarDay = memo(
   }: CalendarDayProps) => {
     const DayElement = readOnly ? 'div' : 'button';
 
-    // Memoize date formatting to avoid recalculation on every render
-    // Use fast array lookups instead of slow toLocaleDateString
+    // ⚡ Bolt: Use math modulo to avoid costly new Date() allocations on every render
     const ariaLabel = useMemo(() => {
-      const fullDate = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        day
-      );
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth();
+      const currentDateDayOfWeek = currentDate.getDay();
+      const currentDateDayOfMonth = currentDate.getDate();
+
+      let firstDayOfWeek = (currentDateDayOfWeek - (currentDateDayOfMonth - 1)) % 7;
+      if (firstDayOfWeek < 0) {
+        firstDayOfWeek += 7;
+      }
+
       const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
       const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-      const weekday = WEEKDAYS[fullDate.getDay()];
-      const month = MONTHS[fullDate.getMonth()];
-      return `${weekday}, ${month} ${day}, ${fullDate.getFullYear()}${isFloDay ? ', Period logged' : ''}`;
+
+      const weekday = WEEKDAYS[(firstDayOfWeek + day - 1) % 7];
+      const monthStr = MONTHS[currentMonth];
+
+      return `${weekday}, ${monthStr} ${day}, ${currentYear}${isFloDay ? ', Period logged' : ''}`;
     }, [currentDate, day, isFloDay]);
 
     return (

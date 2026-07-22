@@ -320,7 +320,10 @@ export const UserCalendar = memo(
     const todayDate = new Date();
     const todayStr = `${todayDate.getFullYear()}-${String(todayDate.getMonth() + 1).padStart(2, '0')}-${String(todayDate.getDate()).padStart(2, '0')}`;
     const currentYear = currentDate.getFullYear();
-    const currentMonthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const currentMonth = currentDate.getMonth();
+    const currentMonthStr = String(currentMonth + 1).padStart(2, '0');
+    // ⚡ Bolt: Hoist firstDayOfWeek calculation to prevent Date instantiation in child loop
+    const firstDayOfWeek = useMemo(() => new Date(currentYear, currentMonth, 1).getDay(), [currentYear, currentMonth]);
 
     return (
       <div ref={swipeRef} className="relative smooth-resize">
@@ -392,6 +395,7 @@ export const UserCalendar = memo(
                   key={dateStr}
                   day={day}
                   currentDate={currentDate}
+                  firstDayOfWeek={firstDayOfWeek}
                   isFloDay={isFloDay}
                   isToday={isToday}
                   readOnly={readOnly}

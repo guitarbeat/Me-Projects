@@ -16,19 +16,29 @@ export const monthNames = [
 export const getDaysInMonth = (date: Date): (number | null)[] => {
   const year = date.getFullYear();
   const month = date.getMonth();
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const daysInMonth = lastDay.getDate();
-  const startingDayOfWeek = firstDay.getDay();
 
-  const days: (number | null)[] = [];
+  // ⚡ Bolt: Optimize by avoiding new Date() allocations
+  // Calculate days in month mathematically
+  const isLeap = (year % 4 === 0 && year % 100 !== 0) || (year % 400 === 0);
+  const daysInMonthArray = [31, isLeap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  const daysInMonth = daysInMonthArray[month];
+
+  // ⚡ Bolt: Calculate starting day of week mathematically from current date
+  let startingDayOfWeek = (date.getDay() - (date.getDate() - 1)) % 7;
+  if (startingDayOfWeek < 0) {
+    startingDayOfWeek += 7;
+  }
+
+  // ⚡ Bolt: Pre-allocate array to avoid .push() reallocation overhead
+  const totalLength = startingDayOfWeek + daysInMonth;
+  const days = new Array(totalLength);
 
   for (let i = 0; i < startingDayOfWeek; i++) {
-    days.push(null);
+    days[i] = null;
   }
 
   for (let day = 1; day <= daysInMonth; day++) {
-    days.push(day);
+    days[startingDayOfWeek + day - 1] = day;
   }
 
   return days;

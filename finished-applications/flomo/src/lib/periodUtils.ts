@@ -24,7 +24,15 @@ export const calculatePeriodInsights = (
   // Count days this month
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
+  // Optimize filtering by using string prefix matching instead of `new Date()` allocation
+  const currentMonthStr = String(currentMonth + 1).padStart(2, '0');
+  const currentYearStr = String(currentYear);
+  const prefix = `${currentYearStr}-${currentMonthStr}-`;
+
   const daysThisMonth = allDates.filter((date) => {
+    if (date.length === 10) {
+      return date.startsWith(prefix);
+    }
     const d = new Date(date);
     return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
   }).length;
@@ -79,12 +87,20 @@ export const calculatePeriodInsights = (
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
 
+  // Format date safely and quickly without toISOString timezone bugs
+  const formatLocalDate = (date: Date) => {
+    const yy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yy}-${mm}-${dd}`;
+  };
+
   let streak = 0;
-  const checkDate = allDates.includes(today.toISOString().split('T')[0])
+  const checkDate = allDates.includes(formatLocalDate(today))
     ? today
     : yesterday;
 
-  while (entries[checkDate.toISOString().split('T')[0]]) {
+  while (entries[formatLocalDate(checkDate)]) {
     streak++;
     checkDate.setDate(checkDate.getDate() - 1);
   }

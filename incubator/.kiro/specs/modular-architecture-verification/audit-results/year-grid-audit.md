@@ -2,7 +2,7 @@
 
 **Date:** 2024
 **Feature:** `year-grid`
-**Location:** `FlowMail/client/src/features/year-grid/`
+**Location:** `flowmail/client/src/features/year-grid/`
 
 ## Executive Summary
 

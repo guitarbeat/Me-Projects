@@ -2,7 +2,7 @@
 
 **Date:** 2024
 **Feature:** `journal`
-**Location:** `FlowMail/client/src/features/journal/`
+**Location:** `flowmail/client/src/features/journal/`
 
 ## Executive Summary
 
@@ -36,7 +36,7 @@ journal/
 - ✅ Feature has a `types.ts` file
 - ✅ Feature has an `index.ts` file
 
-**Note:** The Journal feature does not have a `pages/` subdirectory. The JournalPage component is located at `FlowMail/client/src/pages/journal.tsx` and is imported via the feature's `index.ts` using a relative path (`../../pages/journal`). This is acceptable as the page is still exported through the feature's public API.
+**Note:** The Journal feature does not have a `pages/` subdirectory. The JournalPage component is located at `flowmail/client/src/pages/journal.tsx` and is imported via the feature's `index.ts` using a relative path (`../../pages/journal`). This is acceptable as the page is still exported through the feature's public API.
 
 ### ✅ 2. Index.ts Exports
 

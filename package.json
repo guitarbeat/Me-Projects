@@ -3,18 +3,18 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "apps/flomo",
+    "apps/flo-and-tell",
     "apps/lenticular-lab",
-    "apps/nini.earth",
+    "apps/nini-earth",
     "apps/scanforge",
     "apps/harmonic-studio",
-    "incubator/FlowMail"
+    "incubator/flowmail"
   ],
   "scripts": {
-    "dev:flowmail": "npm run dev --workspace=incubator/FlowMail",
-    "dev:flomo": "npm run dev --workspace=apps/flomo",
-    "dev:lenticular": "npm run dev --workspace=apps/lenticular-lab",
-    "dev:nini": "npm run dev --workspace=apps/nini.earth",
+    "dev:flowmail": "npm run dev --workspace=incubator/flowmail",
+    "dev:flo-and-tell": "npm run dev --workspace=apps/flo-and-tell",
+    "dev:lenticular-lab": "npm run dev --workspace=apps/lenticular-lab",
+    "dev:nini-earth": "npm run dev --workspace=apps/nini-earth",
     "dev:scanforge": "npm run dev --workspace=apps/scanforge",
     "dev:harmonic-studio": "npm run dev --workspace=apps/harmonic-studio",
     "install:all": "npm install"

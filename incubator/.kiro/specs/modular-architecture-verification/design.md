@@ -13,7 +13,7 @@ The modular architecture verification will be implemented through a combination 
 ### Component Architecture
 
 ```
-FlowMail/
+flowmail/
 ├── client/src/
 │   ├── features/                    # Feature modules (plug-and-play)
 │   │   ├── email-inbox/

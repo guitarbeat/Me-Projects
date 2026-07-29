@@ -25,7 +25,7 @@ The App.tsx integration audit reveals a **MIXED** compliance status. While App.t
 
 **Evidence:**
 ```typescript
-// FlowMail/client/src/App.tsx (lines 8-12)
+// flowmail/client/src/App.tsx (lines 8-12)
 import { InboxPage, LaterPage } from './features/email-inbox';
 import { JournalPage } from './features/journal';
 import { YearGridApp } from './features/year-grid';
@@ -44,11 +44,11 @@ import { YearGridApp } from './features/year-grid';
 
 **Status:** ❌ **VIOLATION DETECTED**
 
-**Violation Location:** `FlowMail/client/src/pages/journal.tsx`
+**Violation Location:** `flowmail/client/src/pages/journal.tsx`
 
 **Evidence:**
 ```typescript
-// FlowMail/client/src/pages/journal.tsx (lines 32-49)
+// flowmail/client/src/pages/journal.tsx (lines 32-49)
 import { JournalEventDialog } from '@/features/journal/components/journal-event-dialog';
 import { JournalExportMenu } from '@/features/journal/components/journal-export-menu';
 import { buildEmotionSummary } from '@/features/journal/lib/export';

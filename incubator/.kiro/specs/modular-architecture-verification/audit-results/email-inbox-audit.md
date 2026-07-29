@@ -2,7 +2,7 @@
 
 **Date:** 2024
 **Feature:** `email-inbox`
-**Location:** `FlowMail/client/src/features/email-inbox/`
+**Location:** `flowmail/client/src/features/email-inbox/`
 
 ## Executive Summary
 
@@ -91,7 +91,7 @@ export const emailInboxFeature = {
 
 **Critical Issue:**
 
-**File:** `FlowMail/client/src/features/email-inbox/pages/InboxPage.tsx`
+**File:** `flowmail/client/src/features/email-inbox/pages/InboxPage.tsx`
 **Line:** 9
 **Issue:** Incorrect import from shared components instead of feature components
 
@@ -184,7 +184,7 @@ None
 
 1. **Fix CardStack Import**
    ```typescript
-   // In FlowMail/client/src/features/email-inbox/pages/InboxPage.tsx
+   // In flowmail/client/src/features/email-inbox/pages/InboxPage.tsx
    // Change line 9 from:
    import { CardStack } from '@/components/card-stack';
    
@@ -194,7 +194,7 @@ None
 
 2. **Clean Up Unused Import**
    ```typescript
-   // In FlowMail/client/src/features/email-inbox/pages/InboxPage.tsx
+   // In flowmail/client/src/features/email-inbox/pages/InboxPage.tsx
    // Remove or use the navigate variable
    ```
 

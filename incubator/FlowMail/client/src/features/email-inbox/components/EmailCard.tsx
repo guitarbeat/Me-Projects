@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { motion } from 'framer-motion';
 import { type Email } from '@shared/schema';
 
@@ -10,7 +11,29 @@ interface EmailCardProps {
   rotation?: number;
 }
 
-export function EmailCard({
+const AVATAR_COLORS = [
+  'bg-red-100 text-red-600',
+  'bg-blue-100 text-blue-600',
+  'bg-green-100 text-green-600',
+  'bg-yellow-100 text-yellow-600',
+  'bg-purple-100 text-purple-600',
+  'bg-pink-100 text-pink-600',
+];
+
+function getInitials(name: string): string {
+  return name
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase();
+}
+
+function getAvatarColor(name: string): string {
+  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return AVATAR_COLORS[hash % AVATAR_COLORS.length];
+}
+
+export const EmailCard = memo(function EmailCard({
   email,
   index,
   isDragging,
@@ -18,44 +41,8 @@ export function EmailCard({
   swipeDirection,
   rotation = 0,
 }: EmailCardProps) {
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase();
-  };
-
-  const getAvatarColor = (name: string) => {
-    const colors = [
-      'bg-red-100 text-red-600',
-      'bg-blue-100 text-blue-600',
-      'bg-green-100 text-green-600',
-      'bg-yellow-100 text-yellow-600',
-      'bg-purple-100 text-purple-600',
-      'bg-pink-100 text-pink-600',
-    ];
-    const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    return colors[hash % colors.length];
-  };
-
-  const cardVariants = {
-    initial: { scale: 0.95 - index * 0.02, opacity: 0.8 - index * 0.3, rotate: index * 1 },
-    animate: { scale: 1 - index * 0.03, opacity: 1 - index * 0.3, rotate: index * 1 },
-    exit: {
-      scale: 0.8,
-      opacity: 0,
-      rotate: dragOffset > 0 ? 30 : -30,
-      x: dragOffset > 0 ? 400 : -400,
-      transition: { duration: 0.3 },
-    },
-  };
-
-  // Show action indicators during drag
   const showDeleteIndicator = isDragging && swipeDirection === 'left';
   const showLaterIndicator = isDragging && swipeDirection === 'right';
-
-  // Calculate opacity for overlay based on drag distance
   const overlayOpacity = Math.min(Math.abs(dragOffset) / 150, 0.9);
 
   const cardStyle = {
@@ -81,7 +68,6 @@ export function EmailCard({
         stiffness: 400,
       }}
     >
-      {/* Swipe Action Overlays */}
       {showDeleteIndicator && (
         <div
           className="absolute inset-0 bg-red-500 flex items-center justify-start pl-8 z-10"
@@ -126,4 +112,4 @@ export function EmailCard({
       </div>
     </motion.div>
   );
-}
+});

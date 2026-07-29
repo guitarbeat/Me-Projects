@@ -30,6 +30,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+
+const DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+});
 import type { Database } from '@/integrations/supabase/types';
 
 type AppRole = Database['public']['Enums']['app_role'];
@@ -200,7 +206,7 @@ export const UserManagement: React.FC = () => {
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground truncate">
-                  @{u.username} · {new Date(u.created_at).toLocaleDateString()}
+                  @{u.username} · {DATE_FORMATTER.format(new Date(u.created_at))}
                 </p>
               </div>
 

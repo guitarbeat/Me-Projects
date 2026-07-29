@@ -1,4 +1,8 @@
-export const WeekdayHeaders = () => (
+import { memo } from 'react';
+
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+export const WeekdayHeaders = memo(() => (
   <div
     className="grid grid-cols-7 smooth-resize"
     style={{
@@ -6,7 +10,7 @@ export const WeekdayHeaders = () => (
       marginBottom: 'var(--space-xs)',
     }}
   >
-    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+    {DAYS.map((day) => (
       <div
         key={day}
         className="text-center font-semibold font-quicksand text-muted-foreground smooth-resize"
@@ -21,4 +25,6 @@ export const WeekdayHeaders = () => (
       </div>
     ))}
   </div>
-);
+));
+
+WeekdayHeaders.displayName = 'WeekdayHeaders';

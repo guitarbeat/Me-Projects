@@ -114,6 +114,26 @@ export const CalendarDay = memo(
         )}
       </DayElement>
     );
+  },
+  (prevProps, nextProps) => {
+    return (
+      prevProps.day === nextProps.day &&
+      prevProps.firstDayOfWeek === nextProps.firstDayOfWeek &&
+      prevProps.isFloDay === nextProps.isFloDay &&
+      prevProps.isToday === nextProps.isToday &&
+      prevProps.readOnly === nextProps.readOnly &&
+      prevProps.inMultiSelectRange === nextProps.inMultiSelectRange &&
+      prevProps.justToggled === nextProps.justToggled &&
+      prevProps.tabIndex === nextProps.tabIndex &&
+      prevProps.currentDate.getFullYear() ===
+        nextProps.currentDate.getFullYear() &&
+      prevProps.currentDate.getMonth() === nextProps.currentDate.getMonth() &&
+      prevProps.onToggle === nextProps.onToggle &&
+      prevProps.onPressStart === nextProps.onPressStart &&
+      prevProps.onPressEnd === nextProps.onPressEnd &&
+      prevProps.onHover === nextProps.onHover &&
+      prevProps.onKeyDown === nextProps.onKeyDown
+    );
   }
 );
 

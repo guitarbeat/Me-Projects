@@ -2,6 +2,8 @@
  * Utilities for period tracking insights and pattern recognition
  */
 
+import { formatLocalDate } from '@/lib/dateUtils';
+
 interface PeriodInsights {
   daysThisMonth: number;
   totalDays: number;
@@ -21,10 +23,14 @@ export const calculatePeriodInsights = (
     .filter((date) => entries[date])
     .sort();
 
-  // Count days this month
+  // Count days this month (prefix match avoids Date alloc for YYYY-MM-DD keys)
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
+  const prefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-`;
   const daysThisMonth = allDates.filter((date) => {
+    if (date.length === 10) {
+      return date.startsWith(prefix);
+    }
     const d = new Date(date);
     return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
   }).length;
@@ -80,11 +86,11 @@ export const calculatePeriodInsights = (
   yesterday.setDate(yesterday.getDate() - 1);
 
   let streak = 0;
-  const checkDate = allDates.includes(today.toISOString().split('T')[0])
+  const checkDate = allDates.includes(formatLocalDate(today))
     ? today
     : yesterday;
 
-  while (entries[checkDate.toISOString().split('T')[0]]) {
+  while (entries[formatLocalDate(checkDate)]) {
     streak++;
     checkDate.setDate(checkDate.getDate() - 1);
   }

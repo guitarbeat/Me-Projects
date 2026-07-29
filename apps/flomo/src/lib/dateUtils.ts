@@ -13,22 +13,45 @@ export const monthNames = [
   'December',
 ];
 
+export const formatLocalDate = (date: Date): string => {
+  const yy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yy}-${mm}-${dd}`;
+};
+
 export const getDaysInMonth = (date: Date): (number | null)[] => {
   const year = date.getFullYear();
   const month = date.getMonth();
   const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const daysInMonth = lastDay.getDate();
   const startingDayOfWeek = firstDay.getDay();
 
-  const days: (number | null)[] = [];
+  const isLeap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+  const daysInMonths = [
+    31,
+    isLeap ? 29 : 28,
+    31,
+    30,
+    31,
+    30,
+    31,
+    31,
+    30,
+    31,
+    30,
+    31,
+  ];
+  const daysInMonth = daysInMonths[month];
+
+  const totalDays = startingDayOfWeek + daysInMonth;
+  const days: (number | null)[] = new Array(totalDays);
 
   for (let i = 0; i < startingDayOfWeek; i++) {
-    days.push(null);
+    days[i] = null;
   }
 
   for (let day = 1; day <= daysInMonth; day++) {
-    days.push(day);
+    days[startingDayOfWeek + day - 1] = day;
   }
 
   return days;

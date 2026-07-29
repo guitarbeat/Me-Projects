@@ -54,4 +54,13 @@ Do not recreate per-app `.jules/`, `.lovable/`, or `.kiro/` content trees. Redir
 
 - Visual / ad-hoc verification assets live under `__tests__/`
 - App docs belong in each app’s `docs/` (keep root `README.md`)
-- CI stays in `.github/`; IDE settings (e.g. `incubator/.vscode/`) stay out of `.jules/`
+- **CI SoT:** root [`.github/workflows/`](.github/workflows/) only (nested app `.github/` is unused by GitHub)
+- **Lockfile SoT:** root `package-lock.json` (npm workspaces). Nested workspace locks / pnpm locks are removed; Helios `webconfig` keeps its own locks (not a workspace)
+- **Prettier / pre-commit SoT:** root `.prettierrc`, `.prettierignore`, `.pre-commit-config.yaml`
+- **ESLint:** still per-app for now
+- Agent notes: root `.jules/` only; IDE settings (e.g. `incubator/.vscode/`) stay out of `.jules/`
+
+```bash
+npm run format        # Prettier write (repo root)
+npm run format:check
+```

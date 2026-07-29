@@ -17,7 +17,11 @@
     "dev:nini-earth": "npm run dev --workspace=apps/nini-earth",
     "dev:scanforge": "npm run dev --workspace=apps/scanforge",
     "dev:harmonic-studio": "npm run dev --workspace=apps/harmonic-studio",
-    "install:all": "npm install"
+    "install:all": "npm install",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint:flo-and-tell": "npm run lint --workspace=apps/flo-and-tell",
+    "test:flo-and-tell": "npm test --workspace=apps/flo-and-tell"
   },
   "engines": {
     "node": ">=18.0.0",
@@ -27,5 +31,8 @@
     "drizzle-orm": "^0.45.2",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.6"
   }
 }

@@ -1,0 +1,126 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    outputs:
+      flo-and-tell: ${{ steps.filter.outputs.flo-and-tell }}
+      nini-earth: ${{ steps.filter.outputs.nini-earth }}
+      flowmail: ${{ steps.filter.outputs.flowmail }}
+      harmonic-studio: ${{ steps.filter.outputs.harmonic-studio }}
+      all: ${{ steps.filter.outputs.all }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            flo-and-tell:
+              - 'apps/flo-and-tell/**'
+              - 'package-lock.json'
+              - 'package.json'
+            nini-earth:
+              - 'apps/nini-earth/**'
+              - 'package-lock.json'
+              - 'package.json'
+            flowmail:
+              - 'incubator/flowmail/**'
+              - 'package-lock.json'
+              - 'package.json'
+            harmonic-studio:
+              - 'apps/harmonic-studio/**'
+              - 'package-lock.json'
+              - 'package.json'
+            all:
+              - 'package-lock.json'
+              - 'package.json'
+              - '.github/workflows/ci.yml'
+
+  flo-and-tell:
+    name: Flo and Tell
+    needs: changes
+    if: >
+      github.event_name == 'push' ||
+      needs.changes.outputs.flo-and-tell == 'true' ||
+      needs.changes.outputs.all == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint --workspace=apps/flo-and-tell
+      - run: npm run check-format --workspace=apps/flo-and-tell
+      - run: npm run type-check --workspace=apps/flo-and-tell
+      - run: npm test --workspace=apps/flo-and-tell
+
+  nini-earth:
+    name: nini-earth
+    needs: changes
+    if: >
+      github.event_name == 'push' ||
+      needs.changes.outputs.nini-earth == 'true' ||
+      needs.changes.outputs.all == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npm run build --workspace=apps/nini-earth
+        env:
+          CI: true
+      - run: npm test --workspace=apps/nini-earth
+        env:
+          CI: true
+
+  flowmail:
+    name: FlowMail
+    needs: changes
+    if: >
+      github.event_name == 'push' ||
+      needs.changes.outputs.flowmail == 'true' ||
+      needs.changes.outputs.all == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint --workspace=incubator/flowmail
+      - run: npm run format:check --workspace=incubator/flowmail
+      - run: npm run check --workspace=incubator/flowmail
+      - run: npm run build --workspace=incubator/flowmail
+      - run: npm test --workspace=incubator/flowmail
+      - run: npm run verify-architecture --workspace=incubator/flowmail
+
+  harmonic-studio:
+    name: Harmonic Studio
+    needs: changes
+    if: >
+      github.event_name == 'push' ||
+      needs.changes.outputs.harmonic-studio == 'true' ||
+      needs.changes.outputs.all == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint --workspace=apps/harmonic-studio
+      - run: npm run build --workspace=apps/harmonic-studio

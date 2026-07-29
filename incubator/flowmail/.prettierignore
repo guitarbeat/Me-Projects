@@ -1,0 +1,2 @@
+# Workspace-local ignores (root `.prettierignore` applies to monorepo-wide format)
+scripts/templates/**

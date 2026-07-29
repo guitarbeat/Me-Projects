@@ -3,22 +3,20 @@
   "version": "1.0.0",
   "private": true,
   "workspaces": [
-    "finished-applications/flomo",
-    "finished-applications/lenticular-lab",
-    "finished-applications/nini.earth",
-    "finished-applications/scanforge",
-    "finished-applications/songsmiththeory",
-    "finished-applications/waterfall-flow-control",
-    "wip/FlowMail"
+    "apps/flomo",
+    "apps/lenticular-lab",
+    "apps/nini.earth",
+    "apps/scanforge",
+    "apps/harmonic-studio",
+    "incubator/FlowMail"
   ],
   "scripts": {
-    "dev:flowmail": "npm run dev --workspace=wip/FlowMail",
-    "dev:flomo": "npm run dev --workspace=finished-applications/flomo",
-    "dev:lenticular": "npm run dev --workspace=finished-applications/lenticular-lab",
-    "dev:nini": "npm run dev --workspace=finished-applications/nini.earth",
-    "dev:scanforge": "npm run dev --workspace=finished-applications/scanforge",
-    "dev:songsmiththeory": "npm run dev --workspace=finished-applications/songsmiththeory",
-    "dev:waterfall": "npm run dev --workspace=finished-applications/waterfall-flow-control",
+    "dev:flowmail": "npm run dev --workspace=incubator/FlowMail",
+    "dev:flomo": "npm run dev --workspace=apps/flomo",
+    "dev:lenticular": "npm run dev --workspace=apps/lenticular-lab",
+    "dev:nini": "npm run dev --workspace=apps/nini.earth",
+    "dev:scanforge": "npm run dev --workspace=apps/scanforge",
+    "dev:harmonic-studio": "npm run dev --workspace=apps/harmonic-studio",
     "install:all": "npm install"
   },
   "engines": {

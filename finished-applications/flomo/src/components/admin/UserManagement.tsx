@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Users, Shield, Trash2, Loader2, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -52,6 +52,9 @@ export const UserManagement: React.FC = () => {
   const [deleteTarget, setDeleteTarget] = useState<AdminUser | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [changingRole, setChangingRole] = useState<string | null>(null);
+
+  // ⚡ Bolt Performance Optimization: Cache Intl.DateTimeFormat to avoid slow toLocaleDateString in map loop
+  const dateFormatter = useMemo(() => new Intl.DateTimeFormat(), []);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -200,7 +203,7 @@ export const UserManagement: React.FC = () => {
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground truncate">
-                  @{u.username} · {new Date(u.created_at).toLocaleDateString()}
+                  @{u.username} · {dateFormatter.format(new Date(u.created_at))}
                 </p>
               </div>
 

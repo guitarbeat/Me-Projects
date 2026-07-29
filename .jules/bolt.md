@@ -8,3 +8,6 @@
 ## 2024-05-22 - [Performance: Fast Date Sorting]
 **Learning:** To optimize JavaScript performance, prefer direct string comparison (e.g., `a.date < b.date ? -1 : a.date > b.date ? 1 : 0`) over parsing into `Date` objects when sorting arrays by ISO 8601 formatted date strings.
 **Action:** Always use string comparison for standard YYYY-MM-DD format sorting instead of `new Date().getTime()`, as it avoids significant object allocation overhead.
+## 2026-07-21 - [Date Formatting Overhead in Maps]
+**Learning:** Calling `toLocaleDateString()` inside a `.map` loop for rendering lists has significant overhead because it instantiates a new `Intl.DateTimeFormat` object under the hood on every iteration.
+**Action:** Always hoist or cache `Intl.DateTimeFormat` instances using `useMemo` when rendering lists of formatted dates in React components to avoid severe main-thread blocking.

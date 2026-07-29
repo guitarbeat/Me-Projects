@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { type Email, type Stats } from '@shared/schema';
-import { EmailCard } from './email-card';
+import { EmailCard } from './EmailCard';
 import { useSwipe } from '@/hooks/use-swipe';
 import { useToast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';

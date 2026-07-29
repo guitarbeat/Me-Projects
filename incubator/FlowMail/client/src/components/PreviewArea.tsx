@@ -126,8 +126,6 @@ const PreviewArea: React.FC<PreviewAreaProps> = ({ config, gridRef }) => {
           aria-label="Fit to Screen"
           title="Fit to Screen (0)"
           aria-keyshortcuts="0"
-          className="px-3 h-8 bg-[#222] rounded hover:bg-[#333] text-white text-xs font-mono border border-[#333] active:scale-95 transition-transform"
-          className="px-3 h-8 bg-[#222] rounded hover:bg-[#333] text-white text-xs font-mono border border-[#333] active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none"
           className="px-3 h-8 bg-[#222] rounded hover:bg-[#333] text-white text-xs font-mono border border-[#333] focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none active:scale-95 transition-transform"
         >
           FIT
@@ -137,8 +135,6 @@ const PreviewArea: React.FC<PreviewAreaProps> = ({ config, gridRef }) => {
           aria-label="Zoom In"
           title="Zoom In (Plus)"
           aria-keyshortcuts="+"
-          className="w-8 h-8 bg-[#222] rounded hover:bg-[#333] text-white flex items-center justify-center border border-[#333] active:scale-95 transition-transform"
-          className="w-8 h-8 bg-[#222] rounded hover:bg-[#333] text-white flex items-center justify-center border border-[#333] active:scale-95 transition-transform focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none"
           className="w-8 h-8 bg-[#222] rounded hover:bg-[#333] text-white flex items-center justify-center border border-[#333] focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:outline-none active:scale-95 transition-transform"
         >
           <span className="material-symbols-outlined text-[18px]">add</span>

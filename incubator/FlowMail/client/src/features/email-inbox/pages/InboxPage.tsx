@@ -5,7 +5,7 @@ import { Archive, CalendarDays, Clock3, Inbox, LayoutGrid, List } from 'lucide-r
 import { useLocation } from 'wouter';
 import { type Email, type Stats } from '@shared/schema';
 import { Button } from '@/components/ui/button';
-import { CardStack } from '@/components/card-stack';
+import { CardStack } from '../components/CardStack';
 import { EmailListView } from '../components/EmailListView';
 import { EmailFilters, type EmailFilterOptions } from '../components/EmailFilters';
 import { BulkActions } from '../components/BulkActions';

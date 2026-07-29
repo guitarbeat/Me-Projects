@@ -8,3 +8,6 @@
 ## 2024-05-22 - [Performance: Fast Date Sorting]
 **Learning:** To optimize JavaScript performance, prefer direct string comparison (e.g., `a.date < b.date ? -1 : a.date > b.date ? 1 : 0`) over parsing into `Date` objects when sorting arrays by ISO 8601 formatted date strings.
 **Action:** Always use string comparison for standard YYYY-MM-DD format sorting instead of `new Date().getTime()`, as it avoids significant object allocation overhead.
+## 2024-05-23 - [Date Parsing & Allocation Overhead]
+**Learning:** Using `new Date(year, month + 1, 0)` to calculate the number of days in a month causes significant allocation overhead. Dynamically growing arrays using `.push()` in loops also hurts performance.
+**Action:** Use mathematical leap year checks combined with pre-computed array lookups `[31, isLeap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]` and pre-allocate array lengths using `new Array(totalLength)`.

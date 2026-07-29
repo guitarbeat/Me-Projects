@@ -19,7 +19,9 @@ export function ProgressBar({ emails, stats }: ProgressBarProps) {
       transition={{ duration: 0.5, delay: 0.1 }}
     >
       <div className="flex justify-between items-center mb-2">
-        <span className="text-sm text-[var(--app-text-secondary)]">Progress</span>
+        <span className="text-sm text-[var(--app-text-secondary)]">
+          Progress
+        </span>
         <span className="text-sm font-medium text-[var(--app-text)]">
           {Math.round(progress)}% Complete
         </span>

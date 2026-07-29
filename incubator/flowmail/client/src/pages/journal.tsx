@@ -15,7 +15,14 @@ import {
   startOfMonth,
   startOfWeek,
 } from 'date-fns';
-import { ChevronLeft, ChevronRight, Clock3, NotebookPen, Plus, Settings2 } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  Clock3,
+  NotebookPen,
+  Plus,
+  Settings2,
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -107,11 +114,15 @@ function formatEntryTime(entry: JournalEntry, timeFormat24h: boolean) {
 
 export default function JournalPage() {
   const { toast } = useToast();
-  const [entries, setEntries] = useState<JournalEntry[]>(() => loadJournalEvents());
+  const [entries, setEntries] = useState<JournalEntry[]>(() =>
+    loadJournalEvents()
+  );
   const [settings, setSettings] = useState(() => loadJournalSettings());
-  const [view, setView] = useState<JournalView>(() => loadJournalSettings().defaultView);
+  const [view, setView] = useState<JournalView>(
+    () => loadJournalSettings().defaultView
+  );
   const [selectedDate, setSelectedDate] = useState(() => new Date());
-  
+
   // URL date deep-linking
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -153,34 +164,44 @@ export default function JournalPage() {
     });
   }, [settings, view]);
 
-  const sortedEntries = [...entries].sort((left, right) => left.start.getTime() - right.start.getTime());
+  const sortedEntries = [...entries].sort(
+    (left, right) => left.start.getTime() - right.start.getTime()
+  );
   const windowBounds = getWindowBounds(selectedDate, view);
 
-  const visibleEntries = sortedEntries.filter((entry) => {
+  const visibleEntries = sortedEntries.filter(entry => {
     const isInsideWindow = isWithinInterval(entry.start, windowBounds);
-    const matchesWeekendPreference = settings.showWeekends || !isWeekend(entry.start);
-    const matchesEmotion = emotionFilter === 'all' || entry.emotion === emotionFilter;
+    const matchesWeekendPreference =
+      settings.showWeekends || !isWeekend(entry.start);
+    const matchesEmotion =
+      emotionFilter === 'all' || entry.emotion === emotionFilter;
 
     return isInsideWindow && matchesWeekendPreference && matchesEmotion;
   });
 
   const windowDays = eachDayOfInterval(windowBounds).filter(
-    (day) => settings.showWeekends || !isWeekend(day) || view === 'day'
+    day => settings.showWeekends || !isWeekend(day) || view === 'day'
   );
 
   const groupedEntries = windowDays
-    .map((day) => ({
+    .map(day => ({
       day,
-      entries: visibleEntries.filter((entry) => isSameDay(entry.start, day)),
+      entries: visibleEntries.filter(entry => isSameDay(entry.start, day)),
     }))
-    .filter((group) => view !== 'month' || group.entries.length > 0);
+    .filter(group => view !== 'month' || group.entries.length > 0);
 
-  const todayCount = sortedEntries.filter((entry) => isSameDay(entry.start, new Date())).length;
-  const upcomingEntry = sortedEntries.find((entry) => entry.start.getTime() >= Date.now()) ?? null;
-  const recentNotes = sortedEntries.filter((entry) => entry.notes).slice(-3).reverse();
-  const emotionCounts = journalEmotions.map((emotion) => ({
+  const todayCount = sortedEntries.filter(entry =>
+    isSameDay(entry.start, new Date())
+  ).length;
+  const upcomingEntry =
+    sortedEntries.find(entry => entry.start.getTime() >= Date.now()) ?? null;
+  const recentNotes = sortedEntries
+    .filter(entry => entry.notes)
+    .slice(-3)
+    .reverse();
+  const emotionCounts = journalEmotions.map(emotion => ({
     emotion,
-    count: sortedEntries.filter((entry) => entry.emotion === emotion).length,
+    count: sortedEntries.filter(entry => entry.emotion === emotion).length,
   }));
   const summary = buildEmotionSummary(sortedEntries);
   const dominantEmotion =
@@ -191,13 +212,17 @@ export default function JournalPage() {
   const handleSaveEntry = (nextEntry: JournalEntry) => {
     const wasEditing = Boolean(editingEntry);
 
-    setEntries((currentEntries) => {
-      const existingIndex = currentEntries.findIndex((entry) => entry.id === nextEntry.id);
+    setEntries(currentEntries => {
+      const existingIndex = currentEntries.findIndex(
+        entry => entry.id === nextEntry.id
+      );
 
       if (existingIndex >= 0) {
         const nextEntries = [...currentEntries];
         nextEntries[existingIndex] = nextEntry;
-        return nextEntries.sort((left, right) => left.start.getTime() - right.start.getTime());
+        return nextEntries.sort(
+          (left, right) => left.start.getTime() - right.start.getTime()
+        );
       }
 
       return [...currentEntries, nextEntry].sort(
@@ -211,13 +236,16 @@ export default function JournalPage() {
     if (settings.notifications) {
       toast({
         title: wasEditing ? 'Journal block updated' : 'Journal block added',
-        description: 'The shared workspace saved your reflection block locally.',
+        description:
+          'The shared workspace saved your reflection block locally.',
       });
     }
   };
 
   const handleDeleteEntry = (entryId: string) => {
-    setEntries((currentEntries) => currentEntries.filter((entry) => entry.id !== entryId));
+    setEntries(currentEntries =>
+      currentEntries.filter(entry => entry.id !== entryId)
+    );
     setDialogOpen(false);
     setEditingEntry(null);
 
@@ -240,10 +268,12 @@ export default function JournalPage() {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
                 <p className="app-kicker">Journal</p>
-                <h2 className="mt-2 text-2xl font-semibold tracking-tight">Reflection planner</h2>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight">
+                  Reflection planner
+                </h2>
                 <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--app-text-secondary)]">
-                  Reflection now lives inside FlowMail, so action and follow-up can stay in the
-                  same daily loop.
+                  Reflection now lives inside FlowMail, so action and follow-up
+                  can stay in the same daily loop.
                 </p>
               </div>
 
@@ -270,7 +300,9 @@ export default function JournalPage() {
                   variant="outline"
                   size="icon"
                   className="rounded-full"
-                  onClick={() => setSelectedDate((current) => shiftWindow(current, view, -1))}
+                  onClick={() =>
+                    setSelectedDate(current => shiftWindow(current, view, -1))
+                  }
                 >
                   <ChevronLeft className="h-4 w-4" />
                 </Button>
@@ -282,7 +314,9 @@ export default function JournalPage() {
                   variant="outline"
                   size="icon"
                   className="rounded-full"
-                  onClick={() => setSelectedDate((current) => shiftWindow(current, view, 1))}
+                  onClick={() =>
+                    setSelectedDate(current => shiftWindow(current, view, 1))
+                  }
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
@@ -297,7 +331,7 @@ export default function JournalPage() {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {journalViews.map((journalView) => (
+                {journalViews.map(journalView => (
                   <button
                     key={journalView}
                     type="button"
@@ -319,7 +353,9 @@ export default function JournalPage() {
           <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             <div className="app-shell-panel-soft px-4 py-4">
               <p className="app-stat-label">Total blocks</p>
-              <p className="mt-2 text-2xl font-semibold">{sortedEntries.length}</p>
+              <p className="mt-2 text-2xl font-semibold">
+                {sortedEntries.length}
+              </p>
             </div>
             <div className="app-shell-panel-soft px-4 py-4">
               <p className="app-stat-label">Today</p>
@@ -327,7 +363,9 @@ export default function JournalPage() {
             </div>
             <div className="app-shell-panel-soft px-4 py-4">
               <p className="app-stat-label">In view</p>
-              <p className="mt-2 text-2xl font-semibold">{visibleEntries.length}</p>
+              <p className="mt-2 text-2xl font-semibold">
+                {visibleEntries.length}
+              </p>
             </div>
             <div className="app-shell-panel-soft px-4 py-4">
               <p className="app-stat-label">Dominant energy</p>
@@ -337,8 +375,11 @@ export default function JournalPage() {
 
           <div className="mt-6 space-y-4">
             {groupedEntries.length > 0 ? (
-              groupedEntries.map((group) => (
-                <div key={group.day.toISOString()} className="app-shell-panel-soft px-4 py-4">
+              groupedEntries.map(group => (
+                <div
+                  key={group.day.toISOString()}
+                  className="app-shell-panel-soft px-4 py-4"
+                >
                   <div className="mb-4 flex items-center justify-between gap-3">
                     <div>
                       <h3 className="text-base font-semibold text-[var(--app-text)]">
@@ -354,7 +395,7 @@ export default function JournalPage() {
 
                   {group.entries.length > 0 ? (
                     <div className="space-y-3">
-                      {group.entries.map((entry) => (
+                      {group.entries.map(entry => (
                         <div
                           key={entry.id}
                           className="rounded-2xl border border-[var(--app-panel-border)] bg-white/75 px-4 py-4 dark:bg-white/5"
@@ -368,10 +409,14 @@ export default function JournalPage() {
                                     emotionMeta[entry.emotion].badgeClass
                                   )}
                                 >
-                                  {emotionMeta[entry.emotion].marker} {emotionMeta[entry.emotion].label}
+                                  {emotionMeta[entry.emotion].marker}{' '}
+                                  {emotionMeta[entry.emotion].label}
                                 </span>
                                 <span className="text-sm text-[var(--app-text-secondary)]">
-                                  {formatEntryTime(entry, settings.timeFormat24h)}
+                                  {formatEntryTime(
+                                    entry,
+                                    settings.timeFormat24h
+                                  )}
                                 </span>
                               </div>
 
@@ -405,8 +450,8 @@ export default function JournalPage() {
                     </div>
                   ) : (
                     <div className="rounded-2xl border border-dashed border-[var(--app-panel-border)] px-4 py-8 text-sm text-[var(--app-text-secondary)]">
-                      Nothing is scheduled here yet. Add a block when you want to capture a reset,
-                      follow-up, or check-in.
+                      Nothing is scheduled here yet. Add a block when you want
+                      to capture a reset, follow-up, or check-in.
                     </div>
                   )}
                 </div>
@@ -418,7 +463,8 @@ export default function JournalPage() {
                   No blocks in this window
                 </h3>
                 <p className="mt-2 text-sm text-[var(--app-text-secondary)]">
-                  Try a different view, clear the energy filter, or add your next reflection block.
+                  Try a different view, clear the energy filter, or add your
+                  next reflection block.
                 </p>
               </div>
             )}
@@ -437,7 +483,9 @@ export default function JournalPage() {
                 <Settings2 className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-[var(--app-text)]">Working defaults</h3>
+                <h3 className="text-base font-semibold text-[var(--app-text)]">
+                  Working defaults
+                </h3>
                 <p className="text-sm text-[var(--app-text-secondary)]">
                   Journal defaults stay local to the merged FlowMail workspace.
                 </p>
@@ -449,7 +497,7 @@ export default function JournalPage() {
                 <Label>Energy filter</Label>
                 <Select
                   value={emotionFilter}
-                  onValueChange={(value) => {
+                  onValueChange={value => {
                     if (value === 'all' || isJournalEmotion(value)) {
                       setEmotionFilter(value);
                     }
@@ -460,9 +508,10 @@ export default function JournalPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All energy labels</SelectItem>
-                    {journalEmotions.map((emotion) => (
+                    {journalEmotions.map(emotion => (
                       <SelectItem key={emotion} value={emotion}>
-                        {emotionMeta[emotion].marker} {emotionMeta[emotion].label}
+                        {emotionMeta[emotion].marker}{' '}
+                        {emotionMeta[emotion].label}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -472,15 +521,20 @@ export default function JournalPage() {
               <div className="rounded-2xl border border-[var(--app-panel-border)] bg-white/70 px-4 py-3 dark:bg-white/5">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-medium text-[var(--app-text)]">Show weekends</p>
+                    <p className="text-sm font-medium text-[var(--app-text)]">
+                      Show weekends
+                    </p>
                     <p className="text-xs text-[var(--app-text-secondary)]">
                       Keep Saturday and Sunday visible in planning windows.
                     </p>
                   </div>
                   <Switch
                     checked={settings.showWeekends}
-                    onCheckedChange={(checked) =>
-                      setSettings((current) => ({ ...current, showWeekends: checked }))
+                    onCheckedChange={checked =>
+                      setSettings(current => ({
+                        ...current,
+                        showWeekends: checked,
+                      }))
                     }
                   />
                 </div>
@@ -489,15 +543,20 @@ export default function JournalPage() {
               <div className="rounded-2xl border border-[var(--app-panel-border)] bg-white/70 px-4 py-3 dark:bg-white/5">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-medium text-[var(--app-text)]">24-hour time</p>
+                    <p className="text-sm font-medium text-[var(--app-text)]">
+                      24-hour time
+                    </p>
                     <p className="text-xs text-[var(--app-text-secondary)]">
                       Use military time across journal blocks and exports.
                     </p>
                   </div>
                   <Switch
                     checked={settings.timeFormat24h}
-                    onCheckedChange={(checked) =>
-                      setSettings((current) => ({ ...current, timeFormat24h: checked }))
+                    onCheckedChange={checked =>
+                      setSettings(current => ({
+                        ...current,
+                        timeFormat24h: checked,
+                      }))
                     }
                   />
                 </div>
@@ -506,15 +565,20 @@ export default function JournalPage() {
               <div className="rounded-2xl border border-[var(--app-panel-border)] bg-white/70 px-4 py-3 dark:bg-white/5">
                 <div className="flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-sm font-medium text-[var(--app-text)]">Toast confirmations</p>
+                    <p className="text-sm font-medium text-[var(--app-text)]">
+                      Toast confirmations
+                    </p>
                     <p className="text-xs text-[var(--app-text-secondary)]">
                       Confirm adds and edits with quick local notifications.
                     </p>
                   </div>
                   <Switch
                     checked={settings.notifications}
-                    onCheckedChange={(checked) =>
-                      setSettings((current) => ({ ...current, notifications: checked }))
+                    onCheckedChange={checked =>
+                      setSettings(current => ({
+                        ...current,
+                        notifications: checked,
+                      }))
                     }
                   />
                 </div>
@@ -528,10 +592,13 @@ export default function JournalPage() {
                   step={15}
                   type="number"
                   value={settings.defaultEventDuration}
-                  onChange={(event) =>
-                    setSettings((current) => ({
+                  onChange={event =>
+                    setSettings(current => ({
                       ...current,
-                      defaultEventDuration: Math.max(15, Number(event.target.value) || 15),
+                      defaultEventDuration: Math.max(
+                        15,
+                        Number(event.target.value) || 15
+                      ),
                     }))
                   }
                 />
@@ -550,7 +617,9 @@ export default function JournalPage() {
                 <Clock3 className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-[var(--app-text)]">Mood mix</h3>
+                <h3 className="text-base font-semibold text-[var(--app-text)]">
+                  Mood mix
+                </h3>
                 <p className="text-sm text-[var(--app-text-secondary)]">
                   A quick read on the tone of the journal backlog.
                 </p>
@@ -562,19 +631,28 @@ export default function JournalPage() {
                 const width =
                   sortedEntries.length === 0
                     ? 0
-                    : Math.max((count / sortedEntries.length) * 100, count > 0 ? 12 : 0);
+                    : Math.max(
+                        (count / sortedEntries.length) * 100,
+                        count > 0 ? 12 : 0
+                      );
 
                 return (
                   <div key={emotion} className="space-y-2">
                     <div className="flex items-center justify-between gap-3">
                       <span className="text-sm font-medium text-[var(--app-text)]">
-                        {emotionMeta[emotion].marker} {emotionMeta[emotion].label}
+                        {emotionMeta[emotion].marker}{' '}
+                        {emotionMeta[emotion].label}
                       </span>
-                      <span className="text-sm text-[var(--app-text-secondary)]">{count}</span>
+                      <span className="text-sm text-[var(--app-text-secondary)]">
+                        {count}
+                      </span>
                     </div>
                     <div className="h-2 rounded-full bg-black/5 dark:bg-white/10">
                       <div
-                        className={cn('h-2 rounded-full transition-all', emotionMeta[emotion].barClass)}
+                        className={cn(
+                          'h-2 rounded-full transition-all',
+                          emotionMeta[emotion].barClass
+                        )}
                         style={{ width: `${width}%` }}
                       />
                     </div>
@@ -595,7 +673,9 @@ export default function JournalPage() {
                 <NotebookPen className="h-4 w-4" />
               </div>
               <div>
-                <h3 className="text-base font-semibold text-[var(--app-text)]">Recent notes</h3>
+                <h3 className="text-base font-semibold text-[var(--app-text)]">
+                  Recent notes
+                </h3>
                 <p className="text-sm text-[var(--app-text-secondary)]">
                   What you are carrying forward from the journal right now.
                 </p>
@@ -617,12 +697,14 @@ export default function JournalPage() {
 
             {recentNotes.length > 0 ? (
               <div className="space-y-3">
-                {recentNotes.map((entry) => (
+                {recentNotes.map(entry => (
                   <div
                     key={entry.id}
                     className="rounded-2xl border border-[var(--app-panel-border)] bg-white/70 px-4 py-4 dark:bg-white/5"
                   >
-                    <p className="text-sm font-medium text-[var(--app-text)]">{entry.title}</p>
+                    <p className="text-sm font-medium text-[var(--app-text)]">
+                      {entry.title}
+                    </p>
                     <p className="mt-1 text-xs uppercase tracking-[0.14em] text-[var(--app-text-secondary)]">
                       {format(entry.start, 'MMM d')}
                     </p>
@@ -634,7 +716,8 @@ export default function JournalPage() {
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed border-[var(--app-panel-border)] px-4 py-8 text-sm text-[var(--app-text-secondary)]">
-                Notes from journal blocks will surface here once you start capturing them.
+                Notes from journal blocks will surface here once you start
+                capturing them.
               </div>
             )}
           </motion.section>
@@ -647,7 +730,7 @@ export default function JournalPage() {
         selectedDate={selectedDate}
         settings={settings}
         onDelete={handleDeleteEntry}
-        onOpenChange={(open) => {
+        onOpenChange={open => {
           setDialogOpen(open);
           if (!open) {
             setEditingEntry(null);

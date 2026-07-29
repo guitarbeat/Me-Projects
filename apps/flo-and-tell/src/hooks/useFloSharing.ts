@@ -36,7 +36,7 @@ export const useFloSharing = () => {
       }
 
       // Then fetch profiles for those users
-      const userIds = shares.map((s) => s.shared_with_id);
+      const userIds = shares.map(s => s.shared_with_id);
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
@@ -46,7 +46,7 @@ export const useFloSharing = () => {
         throw profilesError;
       }
 
-      const users: SharedUser[] = (profiles || []).map((p) => ({
+      const users: SharedUser[] = (profiles || []).map(p => ({
         id: p.id,
         username: p.username || '',
         display_name: p.display_name,
@@ -81,7 +81,7 @@ export const useFloSharing = () => {
       }
 
       // Then fetch profiles for those owners
-      const ownerIds = shares.map((s) => s.owner_id);
+      const ownerIds = shares.map(s => s.owner_id);
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('id, username, display_name, avatar_url')
@@ -91,7 +91,7 @@ export const useFloSharing = () => {
         throw profilesError;
       }
 
-      const users: SharedUser[] = (profiles || []).map((p) => ({
+      const users: SharedUser[] = (profiles || []).map(p => ({
         id: p.id,
         username: p.username || '',
         display_name: p.display_name,
@@ -113,7 +113,7 @@ export const useFloSharing = () => {
     try {
       const profiles = await fetchAvailableProfiles(user.id, 50);
       setAvailableUsers(
-        profiles.map((u) => ({
+        profiles.map(u => ({
           id: u.id,
           username: u.username || '',
           display_name: u.display_name,
@@ -204,7 +204,7 @@ export const useFloSharing = () => {
   useEffect(() => {
     if (!initialLoadComplete.current && !loading && sharedWithMe.length >= 0) {
       // Mark initial load complete and store current IDs
-      sharedWithMe.forEach((u) => knownShareIds.current.add(u.id));
+      sharedWithMe.forEach(u => knownShareIds.current.add(u.id));
       initialLoadComplete.current = true;
     }
   }, [sharedWithMe, loading]);
@@ -237,7 +237,7 @@ export const useFloSharing = () => {
           table: 'flo_shares',
           filter: `shared_with_id=eq.${user.id}`,
         },
-        async (payload) => {
+        async payload => {
           // Fetch the owner's profile to show in notification
           const { data: ownerProfile } = await supabase
             .from('profiles')
@@ -264,7 +264,7 @@ export const useFloSharing = () => {
           table: 'flo_shares',
           filter: `shared_with_id=eq.${user.id}`,
         },
-        async (payload) => {
+        async payload => {
           const { data: ownerProfile } = await supabase
             .from('profiles')
             .select('username, display_name')

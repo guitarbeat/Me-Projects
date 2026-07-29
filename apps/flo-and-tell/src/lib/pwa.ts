@@ -42,7 +42,7 @@ export const unregisterServiceWorker = async (): Promise<void> => {
 let deferredPrompt: any = null;
 
 export const initializePWAInstallPrompt = (): void => {
-  window.addEventListener('beforeinstallprompt', (e) => {
+  window.addEventListener('beforeinstallprompt', e => {
     e.preventDefault();
     deferredPrompt = e;
   });

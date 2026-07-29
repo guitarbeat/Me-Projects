@@ -111,7 +111,7 @@ export const CatAvatarPicker: React.FC<CatAvatarPickerProps> = ({
                     src={avatar}
                     alt=""
                     className="w-full h-full object-cover aspect-square transition-all duration-300 group-hover:brightness-110"
-                    onError={(e) => {
+                    onError={e => {
                       (e.target as HTMLImageElement).src =
                         'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?w=150&h=150&fit=crop&crop=face';
                     }}

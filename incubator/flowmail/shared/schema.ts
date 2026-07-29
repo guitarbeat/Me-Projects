@@ -1,4 +1,11 @@
-import { pgTable, text, serial, integer, boolean, timestamp } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  text,
+  serial,
+  integer,
+  boolean,
+  timestamp,
+} from 'drizzle-orm/pg-core';
 import { createInsertSchema } from 'drizzle-zod';
 import { z } from 'zod';
 
@@ -63,5 +70,10 @@ export const emailCredentialsSchema = z.object({
 export type EmailCredentials = z.infer<typeof emailCredentialsSchema>;
 
 // New: Email status validation schema for use in API validation
-export const emailStatusSchema = z.enum(['inbox', 'later', 'archived', 'deleted']);
+export const emailStatusSchema = z.enum([
+  'inbox',
+  'later',
+  'archived',
+  'deleted',
+]);
 export type EmailStatus = z.infer<typeof emailStatusSchema>;

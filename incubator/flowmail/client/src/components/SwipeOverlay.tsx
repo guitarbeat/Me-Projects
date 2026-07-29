@@ -6,7 +6,10 @@ interface SwipeOverlayProps {
   direction?: 'left' | 'right';
 }
 
-export function SwipeOverlay({ isVisible = false, direction }: SwipeOverlayProps) {
+export function SwipeOverlay({
+  isVisible = false,
+  direction,
+}: SwipeOverlayProps) {
   return (
     <AnimatePresence>
       {isVisible && (

@@ -75,9 +75,9 @@ export const usePeriodTracking = () => {
         isFloDay,
         timestamp: Date.now(),
       };
-      setPendingChanges((prev) => {
+      setPendingChanges(prev => {
         // Replace existing change for same date
-        const filtered = prev.filter((c) => c.dateStr !== dateStr);
+        const filtered = prev.filter(c => c.dateStr !== dateStr);
         const updated = [...filtered, newChange];
         try {
           localStorage.setItem(PENDING_KEY, JSON.stringify(updated));
@@ -122,9 +122,9 @@ export const usePeriodTracking = () => {
         }
 
         // Remove synced change
-        setPendingChanges((prev) => {
+        setPendingChanges(prev => {
           const updated = prev.filter(
-            (c) =>
+            c =>
               c.dateStr !== change.dateStr || c.timestamp !== change.timestamp
           );
           localStorage.setItem(PENDING_KEY, JSON.stringify(updated));
@@ -167,7 +167,7 @@ export const usePeriodTracking = () => {
       }
 
       const entries: Record<string, boolean> = {};
-      data?.forEach((entry) => {
+      data?.forEach(entry => {
         entries[entry.date] = entry.is_period_day;
       });
 
@@ -217,7 +217,7 @@ export const usePeriodTracking = () => {
         (payload: RealtimePostgresChangesPayload<FloEntry>) => {
           const { eventType, new: newRecord, old: oldRecord } = payload;
 
-          setFloEntries((prev) => {
+          setFloEntries(prev => {
             const updated = { ...prev };
 
             if (eventType === 'INSERT' || eventType === 'UPDATE') {

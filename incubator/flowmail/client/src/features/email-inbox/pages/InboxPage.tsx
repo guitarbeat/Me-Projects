@@ -1,13 +1,23 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Archive, CalendarDays, Clock3, Inbox, LayoutGrid, List } from 'lucide-react';
+import {
+  Archive,
+  CalendarDays,
+  Clock3,
+  Inbox,
+  LayoutGrid,
+  List,
+} from 'lucide-react';
 import { useLocation } from 'wouter';
 import { type Email, type Stats } from '@shared/schema';
 import { Button } from '@/components/ui/button';
 import { CardStack } from '../components/CardStack';
 import { EmailListView } from '../components/EmailListView';
-import { EmailFilters, type EmailFilterOptions } from '../components/EmailFilters';
+import {
+  EmailFilters,
+  type EmailFilterOptions,
+} from '../components/EmailFilters';
 import { BulkActions } from '../components/BulkActions';
 
 export default function InboxPage() {
@@ -27,16 +37,25 @@ export default function InboxPage() {
   // Filter emails based on active filters
   const filteredEmails = useMemo(() => {
     if (!emails.length) return [];
-    
-    return emails.filter((email) => {
-      if (filters.sender && !email.sender.toLowerCase().includes(filters.sender.toLowerCase()) &&
-          !email.senderEmail.toLowerCase().includes(filters.sender.toLowerCase())) {
+
+    return emails.filter(email => {
+      if (
+        filters.sender &&
+        !email.sender.toLowerCase().includes(filters.sender.toLowerCase()) &&
+        !email.senderEmail.toLowerCase().includes(filters.sender.toLowerCase())
+      ) {
         return false;
       }
-      if (filters.subject && !email.subject.toLowerCase().includes(filters.subject.toLowerCase())) {
+      if (
+        filters.subject &&
+        !email.subject.toLowerCase().includes(filters.subject.toLowerCase())
+      ) {
         return false;
       }
-      if (filters.priority && email.priority.toLowerCase() !== filters.priority.toLowerCase()) {
+      if (
+        filters.priority &&
+        email.priority.toLowerCase() !== filters.priority.toLowerCase()
+      ) {
         return false;
       }
       return true;
@@ -67,22 +86,27 @@ export default function InboxPage() {
             <div>
               <p className="app-kicker">Inbox</p>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight">
-                {filteredEmails.length} email{filteredEmails.length === 1 ? '' : 's'} ready for triage
+                {filteredEmails.length} email
+                {filteredEmails.length === 1 ? '' : 's'} ready for triage
               </h2>
               <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--app-text-secondary)]">
-                Swipe through the queue, then keep any emotional or strategic follow-up in the
-                merged journal route.
+                Swipe through the queue, then keep any emotional or strategic
+                follow-up in the merged journal route.
               </p>
             </div>
 
             <div className="flex flex-wrap gap-3">
               <div className="app-shell-panel-soft px-4 py-3">
                 <p className="app-stat-label">Processed today</p>
-                <p className="mt-1 text-xl font-semibold">{stats?.processedToday || 0}</p>
+                <p className="mt-1 text-xl font-semibold">
+                  {stats?.processedToday || 0}
+                </p>
               </div>
               <div className="app-shell-panel-soft px-4 py-3">
                 <p className="app-stat-label">For later</p>
-                <p className="mt-1 text-xl font-semibold">{stats?.forLater || 0}</p>
+                <p className="mt-1 text-xl font-semibold">
+                  {stats?.forLater || 0}
+                </p>
               </div>
             </div>
           </div>
@@ -90,7 +114,7 @@ export default function InboxPage() {
 
         <div className="mb-4 flex items-center justify-between gap-3">
           <EmailFilters onFilterChange={setFilters} activeFilters={filters} />
-          
+
           <div className="flex items-center gap-2 rounded-lg border border-[var(--app-panel-border)] p-1">
             <Button
               size="sm"
@@ -146,7 +170,9 @@ export default function InboxPage() {
               <Inbox className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-[var(--app-text)]">Queue snapshot</h3>
+              <h3 className="text-base font-semibold text-[var(--app-text)]">
+                Queue snapshot
+              </h3>
               <p className="text-sm text-[var(--app-text-secondary)]">
                 High-level status for the inbox workflow.
               </p>
@@ -157,23 +183,31 @@ export default function InboxPage() {
             <div className="app-shell-panel-soft flex items-center justify-between px-4 py-4">
               <div className="flex items-center gap-3">
                 <CalendarDays className="h-4 w-4 text-primary" />
-                <span className="text-sm text-[var(--app-text)]">Inbox queue</span>
+                <span className="text-sm text-[var(--app-text)]">
+                  Inbox queue
+                </span>
               </div>
               <span className="text-lg font-semibold">{emails.length}</span>
             </div>
             <div className="app-shell-panel-soft flex items-center justify-between px-4 py-4">
               <div className="flex items-center gap-3">
                 <Clock3 className="h-4 w-4 text-emerald-500" />
-                <span className="text-sm text-[var(--app-text)]">Saved for later</span>
+                <span className="text-sm text-[var(--app-text)]">
+                  Saved for later
+                </span>
               </div>
-              <span className="text-lg font-semibold">{stats?.forLater || 0}</span>
+              <span className="text-lg font-semibold">
+                {stats?.forLater || 0}
+              </span>
             </div>
             <div className="app-shell-panel-soft flex items-center justify-between px-4 py-4">
               <div className="flex items-center gap-3">
                 <Archive className="h-4 w-4 text-rose-500" />
                 <span className="text-sm text-[var(--app-text)]">Archived</span>
               </div>
-              <span className="text-lg font-semibold">{stats?.archived || 0}</span>
+              <span className="text-lg font-semibold">
+                {stats?.archived || 0}
+              </span>
             </div>
           </div>
         </motion.section>
@@ -184,10 +218,13 @@ export default function InboxPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, delay: 0.15 }}
         >
-          <h3 className="text-base font-semibold text-[var(--app-text)]">Shortcuts</h3>
+          <h3 className="text-base font-semibold text-[var(--app-text)]">
+            Shortcuts
+          </h3>
           <div className="mt-4 space-y-3">
             <div className="app-shell-panel-soft px-4 py-3 text-sm text-[var(--app-text-secondary)]">
-              <strong>Cards:</strong> Swipe left/right or use arrow keys. Press A/D for quick actions.
+              <strong>Cards:</strong> Swipe left/right or use arrow keys. Press
+              A/D for quick actions.
             </div>
             <div className="app-shell-panel-soft px-4 py-3 text-sm text-[var(--app-text-secondary)]">
               <strong>List:</strong> Select multiple emails for bulk actions.

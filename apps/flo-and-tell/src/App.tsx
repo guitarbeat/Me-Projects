@@ -16,7 +16,7 @@ import { LoginPage } from './pages/Login';
 
 // Lazy load heavy components with prefetch
 const Calendar = lazy(() =>
-  import('@/components/calendar/Calendar').then((m) => ({
+  import('@/components/calendar/Calendar').then(m => ({
     default: m.Calendar,
   }))
 );

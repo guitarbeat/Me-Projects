@@ -179,7 +179,7 @@ export const UserManagement: React.FC = () => {
             No users found
           </p>
         ) : (
-          users.map((u) => (
+          users.map(u => (
             <div
               key={u.user_id}
               className="flex items-center gap-3 p-3 rounded-lg border border-border/50 bg-muted/30 hover:bg-muted/50 transition-colors"
@@ -206,14 +206,15 @@ export const UserManagement: React.FC = () => {
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground truncate">
-                  @{u.username} · {DATE_FORMATTER.format(new Date(u.created_at))}
+                  @{u.username} ·{' '}
+                  {DATE_FORMATTER.format(new Date(u.created_at))}
                 </p>
               </div>
 
               <div className="flex items-center gap-2 shrink-0">
                 <Select
                   value={u.role}
-                  onValueChange={(val) =>
+                  onValueChange={val =>
                     handleRoleChange(u.user_id, val as AppRole)
                   }
                   disabled={isSelf(u.user_id) || changingRole === u.user_id}
@@ -252,7 +253,7 @@ export const UserManagement: React.FC = () => {
 
       <AlertDialog
         open={!!deleteTarget}
-        onOpenChange={(open) => !open && setDeleteTarget(null)}
+        onOpenChange={open => !open && setDeleteTarget(null)}
       >
         <AlertDialogContent className="w-[90vw] sm:w-full max-w-md">
           <AlertDialogHeader>

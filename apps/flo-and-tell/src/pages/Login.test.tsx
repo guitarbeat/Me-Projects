@@ -31,7 +31,7 @@ vi.mock('@/components/feedback/Confetti', () => ({
 }));
 
 // Mock lucide-react icons
-vi.mock('lucide-react', async (importOriginal) => {
+vi.mock('lucide-react', async importOriginal => {
   const actual = await importOriginal();
   return {
     ...actual,

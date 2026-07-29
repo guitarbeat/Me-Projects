@@ -8,6 +8,7 @@ Personal monorepo of finished apps and incubator work.
 |------|------|
 | `apps/` | Finished applications |
 | `incubator/` | Work in progress |
+| `packages/ui` | **Shared UI SoT** (`@me-projects/ui`) for shadcn apps — `cn`, toast, ThemeProvider, shared primitives, Tailwind preset |
 | `.jules/` | **Single SoT** for agent journals, plans, and specs (see [`.jules/README.md`](.jules/README.md)) |
 
 ## Apps
@@ -57,6 +58,7 @@ Do not recreate per-app `.jules/`, `.lovable/`, or `.kiro/` content trees. Redir
 - **CI SoT:** root [`.github/workflows/`](.github/workflows/) only (nested app `.github/` is unused by GitHub)
 - **Lockfile SoT:** root `package-lock.json` (npm workspaces). Nested workspace locks / pnpm locks are removed; Helios `webconfig` keeps its own locks (not a workspace)
 - **Prettier / pre-commit SoT:** root `.prettierrc`, `.prettierignore`, `.pre-commit-config.yaml`
+- **Shared UI SoT:** [`packages/ui`](packages/ui) (`@me-projects/ui`) for flo-and-tell + flowmail — do not re-copy shadcn primitives; brand CSS stays app-local
 - **ESLint:** still per-app for now
 - Agent notes: root `.jules/` only; IDE settings (e.g. `incubator/.vscode/`) stay out of `.jules/`
 

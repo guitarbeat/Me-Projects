@@ -125,7 +125,7 @@ export const PasswordSettings: React.FC = () => {
         <Input
           type="password"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={e => setPassword(e.target.value)}
           placeholder={hasPassword ? 'New password' : 'Create a password'}
           className="min-h-[44px] sm:min-h-[40px]"
           autoComplete="new-password"
@@ -133,7 +133,7 @@ export const PasswordSettings: React.FC = () => {
         <Input
           type="password"
           value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
+          onChange={e => setConfirmPassword(e.target.value)}
           placeholder="Confirm password"
           className="min-h-[44px] sm:min-h-[40px]"
           autoComplete="new-password"

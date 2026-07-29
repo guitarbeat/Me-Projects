@@ -41,7 +41,7 @@ export const SharedUsersList = ({
 
     const query = searchQuery.toLowerCase();
     return users.filter(
-      (user) =>
+      user =>
         user.username.toLowerCase().includes(query) ||
         (user.display_name?.toLowerCase().includes(query) ?? false)
     );
@@ -137,7 +137,7 @@ export const SharedUsersList = ({
           <Input
             placeholder="Search shared calendars..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={e => setSearchQuery(e.target.value)}
             className="pl-9"
           />
         </div>
@@ -198,7 +198,7 @@ export const SharedUsersList = ({
                   {/* Main card content */}
                   <button
                     onClick={() => onUserClick(user.id)}
-                    onTouchStart={(e) => handleTouchStart(e, user.id)}
+                    onTouchStart={e => handleTouchStart(e, user.id)}
                     onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
                     className={cn(

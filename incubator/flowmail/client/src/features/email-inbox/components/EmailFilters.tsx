@@ -27,11 +27,15 @@ interface EmailFiltersProps {
   activeFilters: EmailFilterOptions;
 }
 
-export function EmailFilters({ onFilterChange, activeFilters }: EmailFiltersProps) {
-  const [localFilters, setLocalFilters] = useState<EmailFilterOptions>(activeFilters);
+export function EmailFilters({
+  onFilterChange,
+  activeFilters,
+}: EmailFiltersProps) {
+  const [localFilters, setLocalFilters] =
+    useState<EmailFilterOptions>(activeFilters);
   const [isOpen, setIsOpen] = useState(false);
 
-  const hasActiveFilters = Object.values(activeFilters).some((value) => value);
+  const hasActiveFilters = Object.values(activeFilters).some(value => value);
 
   const handleApply = () => {
     onFilterChange(localFilters);
@@ -78,7 +82,7 @@ export function EmailFilters({ onFilterChange, activeFilters }: EmailFiltersProp
                 id="filter-sender"
                 placeholder="Filter by sender name or email"
                 value={localFilters.sender || ''}
-                onChange={(e) =>
+                onChange={e =>
                   setLocalFilters({ ...localFilters, sender: e.target.value })
                 }
                 className="mt-1.5"
@@ -93,7 +97,7 @@ export function EmailFilters({ onFilterChange, activeFilters }: EmailFiltersProp
                 id="filter-subject"
                 placeholder="Filter by subject"
                 value={localFilters.subject || ''}
-                onChange={(e) =>
+                onChange={e =>
                   setLocalFilters({ ...localFilters, subject: e.target.value })
                 }
                 className="mt-1.5"
@@ -106,7 +110,7 @@ export function EmailFilters({ onFilterChange, activeFilters }: EmailFiltersProp
               </Label>
               <Select
                 value={localFilters.priority || 'all'}
-                onValueChange={(value) =>
+                onValueChange={value =>
                   setLocalFilters({
                     ...localFilters,
                     priority: value === 'all' ? undefined : value,

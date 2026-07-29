@@ -5,7 +5,8 @@ export interface AppColors {
   fill: string;
 }
 
-export type ActiveLabelFormat = 'date' | 'week' | 'day' | 'month' | 'month-date' | 'full';
+export type ActiveLabelFormat =
+  'date' | 'week' | 'day' | 'month' | 'month-date' | 'full';
 export type DotShape = 'square' | 'rounded' | 'circle';
 
 export interface AppConfig {

@@ -22,7 +22,8 @@ export const LegacyPasswordUpgradeDialog: React.FC = () => {
   const [isSigningOut, setIsSigningOut] = useState(false);
 
   const isOpen = !!user && !!profile && !profile.has_custom_password;
-  const displayName = profile?.display_name || profile?.username || 'your account';
+  const displayName =
+    profile?.display_name || profile?.username || 'your account';
 
   useEffect(() => {
     if (!isOpen) {
@@ -104,14 +105,14 @@ export const LegacyPasswordUpgradeDialog: React.FC = () => {
             </div>
           </div>
           <p className="text-xs text-muted-foreground">
-            Your PIN lock stays separate. This only upgrades your account sign-in
-            password.
+            Your PIN lock stays separate. This only upgrades your account
+            sign-in password.
           </p>
         </AlertDialogHeader>
 
         <form
           className="space-y-4"
-          onSubmit={(event) => {
+          onSubmit={event => {
             event.preventDefault();
             void handleSavePassword();
           }}
@@ -120,7 +121,7 @@ export const LegacyPasswordUpgradeDialog: React.FC = () => {
             <Input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
               placeholder="Create a new password"
               autoComplete="new-password"
               disabled={isSaving || isSigningOut}
@@ -128,7 +129,7 @@ export const LegacyPasswordUpgradeDialog: React.FC = () => {
             <Input
               type="password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
+              onChange={e => setConfirmPassword(e.target.value)}
               placeholder="Confirm your new password"
               autoComplete="new-password"
               disabled={isSaving || isSigningOut}

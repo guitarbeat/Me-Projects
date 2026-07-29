@@ -15,7 +15,11 @@ interface EmailListViewProps {
   onSelectionChange: (ids: Set<number>) => void;
 }
 
-export function EmailListView({ emails, selectedIds, onSelectionChange }: EmailListViewProps) {
+export function EmailListView({
+  emails,
+  selectedIds,
+  onSelectionChange,
+}: EmailListViewProps) {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -79,8 +83,12 @@ export function EmailListView({ emails, selectedIds, onSelectionChange }: EmailL
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-accent/10">
             <span className="text-2xl">🎉</span>
           </div>
-          <h3 className="mb-2 text-lg font-medium text-[var(--app-text)]">Inbox Zero!</h3>
-          <p className="text-[var(--app-text-secondary)]">All emails have been processed</p>
+          <h3 className="mb-2 text-lg font-medium text-[var(--app-text)]">
+            Inbox Zero!
+          </h3>
+          <p className="text-[var(--app-text-secondary)]">
+            All emails have been processed
+          </p>
         </div>
       </div>
     );
@@ -107,12 +115,16 @@ export function EmailListView({ emails, selectedIds, onSelectionChange }: EmailL
 
             <div
               className="min-w-0 flex-1 cursor-pointer"
-              onClick={() => setExpandedId(expandedId === email.id ? null : email.id)}
+              onClick={() =>
+                setExpandedId(expandedId === email.id ? null : email.id)
+              }
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="font-semibold text-[var(--app-text)]">{email.sender}</p>
+                    <p className="font-semibold text-[var(--app-text)]">
+                      {email.sender}
+                    </p>
                     {email.unread && (
                       <span className="h-2 w-2 rounded-full bg-primary" />
                     )}
@@ -123,7 +135,9 @@ export function EmailListView({ emails, selectedIds, onSelectionChange }: EmailL
                   <p className="mt-0.5 text-sm text-[var(--app-text-secondary)]">
                     {email.senderEmail}
                   </p>
-                  <p className="mt-2 font-medium text-[var(--app-text)]">{email.subject}</p>
+                  <p className="mt-2 font-medium text-[var(--app-text)]">
+                    {email.subject}
+                  </p>
                   {expandedId === email.id && (
                     <motion.div
                       initial={{ opacity: 0, height: 0 }}
@@ -140,7 +154,9 @@ export function EmailListView({ emails, selectedIds, onSelectionChange }: EmailL
                   <span className="text-xs text-[var(--app-text-secondary)]">
                     {formatTimeAgo(email.timestamp)}
                   </span>
-                  <span className={`text-xs font-medium uppercase ${getPriorityColor(email.priority)}`}>
+                  <span
+                    className={`text-xs font-medium uppercase ${getPriorityColor(email.priority)}`}
+                  >
                     {email.priority}
                   </span>
                 </div>
@@ -151,7 +167,9 @@ export function EmailListView({ emails, selectedIds, onSelectionChange }: EmailL
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => handleAction(email.id, 'later', 'Saved for later')}
+                onClick={() =>
+                  handleAction(email.id, 'later', 'Saved for later')
+                }
                 disabled={updateEmailMutation.isPending}
                 title="Save for later"
               >

@@ -8,7 +8,8 @@
     "apps/nini-earth",
     "apps/scanforge",
     "apps/harmonic-studio",
-    "incubator/flowmail"
+    "incubator/flowmail",
+    "packages/ui"
   ],
   "scripts": {
     "dev:flowmail": "npm run dev --workspace=incubator/flowmail",

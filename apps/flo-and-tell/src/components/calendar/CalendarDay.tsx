@@ -41,8 +41,29 @@ export const CalendarDay = memo(
     // Memoize date formatting to avoid recalculation on every render
     // ⚡ Bolt: Use modulo math with hoisted firstDayOfWeek to avoid Date allocation in loop
     const ariaLabel = useMemo(() => {
-      const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-      const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      const WEEKDAYS = [
+        'Sunday',
+        'Monday',
+        'Tuesday',
+        'Wednesday',
+        'Thursday',
+        'Friday',
+        'Saturday',
+      ];
+      const MONTHS = [
+        'January',
+        'February',
+        'March',
+        'April',
+        'May',
+        'June',
+        'July',
+        'August',
+        'September',
+        'October',
+        'November',
+        'December',
+      ];
       const weekday = WEEKDAYS[(firstDayOfWeek + day - 1) % 7];
       const month = MONTHS[currentDate.getMonth()];
       return `${weekday}, ${month} ${day}, ${currentDate.getFullYear()}${isFloDay ? ', Period logged' : ''}`;
@@ -52,7 +73,7 @@ export const CalendarDay = memo(
       <DayElement
         role={readOnly ? undefined : 'gridcell'}
         tabIndex={tabIndex}
-        onKeyDown={onKeyDown ? (e) => onKeyDown(e, day) : undefined}
+        onKeyDown={onKeyDown ? e => onKeyDown(e, day) : undefined}
         aria-label={ariaLabel}
         aria-pressed={!readOnly ? isFloDay : undefined}
         onClick={readOnly ? undefined : () => onToggle?.(day, isFloDay)}

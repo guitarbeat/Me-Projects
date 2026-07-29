@@ -1,4 +1,11 @@
-import { Copy, Download, FileJson, FileSpreadsheet, Send, Sparkles } from 'lucide-react';
+import {
+  Copy,
+  Download,
+  FileJson,
+  FileSpreadsheet,
+  Send,
+  Sparkles,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -16,7 +23,10 @@ import {
   copyTextToClipboard,
   downloadTextFile,
 } from '@/features/journal/lib/export';
-import { postJournalExport, postJournalSummary } from '@/features/journal/lib/n8nClient';
+import {
+  postJournalExport,
+  postJournalSummary,
+} from '@/features/journal/lib/n8nClient';
 import type { JournalEntry } from '@/features/journal/types';
 
 interface JournalExportMenuProps {
@@ -47,7 +57,11 @@ export function JournalExportMenu({ entries }: JournalExportMenuProps) {
   };
 
   const handleDownloadCsv = () => {
-    downloadTextFile(buildCsv(entries), `journal-export-${buildDateStamp()}.csv`, 'text/csv');
+    downloadTextFile(
+      buildCsv(entries),
+      `journal-export-${buildDateStamp()}.csv`,
+      'text/csv'
+    );
 
     toast({
       title: 'CSV export ready',
@@ -72,7 +86,9 @@ export function JournalExportMenu({ entries }: JournalExportMenuProps) {
 
   const handleCopyJson = async () => {
     try {
-      await copyTextToClipboard(JSON.stringify(buildExportData(entries), null, 2));
+      await copyTextToClipboard(
+        JSON.stringify(buildExportData(entries), null, 2)
+      );
       toast({
         title: 'Copied to clipboard',
         description: 'The journal export payload is ready to paste elsewhere.',
@@ -81,7 +97,9 @@ export function JournalExportMenu({ entries }: JournalExportMenuProps) {
       toast({
         title: 'Clipboard unavailable',
         description:
-          error instanceof Error ? error.message : 'The browser blocked clipboard access.',
+          error instanceof Error
+            ? error.message
+            : 'The browser blocked clipboard access.',
         variant: 'destructive',
       });
     }
@@ -93,7 +111,8 @@ export function JournalExportMenu({ entries }: JournalExportMenuProps) {
     if ('disabled' in result && result.disabled) {
       toast({
         title: 'n8n not configured',
-        description: 'Set the journal webhook config before sending exports upstream.',
+        description:
+          'Set the journal webhook config before sending exports upstream.',
         variant: 'destructive',
       });
       return;
@@ -115,7 +134,8 @@ export function JournalExportMenu({ entries }: JournalExportMenuProps) {
     if ('disabled' in result && result.disabled) {
       toast({
         title: 'n8n not configured',
-        description: 'Set the journal webhook config before sending summaries upstream.',
+        description:
+          'Set the journal webhook config before sending summaries upstream.',
         variant: 'destructive',
       });
       return;
@@ -149,20 +169,32 @@ export function JournalExportMenu({ entries }: JournalExportMenuProps) {
           <FileSpreadsheet className="h-4 w-4" />
           Download CSV
         </DropdownMenuItem>
-        <DropdownMenuItem disabled={!hasEntries} onSelect={handleDownloadSummary}>
+        <DropdownMenuItem
+          disabled={!hasEntries}
+          onSelect={handleDownloadSummary}
+        >
           <Sparkles className="h-4 w-4" />
           Download summary
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem disabled={!hasEntries} onSelect={() => void handleCopyJson()}>
+        <DropdownMenuItem
+          disabled={!hasEntries}
+          onSelect={() => void handleCopyJson()}
+        >
           <Copy className="h-4 w-4" />
           Copy JSON payload
         </DropdownMenuItem>
-        <DropdownMenuItem disabled={!hasEntries} onSelect={() => void handleSendJson()}>
+        <DropdownMenuItem
+          disabled={!hasEntries}
+          onSelect={() => void handleSendJson()}
+        >
           <Send className="h-4 w-4" />
           Send export to n8n
         </DropdownMenuItem>
-        <DropdownMenuItem disabled={!hasEntries} onSelect={() => void handleSendSummary()}>
+        <DropdownMenuItem
+          disabled={!hasEntries}
+          onSelect={() => void handleSendSummary()}
+        >
           <Send className="h-4 w-4" />
           Send summary to n8n
         </DropdownMenuItem>

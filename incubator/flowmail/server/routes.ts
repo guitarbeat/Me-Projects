@@ -5,7 +5,10 @@ import { emailCredentialsSchema, emailStatusSchema } from '@shared/schema';
 import { storage } from './storage';
 
 // Simple in-memory rate limiter keyed by IP + endpoint
-const rateLimitBuckets = new Map<string, { count: number; windowStart: number }>();
+const rateLimitBuckets = new Map<
+  string,
+  { count: number; windowStart: number }
+>();
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const RATE_LIMIT_MAX = 10;
 
@@ -84,9 +87,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(email);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        return res
-          .status(400)
-          .json({ error: 'Invalid status', details: error.flatten().fieldErrors });
+        return res.status(400).json({
+          error: 'Invalid status',
+          details: error.flatten().fieldErrors,
+        });
       }
       res.status(500).json({ error: 'Failed to update email status' });
     }
@@ -118,9 +122,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         limit: z.coerce.number().int().min(1).max(100).optional(),
         offset: z.coerce.number().int().min(0).optional(),
       });
-      const { sender, subject, status, startDate, endDate, limit, offset } = querySchema.parse(
-        req.query
-      );
+      const { sender, subject, status, startDate, endDate, limit, offset } =
+        querySchema.parse(req.query);
       const emails = await storage.searchEmails(
         { sender, subject, status, startDate, endDate },
         limit,
@@ -174,7 +177,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Test email connection (rate limited)
   app.post('/api/email/test', async (req, res) => {
     try {
-      const ip = req.ip || req.headers['x-forwarded-for']?.toString() || 'unknown';
+      const ip =
+        req.ip || req.headers['x-forwarded-for']?.toString() || 'unknown';
       if (isRateLimited(ip, 'email_test')) {
         return res.status(429).json({ error: 'Too many requests' });
       }
@@ -190,7 +194,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { EmailService, EMAIL_PROVIDERS } = await import('./emailService');
 
-      const providerConfig = EMAIL_PROVIDERS[provider as keyof typeof EMAIL_PROVIDERS];
+      const providerConfig =
+        EMAIL_PROVIDERS[provider as keyof typeof EMAIL_PROVIDERS];
       if (!providerConfig) {
         return res.status(400).json({ error: 'Unsupported email provider' });
       }
@@ -214,7 +219,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Fetch emails from IMAP (rate limited)
   app.post('/api/email/fetch', async (req, res) => {
     try {
-      const ip = req.ip || req.headers['x-forwarded-for']?.toString() || 'unknown';
+      const ip =
+        req.ip || req.headers['x-forwarded-for']?.toString() || 'unknown';
       if (isRateLimited(ip, 'email_fetch')) {
         return res.status(429).json({ error: 'Too many requests' });
       }
@@ -231,7 +237,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const { EmailService, EMAIL_PROVIDERS } = await import('./emailService');
 
-      const providerConfig = EMAIL_PROVIDERS[provider as keyof typeof EMAIL_PROVIDERS];
+      const providerConfig =
+        EMAIL_PROVIDERS[provider as keyof typeof EMAIL_PROVIDERS];
       if (!providerConfig) {
         return res.status(400).json({ error: 'Unsupported email provider' });
       }

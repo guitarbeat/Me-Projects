@@ -79,7 +79,7 @@ export const SecurityOverview: React.FC<SecurityOverviewProps> = ({
 
       {/* Status Grid - 2 columns for 2 features */}
       <div className="grid grid-cols-2 gap-2">
-        {indicators.map((indicator) => {
+        {indicators.map(indicator => {
           const Icon = indicator.icon;
           return (
             <button

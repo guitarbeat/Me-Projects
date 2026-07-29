@@ -23,13 +23,15 @@ const AVATAR_COLORS = [
 function getInitials(name: string): string {
   return name
     .split(' ')
-    .map((n) => n[0])
+    .map(n => n[0])
     .join('')
     .toUpperCase();
 }
 
 function getAvatarColor(name: string): string {
-  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const hash = name
+    .split('')
+    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return AVATAR_COLORS[hash % AVATAR_COLORS.length];
 }
 
@@ -90,13 +92,17 @@ export const EmailCard = memo(function EmailCard({
           <div
             className={`w-12 h-12 rounded-full flex items-center justify-center ${getAvatarColor(email.sender)}`}
           >
-            <span className="font-medium text-lg">{getInitials(email.sender)}</span>
+            <span className="font-medium text-lg">
+              {getInitials(email.sender)}
+            </span>
           </div>
           <div className="flex-1">
             <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-lg">
               {email.sender}
             </h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">{email.senderEmail}</p>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">
+              {email.senderEmail}
+            </p>
           </div>
         </div>
 

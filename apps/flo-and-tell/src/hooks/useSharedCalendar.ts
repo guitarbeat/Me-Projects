@@ -82,7 +82,7 @@ export const useSharedCalendar = () => {
         }
 
         const entriesMap: Record<string, boolean> = {};
-        entries?.forEach((entry) => {
+        entries?.forEach(entry => {
           entriesMap[entry.date] = entry.is_period_day;
         });
 
@@ -128,9 +128,9 @@ export const useSharedCalendar = () => {
           const { eventType, new: newRecord, old: oldRecord } = payload;
 
           // Increment update counter for badge notification
-          setUpdateCount((prev) => prev + 1);
+          setUpdateCount(prev => prev + 1);
 
-          setSharedCalendar((prev) => {
+          setSharedCalendar(prev => {
             if (!prev) {
               return prev;
             }

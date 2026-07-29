@@ -20,14 +20,14 @@ export const calculatePeriodInsights = (
   currentDate: Date
 ): PeriodInsights => {
   const allDates = Object.keys(entries)
-    .filter((date) => entries[date])
+    .filter(date => entries[date])
     .sort();
 
   // Count days this month (prefix match avoids Date alloc for YYYY-MM-DD keys)
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
   const prefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-`;
-  const daysThisMonth = allDates.filter((date) => {
+  const daysThisMonth = allDates.filter(date => {
     if (date.length === 10) {
       return date.startsWith(prefix);
     }

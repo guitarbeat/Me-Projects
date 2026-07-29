@@ -45,7 +45,7 @@ export const ScrollAreaAware: React.FC<ScrollAreaAwareProps> = ({
     const isScrolled = scrollTop > 0;
     const isAtBottom = scrollTop + clientHeight >= scrollHeight - 1;
 
-    setScrollState((prev) => {
+    setScrollState(prev => {
       if (
         prev.isScrolled !== isScrolled ||
         prev.isAtBottom !== isAtBottom ||
@@ -73,7 +73,7 @@ export const ScrollAreaAware: React.FC<ScrollAreaAwareProps> = ({
     resizeObserver.observe(el);
 
     // Also observe children for dynamic content
-    Array.from(el.children).forEach((child) => resizeObserver.observe(child));
+    Array.from(el.children).forEach(child => resizeObserver.observe(child));
 
     return () => resizeObserver.disconnect();
   }, [checkScroll]);

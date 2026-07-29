@@ -64,7 +64,7 @@ export const Confetti: React.FC<ConfettiProps> = ({
 
   return (
     <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-      {particles.map((particle) => (
+      {particles.map(particle => (
         <div
           key={particle.id}
           className="absolute animate-confetti-fall"

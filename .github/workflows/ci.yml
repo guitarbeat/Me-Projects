@@ -24,6 +24,7 @@ jobs:
           filters: |
             flo-and-tell:
               - 'apps/flo-and-tell/**'
+              - 'packages/ui/**'
               - 'package-lock.json'
               - 'package.json'
             nini-earth:
@@ -32,6 +33,7 @@ jobs:
               - 'package.json'
             flowmail:
               - 'incubator/flowmail/**'
+              - 'packages/ui/**'
               - 'package-lock.json'
               - 'package.json'
             harmonic-studio:
@@ -41,6 +43,7 @@ jobs:
             all:
               - 'package-lock.json'
               - 'package.json'
+              - 'packages/ui/**'
               - '.github/workflows/ci.yml'
 
   flo-and-tell:

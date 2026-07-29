@@ -46,7 +46,11 @@ export const DashboardActivityGrid: React.FC = () => {
   return (
     <div className="w-full overflow-hidden flex justify-center py-2">
       <div className="scale-[0.85] origin-top">
-         <YearGrid config={DASHBOARD_GRID_CONFIG} activityMap={activityMap} className="!p-0 !shadow-none" />
+        <YearGrid
+          config={DASHBOARD_GRID_CONFIG}
+          activityMap={activityMap}
+          className="!p-0 !shadow-none"
+        />
       </div>
     </div>
   );

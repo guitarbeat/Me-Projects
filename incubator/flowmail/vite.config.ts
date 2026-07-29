@@ -7,8 +7,13 @@ export default defineConfig({
   plugins: [
     react(),
     runtimeErrorOverlay(),
-    ...(process.env.NODE_ENV !== 'production' && process.env.REPL_ID !== undefined
-      ? [await import('@replit/vite-plugin-cartographer').then((m) => m.cartographer())]
+    ...(process.env.NODE_ENV !== 'production' &&
+    process.env.REPL_ID !== undefined
+      ? [
+          await import('@replit/vite-plugin-cartographer').then(m =>
+            m.cartographer()
+          ),
+        ]
       : []),
   ],
   resolve: {
@@ -17,6 +22,10 @@ export default defineConfig({
       '@shared': path.resolve(import.meta.dirname, 'shared'),
       '@assets': path.resolve(import.meta.dirname, 'attached_assets'),
     },
+    dedupe: ['react', 'react-dom'],
+  },
+  optimizeDeps: {
+    include: ['@me-projects/ui'],
   },
   root: path.resolve(import.meta.dirname, 'client'),
   build: {
@@ -26,6 +35,10 @@ export default defineConfig({
   server: {
     fs: {
       strict: true,
+      allow: [
+        path.resolve(import.meta.dirname),
+        path.resolve(import.meta.dirname, '../../packages/ui'),
+      ],
       deny: ['**/.*'],
     },
   },

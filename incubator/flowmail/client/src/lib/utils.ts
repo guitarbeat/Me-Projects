@@ -1,14 +1,9 @@
-import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+export { cn } from '@me-projects/ui';
 
 export function getInitials(name: string): string {
   return name
     .split(' ')
-    .map((n) => n[0])
+    .map(n => n[0])
     .join('')
     .toUpperCase()
     .slice(0, 2);
@@ -26,7 +21,9 @@ export function getAvatarColor(name: string): string {
     'bg-orange-100 text-orange-600',
   ];
 
-  const hash = name.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  const hash = name
+    .split('')
+    .reduce((acc, char) => acc + char.charCodeAt(0), 0);
   return colors[hash % colors.length];
 }
 

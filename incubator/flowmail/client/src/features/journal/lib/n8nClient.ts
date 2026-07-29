@@ -1,4 +1,8 @@
-import { journalStorageKeys, readJsonStorage, writeJsonStorage } from '@/features/journal/lib/storage';
+import {
+  journalStorageKeys,
+  readJsonStorage,
+  writeJsonStorage,
+} from '@/features/journal/lib/storage';
 
 export type JournalN8nConfig = {
   enabled: boolean;
@@ -32,7 +36,10 @@ function getEnvConfig(): Partial<JournalN8nConfig> {
 }
 
 export function loadJournalN8nConfig(): JournalN8nConfig {
-  const storedConfig = readJsonStorage<Partial<JournalN8nConfig>>(journalStorageKeys.n8n, {});
+  const storedConfig = readJsonStorage<Partial<JournalN8nConfig>>(
+    journalStorageKeys.n8n,
+    {}
+  );
   const envConfig = getEnvConfig();
 
   return {
@@ -78,7 +85,9 @@ function buildHeaders(config: JournalN8nConfig): Record<string, string> {
   return headers;
 }
 
-function enqueueRequest(request: Omit<QueuedRequest, 'attempt' | 'enqueuedAt' | 'id'>) {
+function enqueueRequest(
+  request: Omit<QueuedRequest, 'attempt' | 'enqueuedAt' | 'id'>
+) {
   const queue = readQueue();
 
   queue.push({
@@ -135,7 +144,11 @@ export async function flushJournalQueue() {
   writeQueue(remainingQueue);
 }
 
-async function postWithQueue(url: string, payload: unknown, headers: Record<string, string>) {
+async function postWithQueue(
+  url: string,
+  payload: unknown,
+  headers: Record<string, string>
+) {
   const request = {
     url,
     method: 'POST' as const,
@@ -170,7 +183,11 @@ export async function postJournalExport(payload: unknown) {
     return { disabled: true } as const;
   }
 
-  return postWithQueue(buildUrl(config.baseUrl, config.exportPath), payload, buildHeaders(config));
+  return postWithQueue(
+    buildUrl(config.baseUrl, config.exportPath),
+    payload,
+    buildHeaders(config)
+  );
 }
 
 export async function postJournalSummary(payload: unknown) {
@@ -180,7 +197,11 @@ export async function postJournalSummary(payload: unknown) {
     return { disabled: true } as const;
   }
 
-  return postWithQueue(buildUrl(config.baseUrl, config.summaryPath), payload, buildHeaders(config));
+  return postWithQueue(
+    buildUrl(config.baseUrl, config.summaryPath),
+    payload,
+    buildHeaders(config)
+  );
 }
 
 if (typeof window !== 'undefined') {

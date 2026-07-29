@@ -50,8 +50,12 @@ export function StatsGrid({ stats }: StatsGridProps) {
         >
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[var(--app-text-secondary)] text-sm">{item.label}</p>
-              <p className="text-2xl font-semibold text-[var(--app-text)]">{item.value}</p>
+              <p className="text-[var(--app-text-secondary)] text-sm">
+                {item.label}
+              </p>
+              <p className="text-2xl font-semibold text-[var(--app-text)]">
+                {item.value}
+              </p>
             </div>
             <div
               className={`w-10 h-10 rounded-lg flex items-center justify-center ${item.bgColor}`}

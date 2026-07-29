@@ -20,7 +20,7 @@ export const useLoadingState = (options: UseLoadingStateOptions = {}) => {
   });
 
   const setLoading = useCallback((loading: boolean) => {
-    setState((prev) => ({
+    setState(prev => ({
       ...prev,
       loading,
       error: loading ? null : prev.error,
@@ -28,7 +28,7 @@ export const useLoadingState = (options: UseLoadingStateOptions = {}) => {
   }, []);
 
   const setError = useCallback((error: string | null) => {
-    setState((prev) => ({ ...prev, error, loading: false }));
+    setState(prev => ({ ...prev, error, loading: false }));
   }, []);
 
   const reset = useCallback(() => {

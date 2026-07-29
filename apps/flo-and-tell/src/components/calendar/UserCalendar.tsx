@@ -323,7 +323,10 @@ export const UserCalendar = memo(
     const currentMonth = currentDate.getMonth();
     const currentMonthStr = String(currentMonth + 1).padStart(2, '0');
     // ⚡ Bolt: Hoist firstDayOfWeek calculation to prevent Date instantiation in child loop
-    const firstDayOfWeek = useMemo(() => new Date(currentYear, currentMonth, 1).getDay(), [currentYear, currentMonth]);
+    const firstDayOfWeek = useMemo(
+      () => new Date(currentYear, currentMonth, 1).getDay(),
+      [currentYear, currentMonth]
+    );
 
     return (
       <div ref={swipeRef} className="relative smooth-resize">

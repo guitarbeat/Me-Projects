@@ -35,7 +35,7 @@ describe('dateUtils', () => {
       const days = getDaysInMonth(date);
 
       // Count non-null days (should be 29 for leap year)
-      const nonNullDays = days.filter((day) => day !== null);
+      const nonNullDays = days.filter(day => day !== null);
       expect(nonNullDays).toHaveLength(29);
       expect(nonNullDays[nonNullDays.length - 1]).toBe(29);
     });

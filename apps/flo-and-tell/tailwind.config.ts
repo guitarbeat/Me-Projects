@@ -1,13 +1,15 @@
 import type { Config } from 'tailwindcss';
-import tailwindcssAnimate from 'tailwindcss-animate';
+import uiPreset from '@me-projects/ui/tailwind-preset';
 
 export default {
+  presets: [uiPreset],
   darkMode: ['class'],
   content: [
     './pages/**/*.{ts,tsx}',
     './components/**/*.{ts,tsx}',
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
+    '../../packages/ui/src/**/*.{ts,tsx}',
   ],
   prefix: '',
   theme: {
@@ -24,50 +26,6 @@ export default {
         quicksand: ['Quicksand', 'sans-serif'],
       },
       colors: {
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
-        primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
-        },
-        secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
-        },
-        destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
-        },
-        muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
-        },
-        accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
-        },
-        popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
-        },
-        card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
-        },
-        sidebar: {
-          DEFAULT: 'hsl(var(--sidebar-background))',
-          foreground: 'hsl(var(--sidebar-foreground))',
-          primary: 'hsl(var(--sidebar-primary))',
-          'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-          accent: 'hsl(var(--sidebar-accent))',
-          'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-          border: 'hsl(var(--sidebar-border))',
-          ring: 'hsl(var(--sidebar-ring))',
-        },
-        // * Theme Colors - Using CSS variables for consistency
         'rose-pink': 'hsl(var(--rose-pink))',
         coral: 'hsl(var(--coral))',
         lavender: 'hsl(var(--lavender))',
@@ -93,14 +51,6 @@ export default {
         'ease-out': 'var(--motion-ease-out)',
       },
       keyframes: {
-        'accordion-down': {
-          from: { height: '0' },
-          to: { height: 'var(--radix-accordion-content-height)' },
-        },
-        'accordion-up': {
-          from: { height: 'var(--radix-accordion-content-height)' },
-          to: { height: '0' },
-        },
         'fade-in': {
           from: { opacity: '0', transform: 'translateY(4px)' },
           to: { opacity: '1', transform: 'translateY(0)' },
@@ -176,10 +126,6 @@ export default {
         },
       },
       animation: {
-        'accordion-down':
-          'accordion-down var(--motion-base) var(--motion-ease-out)',
-        'accordion-up':
-          'accordion-up var(--motion-base) var(--motion-ease-out)',
         'fade-in': 'fade-in var(--motion-base) var(--motion-ease)',
         'fade-out': 'fade-out var(--motion-base) var(--motion-ease)',
         'scale-in': 'scale-in var(--motion-fast) var(--motion-ease-out)',
@@ -209,11 +155,9 @@ export default {
         glow: '0 0 2px hsl(var(--ring) / 0.35)',
       },
       spacing: {
-        // * Unified spacing scale - 4px base unit
-        '18': '4.5rem', // 72px
-        '22': '5.5rem', // 88px
+        '18': '4.5rem',
+        '22': '5.5rem',
       },
     },
   },
-  plugins: [tailwindcssAnimate],
 } satisfies Config;

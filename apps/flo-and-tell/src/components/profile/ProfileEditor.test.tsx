@@ -68,7 +68,7 @@ describe('ProfileEditor', () => {
   describe('Loading State', () => {
     it('shows loading state on upload button during file upload', async () => {
       let resolveProcessing: (value: string) => void;
-      const processingPromise = new Promise<string>((resolve) => {
+      const processingPromise = new Promise<string>(resolve => {
         resolveProcessing = resolve;
       });
       (processImageToBase64 as any).mockReturnValue(processingPromise);

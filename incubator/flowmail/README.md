@@ -79,11 +79,16 @@ client/src/features/my-feature-name/
 After creating a feature, integrate it into the app:
 
 1. **Import the feature in App.tsx:**
+
    ```typescript
-   import { MyFeatureNamePage, myFeatureNameFeature } from './features/my-feature-name';
+   import {
+     MyFeatureNamePage,
+     myFeatureNameFeature,
+   } from './features/my-feature-name';
    ```
 
 2. **Add the route:**
+
    ```typescript
    <Route path="/my-feature-name" component={MyFeatureNamePage} />
    ```
@@ -112,6 +117,7 @@ Customize the template by:
 Running `npm run create-feature task-manager` creates:
 
 **index.ts:**
+
 ```typescript
 export { default as TaskManagerPage } from './pages/FeaturePage';
 export type { TaskManagerConfig, TaskManagerData } from './types';
@@ -121,9 +127,7 @@ export const taskManagerFeature = {
   name: 'Task Manager',
   version: '1.0.0',
   description: 'Description of Task Manager feature',
-  routes: [
-    { path: '/task-manager', component: 'TaskManagerPage' },
-  ],
+  routes: [{ path: '/task-manager', component: 'TaskManagerPage' }],
   navigation: [
     { path: '/task-manager', label: 'Task Manager', icon: 'Box', order: 10 },
   ],
@@ -132,6 +136,7 @@ export const taskManagerFeature = {
 ```
 
 **pages/FeaturePage.tsx:**
+
 ```typescript
 export default function FeaturePage() {
   return (
@@ -159,6 +164,7 @@ npm run verify-architecture
 ```
 
 This checks:
+
 - Feature structure and naming conventions
 - Import patterns (no cross-feature internal imports)
 - Configuration validity

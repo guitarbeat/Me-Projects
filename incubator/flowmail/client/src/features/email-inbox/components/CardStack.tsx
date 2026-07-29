@@ -13,7 +13,10 @@ interface CardStackProps {
 
 export function CardStack({ emails }: CardStackProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [lastAction, setLastAction] = useState<{ id: number; action: string } | null>(null);
+  const [lastAction, setLastAction] = useState<{
+    id: number;
+    action: string;
+  } | null>(null);
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
@@ -66,14 +69,14 @@ export function CardStack({ emails }: CardStackProps) {
       duration: 3000,
     });
 
-    setCurrentIndex((prev) => prev + 1);
+    setCurrentIndex(prev => prev + 1);
   };
 
   const handleUndo = () => {
     if (!lastAction) return;
 
     undoMutation.mutate(lastAction.id);
-    setCurrentIndex((prev) => Math.max(0, prev - 1));
+    setCurrentIndex(prev => Math.max(0, prev - 1));
     setLastAction(null);
   };
 
@@ -81,7 +84,10 @@ export function CardStack({ emails }: CardStackProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Prevent shortcuts when typing in input fields
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement
+      ) {
         return;
       }
 
@@ -108,8 +114,12 @@ export function CardStack({ emails }: CardStackProps) {
           <div className="w-16 h-16 bg-accent/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">🎉</span>
           </div>
-          <h3 className="text-lg font-medium text-[var(--app-text)] mb-2">Inbox Zero!</h3>
-          <p className="text-[var(--app-text-secondary)]">All emails have been processed</p>
+          <h3 className="text-lg font-medium text-[var(--app-text)] mb-2">
+            Inbox Zero!
+          </h3>
+          <p className="text-[var(--app-text-secondary)]">
+            All emails have been processed
+          </p>
         </div>
       </div>
     );

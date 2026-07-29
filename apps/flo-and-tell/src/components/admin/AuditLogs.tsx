@@ -78,7 +78,7 @@ export const AuditLogs: React.FC = () => {
             Security summary
           </CardDescription>
           <div className="flex gap-1 ml-auto">
-            {TIME_OPTIONS.map((opt) => (
+            {TIME_OPTIONS.map(opt => (
               <Button
                 key={opt.hours}
                 variant={hoursBack === opt.hours ? 'default' : 'outline'}

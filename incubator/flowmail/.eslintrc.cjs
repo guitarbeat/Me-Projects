@@ -50,5 +50,11 @@ module.exports = {
       version: 'detect',
     },
   },
-  ignorePatterns: ['dist', 'node_modules', 'coverage', '*.config.js', '*.config.ts'],
+  ignorePatterns: [
+    'dist',
+    'node_modules',
+    'coverage',
+    '*.config.js',
+    '*.config.ts',
+  ],
 };

@@ -23,6 +23,7 @@ Thin redirect stubs may exist at old tool paths (`apps/*/.lovable/README.md`, `i
 | Path | Contents |
 |------|----------|
 | [`shared/bolt.md`](shared/bolt.md) | Cross-app date / sorting perf notes |
+| [`shared/ui-sot.md`](shared/ui-sot.md) | Shared UI package convention |
 | [`apps/flo-and-tell/`](apps/flo-and-tell/) | bolt, palette, sentinel + plans |
 | [`apps/harmonic-studio/`](apps/harmonic-studio/) | bolt, palette, sentinel |
 | [`apps/helios-billy-bass/`](apps/helios-billy-bass/) | palette |

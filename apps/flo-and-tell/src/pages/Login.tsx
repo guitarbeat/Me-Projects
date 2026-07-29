@@ -97,7 +97,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
       return null;
     }
     return userProfiles.find(
-      (p) => p.username.toLowerCase() === username.trim().toLowerCase()
+      p => p.username.toLowerCase() === username.trim().toLowerCase()
     );
   }, [username, userProfiles]);
 
@@ -186,7 +186,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
 
       try {
         // Brief "checking" state
-        await new Promise((resolve) => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 300));
         setButtonState('signing-in');
 
         const result = await signInOrSignUp(
@@ -416,7 +416,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
             <Input
               type="text"
               value={username}
-              onChange={(e) => handleUsernameChange(e.target.value)}
+              onChange={e => handleUsernameChange(e.target.value)}
               className={`border-2 transition-all duration-300 touch-manipulation font-quicksand placeholder:text-muted-foreground backdrop-blur-sm bg-background/80 hover:bg-background/90 focus:bg-background shadow-lg hover:shadow-xl focus:shadow-2xl focus:animate-breathing input-focus-ready input-placeholder-fade empty-input-focus ${
                 matchingUser
                   ? 'border-green-400 dark:border-green-500 focus:border-green-500 success-glow'
@@ -503,7 +503,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
                 id="password-input"
                 type={showPassword ? 'text' : 'password'}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={e => setPassword(e.target.value)}
                 className="border-2 transition-all duration-300 touch-manipulation font-quicksand placeholder:text-muted-foreground backdrop-blur-sm bg-background/80 hover:bg-background/90 focus:bg-background shadow-lg hover:shadow-xl focus:shadow-2xl border-rose-pink/30 dark:border-rose-pink/20 focus:border-coral dark:focus:border-coral"
                 style={{
                   paddingLeft: 'clamp(2.75rem, 6vw, 3rem)',
@@ -568,7 +568,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
           {/* Password required hint */}
           {showPasswordField && (
             <p className="text-xs text-muted-foreground text-center animate-fade-in">
-              Use a password to continue. New accounts create it here; existing accounts enter it here.
+              Use a password to continue. New accounts create it here; existing
+              accounts enter it here.
             </p>
           )}
           {/* false && showPasswordField && (
@@ -604,7 +605,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
         {userProfiles.length === 0 && (
           <p className="text-center text-sm text-muted-foreground font-quicksand mt-4 animate-hint-entrance">
             <span className="gentle-breathe inline-block">
-              First time here? Enter a username to get started, then choose a password.
+              First time here? Enter a username to get started, then choose a
+              password.
             </span>
           </p>
         )}
@@ -632,4 +634,3 @@ export const LoginPage: React.FC<LoginPageProps> = ({ isExiting = false }) => {
     </div>
   );
 };
-

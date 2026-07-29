@@ -7,10 +7,16 @@ interface UseSwipeOptions {
   threshold?: number;
 }
 
-export function useSwipe({ onSwipeLeft, onSwipeRight, threshold = 100 }: UseSwipeOptions) {
+export function useSwipe({
+  onSwipeLeft,
+  onSwipeRight,
+  threshold = 100,
+}: UseSwipeOptions) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
-  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+  const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(
+    null
+  );
   const [rotation, setRotation] = useState(0);
   const isResetting = useRef(false);
   const isDraggingRef = useRef(false);
@@ -47,14 +53,18 @@ export function useSwipe({ onSwipeLeft, onSwipeRight, threshold = 100 }: UseSwip
 
         // Smooth damping for large movements
         const dampedMx =
-          mx > 0 ? Math.min(mx, 250 + (mx - 250) * 0.3) : Math.max(mx, -250 + (mx + 250) * 0.3);
+          mx > 0
+            ? Math.min(mx, 250 + (mx - 250) * 0.3)
+            : Math.max(mx, -250 + (mx + 250) * 0.3);
 
         setDragOffset(dampedMx);
 
         // Calculate rotation with smoother easing
         const maxRotation = 12;
         const rotationValue = (dampedMx / 200) * maxRotation;
-        setRotation(Math.max(-maxRotation, Math.min(maxRotation, rotationValue)));
+        setRotation(
+          Math.max(-maxRotation, Math.min(maxRotation, rotationValue))
+        );
 
         // Show direction indicator
         if (Math.abs(dampedMx) > 40) {

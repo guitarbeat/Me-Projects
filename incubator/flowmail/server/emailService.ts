@@ -46,7 +46,9 @@ export class EmailService {
       return connection;
     } catch (error) {
       console.error('Failed to connect to email server:', error);
-      throw new Error('Email connection failed. Please check your credentials.');
+      throw new Error(
+        'Email connection failed. Please check your credentials.'
+      );
     }
   }
 
@@ -80,31 +82,41 @@ export class EmailService {
             (part.disposition &&
               part.disposition.type &&
               part.disposition.type.toUpperCase() === 'ATTACHMENT') ||
-            (part.disposition && part.disposition.params && part.disposition.params.filename) ||
+            (part.disposition &&
+              part.disposition.params &&
+              part.disposition.params.filename) ||
             (part.params && (part.params.name || part.params.filename));
           if (isAttachment) count += 1;
-          if (part.parts && part.parts.length) count += countAttachments(part.parts);
+          if (part.parts && part.parts.length)
+            count += countAttachments(part.parts);
         }
         return count;
       };
 
       for (const message of messages.slice(0, limit)) {
         try {
-          const header = message.parts.find((part: any) => part.which === 'HEADER');
+          const header = message.parts.find(
+            (part: any) => part.which === 'HEADER'
+          );
           const body = message.parts.find((part: any) => part.which === 'TEXT');
 
           if (header) {
             const parsed = imaps.getParsedHeaders(header.body);
 
             // Extract email details
-            const subject = (parsed.subject && parsed.subject[0]) || 'No Subject';
-            const fromField = (parsed.from && parsed.from[0]) || 'Unknown Sender';
-            const dateField = (parsed.date && parsed.date[0]) || new Date().toISOString();
-            const priority = (parsed['x-priority'] && parsed['x-priority'][0]) || 'normal';
+            const subject =
+              (parsed.subject && parsed.subject[0]) || 'No Subject';
+            const fromField =
+              (parsed.from && parsed.from[0]) || 'Unknown Sender';
+            const dateField =
+              (parsed.date && parsed.date[0]) || new Date().toISOString();
+            const priority =
+              (parsed['x-priority'] && parsed['x-priority'][0]) || 'normal';
             const hasReply = Boolean(parsed['in-reply-to']);
 
             // Parse sender name and email
-            const fromMatch = fromField.match(/^(.*?)\s*<(.+)>$/) || fromField.match(/^(.+)$/);
+            const fromMatch =
+              fromField.match(/^(.*?)\s*<(.+)>$/) || fromField.match(/^(.+)$/);
             const senderName = fromMatch
               ? (fromMatch[1] || fromMatch[0]).trim().replace(/"/g, '')
               : 'Unknown';
@@ -119,7 +131,9 @@ export class EmailService {
               bodyText = body.body.toString().substring(0, 500); // Limit body length
             }
 
-            const attachmentCount = countAttachments(message.attributes?.struct);
+            const attachmentCount = countAttachments(
+              message.attributes?.struct
+            );
 
             emails.push({
               id: message.attributes.uid.toString(),

@@ -48,7 +48,7 @@ export const OnboardingTooltip = ({
         <span>{message}</span>
         {onDismiss && (
           <button
-            onClick={(e) => {
+            onClick={e => {
               e.stopPropagation();
               onDismiss();
             }}

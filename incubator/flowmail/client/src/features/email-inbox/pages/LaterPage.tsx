@@ -53,7 +53,9 @@ export default function LaterPage() {
       <div className="app-shell-panel flex min-h-[420px] items-center justify-center">
         <div className="text-center">
           <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-primary" />
-          <p className="text-gray-600 dark:text-gray-400">Loading saved emails...</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            Loading saved emails...
+          </p>
         </div>
       </div>
     );
@@ -75,12 +77,14 @@ export default function LaterPage() {
             <div>
               <p className="app-kicker">Saved for later</p>
               <h2 className="mt-1 text-2xl font-semibold tracking-tight">
-                {emails.length} email{emails.length === 1 ? '' : 's'} waiting for review
+                {emails.length} email{emails.length === 1 ? '' : 's'} waiting
+                for review
               </h2>
             </div>
           </div>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--app-text-secondary)]">
-            These emails need more time or attention. Move them back to inbox or archive when done.
+            These emails need more time or attention. Move them back to inbox or
+            archive when done.
           </p>
         </div>
 
@@ -112,10 +116,14 @@ export default function LaterPage() {
                   <div className="flex items-start justify-between gap-4">
                     <div
                       className="min-w-0 flex-1 cursor-pointer"
-                      onClick={() => setExpandedId(expandedId === email.id ? null : email.id)}
+                      onClick={() =>
+                        setExpandedId(expandedId === email.id ? null : email.id)
+                      }
                     >
                       <div className="flex items-center gap-2">
-                        <p className="font-semibold text-[var(--app-text)]">{email.sender}</p>
+                        <p className="font-semibold text-[var(--app-text)]">
+                          {email.sender}
+                        </p>
                         <span className="text-xs text-[var(--app-text-secondary)]">
                           {formatTimeAgo(email.timestamp)}
                         </span>
@@ -123,7 +131,9 @@ export default function LaterPage() {
                       <p className="mt-0.5 text-sm text-[var(--app-text-secondary)]">
                         {email.senderEmail}
                       </p>
-                      <p className="mt-3 font-medium text-[var(--app-text)]">{email.subject}</p>
+                      <p className="mt-3 font-medium text-[var(--app-text)]">
+                        {email.subject}
+                      </p>
                       {expandedId === email.id && (
                         <motion.div
                           initial={{ opacity: 0, height: 0 }}
@@ -140,7 +150,9 @@ export default function LaterPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleAction(email.id, 'inbox', 'Moved to inbox')}
+                        onClick={() =>
+                          handleAction(email.id, 'inbox', 'Moved to inbox')
+                        }
                         disabled={updateEmailMutation.isPending}
                         title="Move to inbox"
                       >
@@ -149,7 +161,9 @@ export default function LaterPage() {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleAction(email.id, 'archived', 'Archived')}
+                        onClick={() =>
+                          handleAction(email.id, 'archived', 'Archived')
+                        }
                         disabled={updateEmailMutation.isPending}
                         title="Archive"
                       >

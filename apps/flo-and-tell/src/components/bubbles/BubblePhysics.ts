@@ -51,7 +51,7 @@ export class BubblePhysics {
     }
 
     // Collision avoidance
-    otherBubbles.forEach((other) => {
+    otherBubbles.forEach(other => {
       if (other === bubble) {
         return;
       }

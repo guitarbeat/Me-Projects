@@ -26,11 +26,7 @@ import { cn } from '@/lib/utils';
 import { hashPin } from '@/lib/security';
 
 export const AccessControlSettings: React.FC = () => {
-  const {
-    profile,
-    session,
-    refreshProfile,
-  } = useAuth();
+  const { profile, session, refreshProfile } = useAuth();
   const { toast } = useToast();
 
   // Combined access code state
@@ -250,15 +246,15 @@ export const AccessControlSettings: React.FC = () => {
         {pinValues.map((digit, index) => (
           <Input
             key={index}
-            ref={(el) => {
+            ref={el => {
               refs.current[index] = el;
             }}
             type="password"
             inputMode="numeric"
             maxLength={1}
             value={digit}
-            onChange={(e) => handlePinChange(index, e.target.value, isConfirm)}
-            onKeyDown={(e) => handlePinKeyDown(index, e, isConfirm)}
+            onChange={e => handlePinChange(index, e.target.value, isConfirm)}
+            onKeyDown={e => handlePinKeyDown(index, e, isConfirm)}
             className="w-12 h-12 text-center text-xl font-bold"
             autoComplete="off"
           />

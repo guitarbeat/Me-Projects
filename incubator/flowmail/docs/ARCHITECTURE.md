@@ -15,14 +15,18 @@ This architecture provides:
 ## Core Principles
 
 ### 1. Feature Isolation
+
 Features are isolated modules that:
+
 - Live in their own directory under `client/src/features/`
 - Export a single public API through `index.ts`
 - Don't import from other features' internals
 - Declare all dependencies explicitly
 
 ### 2. Configuration-Driven
+
 Features are self-describing through configuration objects that declare:
+
 - Routes and navigation items
 - API endpoints used
 - Storage requirements
@@ -30,7 +34,9 @@ Features are self-describing through configuration objects that declare:
 - NPM dependencies
 
 ### 3. Plug-and-Play
+
 Features can be:
+
 - Added by creating a new directory and importing in App.tsx
 - Removed by deleting the directory and removing the import
 - Toggled on/off by commenting out a single import line
@@ -128,12 +134,8 @@ export const featureConfig = {
   name: 'Feature Name',
   version: '1.0.0',
   description: 'Brief description of the feature',
-  routes: [
-    { path: '/feature', component: 'FeaturePage' }
-  ],
-  navigation: [
-    { path: '/feature', label: 'Feature', icon: 'Icon', order: 1 }
-  ],
+  routes: [{ path: '/feature', component: 'FeaturePage' }],
+  navigation: [{ path: '/feature', label: 'Feature', icon: 'Icon', order: 1 }],
   dependencies: ['dependency-name'],
 };
 ```
@@ -145,37 +147,39 @@ export const featureConfig = {
 ```typescript
 interface FeatureConfig {
   // Required fields
-  id: string;                        // Unique identifier (kebab-case)
-  name: string;                      // Display name
-  version: string;                   // Semantic version (e.g., "1.0.0")
-  description: string;               // Brief description
-  routes: RouteConfig[];             // Route definitions
-  navigation: NavigationItem[];      // Navigation menu items
-  dependencies: string[];            // NPM package dependencies
+  id: string; // Unique identifier (kebab-case)
+  name: string; // Display name
+  version: string; // Semantic version (e.g., "1.0.0")
+  description: string; // Brief description
+  routes: RouteConfig[]; // Route definitions
+  navigation: NavigationItem[]; // Navigation menu items
+  dependencies: string[]; // NPM package dependencies
 
   // Optional fields
-  standalone?: boolean;              // Can run independently
-  api?: {                            // API endpoints used
+  standalone?: boolean; // Can run independently
+  api?: {
+    // API endpoints used
     endpoints: string[];
   };
-  storage?: {                        // Storage requirements
+  storage?: {
+    // Storage requirements
     type: 'localStorage' | 'database';
     key?: string;
   };
-  capabilities?: string[];           // Feature capabilities
+  capabilities?: string[]; // Feature capabilities
 }
 
 interface RouteConfig {
-  path: string;                      // Route path (e.g., "/inbox")
-  component: string;                 // Component name
-  exact?: boolean;                   // Exact path match
+  path: string; // Route path (e.g., "/inbox")
+  component: string; // Component name
+  exact?: boolean; // Exact path match
 }
 
 interface NavigationItem {
-  path: string;                      // Navigation path
-  label: string;                     // Display label
-  icon: string;                      // Icon name (Lucide React)
-  order: number;                     // Display order
+  path: string; // Navigation path
+  label: string; // Display label
+  icon: string; // Icon name (Lucide React)
+  order: number; // Display order
 }
 ```
 
@@ -207,6 +211,7 @@ interface NavigationItem {
 **Location**: `client/src/features/email-inbox/`
 
 **Exports**:
+
 - `InboxPage` - Main inbox page component
 - `LaterPage` - Later/snoozed emails page
 - `CardStack` - Swipeable card stack component
@@ -217,6 +222,7 @@ interface NavigationItem {
 - `EmailFilterOptions` (type)
 
 **Configuration**:
+
 ```typescript
 {
   id: 'email-inbox',
@@ -250,6 +256,7 @@ interface NavigationItem {
 **Location**: `client/src/features/journal/`
 
 **Exports**:
+
 - `JournalPage` - Main journal page component
 - `loadJournalEvents` - Load events from storage
 - `saveJournalEvents` - Save events to storage
@@ -262,6 +269,7 @@ interface NavigationItem {
 - `emotionMeta` - Emotion metadata
 
 **Configuration**:
+
 ```typescript
 {
   id: 'journal',
@@ -295,9 +303,11 @@ interface NavigationItem {
 **Location**: `client/src/features/year-grid/`
 
 **Exports**:
+
 - `YearGridApp` - Standalone year grid application
 
 **Configuration**:
+
 ```typescript
 {
   id: 'year-grid',
@@ -420,12 +430,14 @@ interface NavigationItem {
 #### 1. Direct Internal Imports
 
 **Problem**:
+
 ```typescript
 // ❌ BAD: Importing from feature internals
 import { EmailCard } from './features/email-inbox/components/EmailCard';
 ```
 
 **Solution**:
+
 ```typescript
 // ✅ GOOD: Importing from feature index
 import { EmailCard } from './features/email-inbox';
@@ -434,12 +446,14 @@ import { EmailCard } from './features/email-inbox';
 #### 2. Cross-Feature Dependencies
 
 **Problem**:
+
 ```typescript
 // ❌ BAD: Feature A importing from Feature B internals
 import { JournalEntry } from '../journal/types';
 ```
 
 **Solution**:
+
 ```typescript
 // ✅ GOOD: Feature B exports types through index
 import { JournalEntry } from '../journal';
@@ -448,12 +462,14 @@ import { JournalEntry } from '../journal';
 #### 3. Missing Exports
 
 **Problem**:
+
 ```typescript
 // Component exists but not exported from index.ts
 // App.tsx tries to import it → Error!
 ```
 
 **Solution**:
+
 ```typescript
 // Add to feature's index.ts
 export { MyComponent } from './components/MyComponent';
@@ -462,6 +478,7 @@ export { MyComponent } from './components/MyComponent';
 #### 4. Incomplete Configuration
 
 **Problem**:
+
 ```typescript
 // ❌ BAD: Missing required fields
 export const myFeature = {
@@ -472,6 +489,7 @@ export const myFeature = {
 ```
 
 **Solution**:
+
 ```typescript
 // ✅ GOOD: Complete configuration
 export const myFeature = {
@@ -480,7 +498,9 @@ export const myFeature = {
   version: '1.0.0',
   description: 'Description of my feature',
   routes: [{ path: '/my-feature', component: 'MyFeaturePage' }],
-  navigation: [{ path: '/my-feature', label: 'My Feature', icon: 'Icon', order: 4 }],
+  navigation: [
+    { path: '/my-feature', label: 'My Feature', icon: 'Icon', order: 4 },
+  ],
   dependencies: [],
 };
 ```
@@ -544,11 +564,13 @@ The verification script should be run in your CI/CD pipeline:
 **Symptom**: `Cannot find module './features/x'`
 
 **Causes**:
+
 - Feature index.ts doesn't exist
 - Component not exported from index.ts
 - Typo in import path
 
 **Solution**:
+
 1. Check that `features/x/index.ts` exists
 2. Verify the component is exported in index.ts
 3. Check import path spelling
@@ -558,11 +580,13 @@ The verification script should be run in your CI/CD pipeline:
 **Symptom**: TypeScript compilation errors related to feature imports
 
 **Causes**:
+
 - Types not exported from feature index
 - Circular dependencies
 - Missing type definitions
 
 **Solution**:
+
 1. Export types from feature index.ts
 2. Check for circular imports
 3. Ensure all types are properly defined
@@ -572,11 +596,13 @@ The verification script should be run in your CI/CD pipeline:
 **Symptom**: Routes not working as expected
 
 **Causes**:
+
 - Duplicate route paths
 - Route order issues
 - Missing route configuration
 
 **Solution**:
+
 1. Check for duplicate paths in feature configurations
 2. Verify route order in App.tsx
 3. Ensure routes are defined in feature configuration
@@ -586,11 +612,13 @@ The verification script should be run in your CI/CD pipeline:
 **Symptom**: Verification script reports configuration issues
 
 **Causes**:
+
 - Missing required fields
 - Invalid field values
 - Duplicate feature IDs
 
 **Solution**:
+
 1. Compare configuration against schema
 2. Ensure all required fields are present
 3. Check for duplicate IDs across features

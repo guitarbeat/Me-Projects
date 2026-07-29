@@ -142,10 +142,12 @@ export function JournalEventDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>{entry ? 'Edit journal block' : 'Add journal block'}</DialogTitle>
+          <DialogTitle>
+            {entry ? 'Edit journal block' : 'Add journal block'}
+          </DialogTitle>
           <DialogDescription>
-            Capture a reflection session, a recovery block, or a follow-up checkpoint inside the
-            shared workspace.
+            Capture a reflection session, a recovery block, or a follow-up
+            checkpoint inside the shared workspace.
           </DialogDescription>
         </DialogHeader>
 
@@ -156,8 +158,8 @@ export function JournalEventDialog({
               id="journal-title"
               placeholder="Weekly reset, post-meeting decompression, focus block"
               value={draft.title}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, title: event.target.value }))
+              onChange={event =>
+                setDraft(current => ({ ...current, title: event.target.value }))
               }
             />
           </div>
@@ -169,8 +171,11 @@ export function JournalEventDialog({
                 id="journal-start"
                 type="datetime-local"
                 value={draft.start}
-                onChange={(event) =>
-                  setDraft((current) => ({ ...current, start: event.target.value }))
+                onChange={event =>
+                  setDraft(current => ({
+                    ...current,
+                    start: event.target.value,
+                  }))
                 }
               />
             </div>
@@ -181,8 +186,8 @@ export function JournalEventDialog({
                 id="journal-end"
                 type="datetime-local"
                 value={draft.end}
-                onChange={(event) =>
-                  setDraft((current) => ({ ...current, end: event.target.value }))
+                onChange={event =>
+                  setDraft(current => ({ ...current, end: event.target.value }))
                 }
               />
             </div>
@@ -192,19 +197,19 @@ export function JournalEventDialog({
             <Label>Energy</Label>
             <Select
               value={draft.emotion}
-              onValueChange={(value) => {
+              onValueChange={value => {
                 if (!isJournalEmotion(value)) {
                   return;
                 }
 
-                setDraft((current) => ({ ...current, emotion: value }));
+                setDraft(current => ({ ...current, emotion: value }));
               }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select an energy label" />
               </SelectTrigger>
               <SelectContent>
-                {journalEmotions.map((emotion) => (
+                {journalEmotions.map(emotion => (
                   <SelectItem key={emotion} value={emotion}>
                     {emotionMeta[emotion].marker} {emotionMeta[emotion].label}
                   </SelectItem>
@@ -219,8 +224,8 @@ export function JournalEventDialog({
               id="journal-notes"
               placeholder="What happened, what you want to remember, or how you want to reset."
               value={draft.notes}
-              onChange={(event) =>
-                setDraft((current) => ({ ...current, notes: event.target.value }))
+              onChange={event =>
+                setDraft(current => ({ ...current, notes: event.target.value }))
               }
             />
           </div>
@@ -234,11 +239,19 @@ export function JournalEventDialog({
 
         <DialogFooter className="gap-2">
           {entry ? (
-            <Button type="button" variant="outline" onClick={() => onDelete(entry.id)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onDelete(entry.id)}
+            >
               Delete block
             </Button>
           ) : null}
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => onOpenChange(false)}
+          >
             Cancel
           </Button>
           <Button type="button" onClick={handleSave}>

@@ -18,7 +18,7 @@ vi.mock('./CalendarDay', async () => {
       <div
         data-testid={`day-${props.day}`}
         onClick={() => props.onToggle(props.day, props.isFloDay)}
-        onKeyDown={(e) => props.onKeyDown && props.onKeyDown(e, props.day)}
+        onKeyDown={e => props.onKeyDown && props.onKeyDown(e, props.day)}
         tabIndex={props.tabIndex}
       >
         {props.day} {props.isFloDay ? 'Flo' : ''}

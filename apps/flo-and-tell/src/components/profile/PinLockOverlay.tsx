@@ -64,7 +64,7 @@ export const PinLockOverlay: React.FC<PinLockOverlayProps> = ({
     }
 
     const timer = setInterval(() => {
-      setLockoutTimeLeft((prev) => prev - 1);
+      setLockoutTimeLeft(prev => prev - 1);
     }, 1000);
 
     return () => clearInterval(timer);
@@ -285,15 +285,15 @@ export const PinLockOverlay: React.FC<PinLockOverlayProps> = ({
               {pin.map((digit, index) => (
                 <Input
                   key={index}
-                  ref={(el) => {
+                  ref={el => {
                     inputRefs.current[index] = el;
                   }}
                   type="password"
                   inputMode="numeric"
                   maxLength={1}
                   value={digit}
-                  onChange={(e) => handlePinChange(index, e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(index, e)}
+                  onChange={e => handlePinChange(index, e.target.value)}
+                  onKeyDown={e => handleKeyDown(index, e)}
                   disabled={isLockedOut}
                   className={cn(
                     'w-14 h-14 text-center text-2xl font-bold',

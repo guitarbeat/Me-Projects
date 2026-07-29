@@ -80,7 +80,7 @@ export const useKeyboardShortcuts = ({
           break;
         case '?':
           e.preventDefault();
-          setShowHelp((prev) => !prev);
+          setShowHelp(prev => !prev);
           break;
         case 'Escape':
           if (showHelp) {

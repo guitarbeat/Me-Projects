@@ -129,7 +129,7 @@ export const AppSettings: React.FC = () => {
             No settings configured
           </p>
         ) : (
-          settings.map((setting) => (
+          settings.map(setting => (
             <div key={setting.id} className="space-y-1.5">
               <div className="flex items-center justify-between">
                 <Label className="text-xs font-medium">{setting.key}</Label>
@@ -145,8 +145,8 @@ export const AppSettings: React.FC = () => {
               <div className="flex gap-2">
                 <textarea
                   value={getDisplayValue(setting)}
-                  onChange={(e) =>
-                    setEditedValues((prev) => ({
+                  onChange={e =>
+                    setEditedValues(prev => ({
                       ...prev,
                       [setting.key]: e.target.value,
                     }))

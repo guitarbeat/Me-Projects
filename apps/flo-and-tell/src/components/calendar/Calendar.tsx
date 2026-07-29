@@ -139,7 +139,7 @@ export const Calendar = () => {
   // Convert sharedWithMe to userProfiles format for floating bubbles (with id for lookup)
   const sharedUserProfiles = useMemo(
     () =>
-      sharedWithMe.map((u) => ({
+      sharedWithMe.map(u => ({
         id: u.id,
         username: u.username,
         display_name: u.display_name || undefined,

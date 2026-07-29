@@ -13,6 +13,7 @@ The App.tsx file has been audited for compliance with the modular architecture p
 ### ✅ PASS: Email Inbox Feature Integration
 
 **Import Statement:**
+
 ```typescript
 import { InboxPage, LaterPage } from './features/email-inbox';
 ```
@@ -20,15 +21,18 @@ import { InboxPage, LaterPage } from './features/email-inbox';
 **Status:** ✅ Correct - imports from feature index file
 
 **Routes:**
+
 - `/inbox` → InboxPage ✅
 - `/later` → LaterPage ✅
 - `/` → InboxPage ✅
 
 **Configuration Match:**
+
 - Feature config declares routes: `/`, `/inbox`, `/later` ✅
 - App.tsx implements all routes ✅
 
 **Navigation:**
+
 - Feature config declares: Inbox (order 1), Later (order 2)
 - Status: ⚠️ Navigation items not visible in App.tsx (likely in AppShell component)
 
@@ -37,6 +41,7 @@ import { InboxPage, LaterPage } from './features/email-inbox';
 ### ❌ FAIL: Year Grid Feature Integration
 
 **Import Statement:**
+
 ```typescript
 import YearGridApp from './features/year-grid/App';
 ```
@@ -44,6 +49,7 @@ import YearGridApp from './features/year-grid/App';
 **Status:** ❌ INCORRECT - imports directly from internal file, not from index
 
 **Expected:**
+
 ```typescript
 import { YearGridApp } from './features/year-grid';
 ```
@@ -51,12 +57,14 @@ import { YearGridApp } from './features/year-grid';
 **Issue:** Bypasses the feature's public API (index.ts)
 
 **Routes:**
+
 - Not using routing system (toggle-based view switching)
 - Feature config correctly declares: `routes: []` ✅
 - Feature config correctly declares: `navigation: []` ✅
 - Feature marked as `standalone: true` ✅
 
 **Integration Pattern:**
+
 - Uses view state toggle instead of routing
 - Status: ⚠️ Non-standard integration pattern (acceptable for standalone feature)
 
@@ -65,6 +73,7 @@ import { YearGridApp } from './features/year-grid';
 ### ❌ FAIL: Journal Feature Integration
 
 **Import Statement:**
+
 ```typescript
 import Journal from './pages/journal';
 ```
@@ -72,6 +81,7 @@ import Journal from './pages/journal';
 **Status:** ❌ INCORRECT - imports from pages directory, not from feature
 
 **Expected:**
+
 ```typescript
 import { JournalPage } from './features/journal';
 ```
@@ -79,14 +89,17 @@ import { JournalPage } from './features/journal';
 **Issue:** Journal page exists at `./pages/journal.tsx` but should be imported from feature index
 
 **Routes:**
+
 - `/journal` → Journal ✅ (route exists)
 
 **Configuration Match:**
+
 - Feature config declares route: `/journal` ✅
 - App.tsx implements route ✅
 - But imports from wrong location ❌
 
 **Root Cause:** The journal feature's index.ts exports:
+
 ```typescript
 export { default as JournalPage } from '../../pages/journal';
 ```
@@ -98,6 +111,7 @@ This re-exports from `pages/journal.tsx` instead of having the page in the featu
 ### ⚠️ WARNING: Non-Feature Pages
 
 **Import Statements:**
+
 ```typescript
 import Settings from './pages/settings';
 import NotFound from './pages/NotFound';
@@ -106,6 +120,7 @@ import NotFound from './pages/NotFound';
 **Status:** ⚠️ Acceptable - these are app-level pages, not feature pages
 
 **Analysis:**
+
 - Settings and NotFound are application-level concerns
 - Not part of any feature module
 - Acceptable to keep in `./pages/` directory
@@ -117,11 +132,11 @@ import NotFound from './pages/NotFound';
 
 ### Declared Routes vs Implemented Routes
 
-| Feature | Config Routes | App.tsx Routes | Match |
-|---------|---------------|----------------|-------|
-| email-inbox | `/`, `/inbox`, `/later` | `/`, `/inbox`, `/later` | ✅ |
-| journal | `/journal` | `/journal` | ✅ |
-| year-grid | `[]` (standalone) | N/A (toggle) | ✅ |
+| Feature     | Config Routes           | App.tsx Routes          | Match |
+| ----------- | ----------------------- | ----------------------- | ----- |
+| email-inbox | `/`, `/inbox`, `/later` | `/`, `/inbox`, `/later` | ✅    |
+| journal     | `/journal`              | `/journal`              | ✅    |
+| year-grid   | `[]` (standalone)       | N/A (toggle)            | ✅    |
 
 **Status:** ✅ All feature routes are correctly implemented
 
@@ -131,13 +146,14 @@ import NotFound from './pages/NotFound';
 
 ### Feature Navigation Items
 
-| Feature | Navigation Items | Integration Status |
-|---------|------------------|-------------------|
+| Feature     | Navigation Items                 | Integration Status        |
+| ----------- | -------------------------------- | ------------------------- |
 | email-inbox | Inbox (order 1), Later (order 2) | ⚠️ Not visible in App.tsx |
-| journal | Journal (order 3) | ⚠️ Not visible in App.tsx |
-| year-grid | `[]` (header button) | ⚠️ Not visible in App.tsx |
+| journal     | Journal (order 3)                | ⚠️ Not visible in App.tsx |
+| year-grid   | `[]` (header button)             | ⚠️ Not visible in App.tsx |
 
 **Analysis:**
+
 - Navigation is likely handled by the AppShell component
 - Need to verify AppShell reads from feature configurations
 - Cannot confirm from App.tsx alone
@@ -172,8 +188,21 @@ import NotFound from './pages/NotFound';
      import { JournalEventDialog } from '@/features/journal/components/JournalEventDialog';
      import { JournalExportMenu } from '@/features/journal/components/JournalExportMenu';
      import { buildEmotionSummary } from '@/features/journal/lib/export';
-     import { loadJournalEvents, loadJournalSettings, saveJournalEvents, saveJournalSettings } from '@/features/journal/lib/storage';
-     import { emotionMeta, isJournalEmotion, journalEmotions, journalViews, type JournalEmotion, type JournalEntry, type JournalView } from '@/features/journal/types';
+     import {
+       loadJournalEvents,
+       loadJournalSettings,
+       saveJournalEvents,
+       saveJournalSettings,
+     } from '@/features/journal/lib/storage';
+     import {
+       emotionMeta,
+       isJournalEmotion,
+       journalEmotions,
+       journalViews,
+       type JournalEmotion,
+       type JournalEntry,
+       type JournalView,
+     } from '@/features/journal/types';
      ```
    - Severity: ❌ HIGH - page imports from feature internals instead of feature index
    - Root Cause: Journal page lives in `pages/` but should be part of journal feature
@@ -194,7 +223,10 @@ import NotFound from './pages/NotFound';
    - Imports:
      ```typescript
      import { EmailListView } from '@/features/email-inbox/components/EmailListView';
-     import { EmailFilters, type EmailFilterOptions } from '@/features/email-inbox/components/EmailFilters';
+     import {
+       EmailFilters,
+       type EmailFilterOptions,
+     } from '@/features/email-inbox/components/EmailFilters';
      import { BulkActions } from '@/features/email-inbox/components/BulkActions';
      ```
    - Severity: ⚠️ MEDIUM - uses absolute paths for internal feature imports
@@ -227,11 +259,13 @@ App.tsx
 ### Fix 1: Update Year Grid Import
 
 **Current:**
+
 ```typescript
 import YearGridApp from './features/year-grid/App';
 ```
 
 **Fixed:**
+
 ```typescript
 import { YearGridApp } from './features/year-grid';
 ```
@@ -243,18 +277,21 @@ import { YearGridApp } from './features/year-grid';
 ### Fix 2: Move Journal Page into Feature
 
 **Current Structure:**
+
 ```
 pages/journal.tsx (imports from @/features/journal/...)
 features/journal/index.ts (re-exports from ../../pages/journal)
 ```
 
 **Fixed Structure:**
+
 ```
 features/journal/pages/JournalPage.tsx (uses relative imports)
 features/journal/index.ts (exports from ./pages/JournalPage)
 ```
 
 **Steps:**
+
 1. Move `pages/journal.tsx` to `features/journal/pages/JournalPage.tsx`
 2. Update all imports in JournalPage.tsx to use relative paths
 3. Update `features/journal/index.ts` to export from `./pages/JournalPage`
@@ -268,6 +305,7 @@ features/journal/index.ts (exports from ./pages/JournalPage)
 ### Fix 3: Remove Cross-Feature Coupling in InboxPage
 
 **Current:**
+
 ```typescript
 // InboxPage.tsx
 import { loadJournalEvents } from '@/features/journal/lib/storage';
@@ -279,15 +317,18 @@ import { emotionMeta } from '@/features/journal/types';
 **Solution Options:**
 
 **Option A: Remove Journal Integration**
+
 - Remove journal-related code from InboxPage
 - Keep features completely independent
 
 **Option B: Create Shared Utilities**
+
 - Move shared types/utilities to a shared location
 - Both features import from shared location
 - Example: `lib/journal-types.ts` or `lib/shared-types.ts`
 
 **Option C: Pass Data via Props**
+
 - Load journal data in App.tsx or parent component
 - Pass to InboxPage via props
 - Maintains feature independence
@@ -301,18 +342,21 @@ import { emotionMeta } from '@/features/journal/types';
 ### Fix 4: Use Relative Imports Within Features
 
 **Current:**
+
 ```typescript
 // features/email-inbox/pages/InboxPage.tsx
 import { EmailListView } from '@/features/email-inbox/components/EmailListView';
 ```
 
 **Fixed:**
+
 ```typescript
 // features/email-inbox/pages/InboxPage.tsx
 import { EmailListView } from '../components/EmailListView';
 ```
 
 **Apply to:**
+
 - All internal feature imports
 - Improves feature portability
 
@@ -323,6 +367,7 @@ import { EmailListView } from '../components/EmailListView';
 ### Fix 5: Verify Navigation Integration
 
 **Action Required:**
+
 - Audit AppShell component
 - Verify it reads navigation items from feature configurations
 - Ensure navigation order is respected
@@ -360,18 +405,19 @@ import { EmailListView } from '../components/EmailListView';
 
 ## Compliance Score
 
-| Category | Score | Status |
-|----------|-------|--------|
-| Import Patterns (App.tsx) | 33% (1/3) | ❌ FAIL |
-| Import Patterns (All Files) | 20% (1/5) | ❌ CRITICAL |
-| Route Configuration | 100% (3/3) | ✅ PASS |
-| Feature Exports | 100% (3/3) | ✅ PASS |
-| Feature Independence | 0% (0/2) | ❌ CRITICAL |
-| Navigation Integration | N/A | ⚠️ NEEDS VERIFICATION |
+| Category                    | Score      | Status                |
+| --------------------------- | ---------- | --------------------- |
+| Import Patterns (App.tsx)   | 33% (1/3)  | ❌ FAIL               |
+| Import Patterns (All Files) | 20% (1/5)  | ❌ CRITICAL           |
+| Route Configuration         | 100% (3/3) | ✅ PASS               |
+| Feature Exports             | 100% (3/3) | ✅ PASS               |
+| Feature Independence        | 0% (0/2)   | ❌ CRITICAL           |
+| Navigation Integration      | N/A        | ⚠️ NEEDS VERIFICATION |
 
 **Overall Compliance:** ❌ 40% - Critical issues require immediate attention
 
 **Critical Issues:**
+
 - Cross-feature coupling (InboxPage → Journal internals)
 - Journal page not properly modularized
 - Multiple direct internal imports bypassing feature APIs
@@ -381,21 +427,21 @@ import { EmailListView } from '../components/EmailListView';
 ## Conclusion
 
 App.tsx has **2 critical import violations** that must be fixed:
+
 1. Year Grid imports from internal file instead of feature index
 2. Journal imports from pages directory instead of feature index
 
-**Additional Critical Issues Found:**
-3. InboxPage has cross-feature coupling with Journal feature internals
-4. Journal page exists outside feature boundary and imports feature internals directly
-5. Multiple files use absolute paths for internal feature imports
+**Additional Critical Issues Found:** 3. InboxPage has cross-feature coupling with Journal feature internals 4. Journal page exists outside feature boundary and imports feature internals directly 5. Multiple files use absolute paths for internal feature imports
 
 **Impact on Modular Architecture:**
+
 - Features are NOT truly independent (email-inbox depends on journal)
 - Features CANNOT be easily removed (removing journal would break email-inbox)
 - Feature boundaries are NOT properly enforced
 - The plug-and-play architecture goal is NOT achieved
 
 **Priority Fixes Required:**
+
 1. Move journal page into journal feature directory
 2. Remove cross-feature coupling between InboxPage and Journal
 3. Fix all imports to use feature index files
@@ -414,4 +460,3 @@ The navigation integration cannot be verified from App.tsx alone and requires au
 3. Test application to ensure functionality is preserved
 4. Proceed to audit AppShell component for navigation integration
 5. Run verification script once available
-

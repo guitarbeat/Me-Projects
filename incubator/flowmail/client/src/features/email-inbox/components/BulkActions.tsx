@@ -23,7 +23,11 @@ interface BulkActionsProps {
   onSelectionChange: (ids: Set<number>) => void;
 }
 
-export function BulkActions({ emails, selectedIds, onSelectionChange }: BulkActionsProps) {
+export function BulkActions({
+  emails,
+  selectedIds,
+  onSelectionChange,
+}: BulkActionsProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -31,15 +35,18 @@ export function BulkActions({ emails, selectedIds, onSelectionChange }: BulkActi
   const bulkUpdateMutation = useMutation({
     mutationFn: async ({ ids, status }: { ids: number[]; status: string }) => {
       await Promise.all(
-        ids.map((id) => apiRequest('PATCH', `/api/emails/${id}/status`, { status }))
+        ids.map(id =>
+          apiRequest('PATCH', `/api/emails/${id}/status`, { status })
+        )
       );
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['/api/emails/status/inbox'] });
       queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
       onSelectionChange(new Set());
-      
-      const action = variables.status === 'archived' ? 'archived' : 'moved to later';
+
+      const action =
+        variables.status === 'archived' ? 'archived' : 'moved to later';
       toast({
         title: 'Success',
         description: `${variables.ids.length} email${variables.ids.length === 1 ? '' : 's'} ${action}`,
@@ -56,13 +63,15 @@ export function BulkActions({ emails, selectedIds, onSelectionChange }: BulkActi
 
   const bulkDeleteMutation = useMutation({
     mutationFn: async (ids: number[]) => {
-      await Promise.all(ids.map((id) => apiRequest('DELETE', `/api/emails/${id}`)));
+      await Promise.all(
+        ids.map(id => apiRequest('DELETE', `/api/emails/${id}`))
+      );
     },
     onSuccess: (_, ids) => {
       queryClient.invalidateQueries({ queryKey: ['/api/emails/status/inbox'] });
       queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
       onSelectionChange(new Set());
-      
+
       toast({
         title: 'Success',
         description: `${ids.length} email${ids.length === 1 ? '' : 's'} deleted`,
@@ -81,7 +90,7 @@ export function BulkActions({ emails, selectedIds, onSelectionChange }: BulkActi
     if (selectedIds.size === emails.length) {
       onSelectionChange(new Set());
     } else {
-      onSelectionChange(new Set(emails.map((e) => e.id)));
+      onSelectionChange(new Set(emails.map(e => e.id)));
     }
   };
 
@@ -149,14 +158,21 @@ export function BulkActions({ emails, selectedIds, onSelectionChange }: BulkActi
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete {selectedIds.size} email{selectedIds.size === 1 ? '' : 's'}?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Delete {selectedIds.size} email{selectedIds.size === 1 ? '' : 's'}
+              ?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. The selected emails will be permanently deleted.
+              This action cannot be undone. The selected emails will be
+              permanently deleted.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

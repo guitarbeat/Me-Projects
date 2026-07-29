@@ -63,11 +63,11 @@ export const errorTracker = new ErrorTracker();
  * Global error handler setup - attaches window event listeners
  */
 export const setupGlobalErrorHandling = (userId?: string): void => {
-  window.addEventListener('error', (event) => {
+  window.addEventListener('error', event => {
     errorTracker.trackError(event.error, undefined, userId);
   });
 
-  window.addEventListener('unhandledrejection', (event) => {
+  window.addEventListener('unhandledrejection', event => {
     const error = new Error(
       event.reason?.message || 'Unhandled Promise Rejection'
     );

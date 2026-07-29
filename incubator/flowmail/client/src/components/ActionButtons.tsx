@@ -7,7 +7,11 @@ interface ActionButtonsProps {
   disabled?: boolean;
 }
 
-export function ActionButtons({ onSwipeLeft, onSwipeRight, disabled }: ActionButtonsProps) {
+export function ActionButtons({
+  onSwipeLeft,
+  onSwipeRight,
+  disabled,
+}: ActionButtonsProps) {
   return (
     <motion.div
       className="flex justify-center space-x-8 mb-6"

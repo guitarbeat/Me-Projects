@@ -179,7 +179,7 @@ export const ProfileEditor: React.FC<ProfileEditorProps> = ({
       localStorage.getItem('allUsers') || '[]'
     );
     const existingUser = allUsers.find(
-      (u) =>
+      u =>
         u.username.toLowerCase() === normalizedUsername.toLowerCase() &&
         u.id !== user.id
     );
@@ -216,7 +216,7 @@ export const ProfileEditor: React.FC<ProfileEditorProps> = ({
         const existingUsers: LocalUser[] = JSON.parse(
           localStorage.getItem('allUsers') || '[]'
         );
-        const updatedUsers = existingUsers.map((eu) =>
+        const updatedUsers = existingUsers.map(eu =>
           eu.id === updatedUser.id
             ? { ...eu, displayName: trimmedName, avatarUrl: updatedAvatar }
             : { ...eu, avatarUrl: eu.avatarUrl ?? null }
@@ -656,7 +656,7 @@ export const ProfileEditor: React.FC<ProfileEditorProps> = ({
                         nameError ? 'display-name-error' : 'display-name-helper'
                       }
                       value={name}
-                      onChange={(e) => {
+                      onChange={e => {
                         setName(e.target.value);
                         setNameError(null);
                       }}
@@ -706,11 +706,11 @@ export const ProfileEditor: React.FC<ProfileEditorProps> = ({
                 isPrivate:
                   (profile as typeof profile & { is_private?: boolean })
                     ?.is_private ?? false,
-                hasAccessCode:
-                  !!(profile as typeof profile & { pin_hash?: string | null })
-                    ?.pin_hash,
+                hasAccessCode: !!(
+                  profile as typeof profile & { pin_hash?: string | null }
+                )?.pin_hash,
               }}
-              onScrollTo={(section) => {
+              onScrollTo={section => {
                 const el = document.getElementById(`${section}-section`);
                 if (el) {
                   el.scrollIntoView({ behavior: 'smooth', block: 'start' });

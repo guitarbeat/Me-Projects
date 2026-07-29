@@ -12,7 +12,11 @@ import {
   Mail,
   NotebookPen,
 } from 'lucide-react';
-import { type Activity as ActivityType, type Stats, emailCredentialsSchema } from '@shared/schema';
+import {
+  type Activity as ActivityType,
+  type Stats,
+  emailCredentialsSchema,
+} from '@shared/schema';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -92,14 +96,20 @@ export default function Settings() {
     queryKey: ['/api/email/providers'],
   });
 
-  const selectedGuide = emailProvider ? providerGuides[emailProvider] : undefined;
+  const selectedGuide = emailProvider
+    ? providerGuides[emailProvider]
+    : undefined;
 
   const testConnectionMutation = useMutation({
-    mutationFn: async (credentials: { provider: string; user: string; password: string }) => {
+    mutationFn: async (credentials: {
+      provider: string;
+      user: string;
+      password: string;
+    }) => {
       const response = await apiRequest('POST', '/api/email/test', credentials);
       return (await response.json()) as EmailConnectionResult;
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       if (data.success) {
         toast({
           title: 'Connection successful',
@@ -110,7 +120,9 @@ export default function Settings() {
 
       toast({
         title: 'Connection failed',
-        description: data.message || 'Please verify the provider settings and app password.',
+        description:
+          data.message ||
+          'Please verify the provider settings and app password.',
         variant: 'destructive',
       });
     },
@@ -133,10 +145,14 @@ export default function Settings() {
       password: string;
       limit?: number;
     }) => {
-      const response = await apiRequest('POST', '/api/email/fetch', credentials);
+      const response = await apiRequest(
+        'POST',
+        '/api/email/fetch',
+        credentials
+      );
       return (await response.json()) as FetchEmailsResult;
     },
-    onSuccess: (data) => {
+    onSuccess: data => {
       toast({
         title: 'Emails fetched successfully',
         description: `Imported ${data.count} new emails from your inbox.`,
@@ -148,7 +164,9 @@ export default function Settings() {
       toast({
         title: 'Failed to fetch emails',
         description:
-          error instanceof Error ? error.message : 'Please check your connection and try again.',
+          error instanceof Error
+            ? error.message
+            : 'Please check your connection and try again.',
         variant: 'destructive',
       });
     },
@@ -209,31 +227,39 @@ export default function Settings() {
           transition={{ duration: 0.4 }}
         >
           <p className="app-kicker">Settings</p>
-          <h2 className="mt-2 text-2xl font-semibold tracking-tight">Connections and defaults</h2>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight">
+            Connections and defaults
+          </h2>
           <p className="mt-2 max-w-2xl text-sm leading-6 text-[var(--app-text-secondary)]">
-            Keep inbox triage and journal reflection aligned in the same workspace. Email setup
-            lives here, while journal defaults travel with the merged host app.
+            Keep inbox triage and journal reflection aligned in the same
+            workspace. Email setup lives here, while journal defaults travel
+            with the merged host app.
           </p>
 
           <div className="mt-5 grid gap-3 sm:grid-cols-2">
             <div className="app-shell-panel-soft px-4 py-4">
               <div className="flex items-center gap-3">
                 <Inbox className="h-4 w-4 text-primary" />
-                <p className="text-sm font-medium text-[var(--app-text)]">Inbox pipeline</p>
+                <p className="text-sm font-medium text-[var(--app-text)]">
+                  Inbox pipeline
+                </p>
               </div>
               <p className="mt-2 text-sm leading-6 text-[var(--app-text-secondary)]">
-                Connect a provider, test access, and pull fresh emails into the swipe queue.
+                Connect a provider, test access, and pull fresh emails into the
+                swipe queue.
               </p>
             </div>
 
             <div className="app-shell-panel-soft px-4 py-4">
               <div className="flex items-center gap-3">
                 <NotebookPen className="h-4 w-4 text-violet-500" />
-                <p className="text-sm font-medium text-[var(--app-text)]">Journal route</p>
+                <p className="text-sm font-medium text-[var(--app-text)]">
+                  Journal route
+                </p>
               </div>
               <p className="mt-2 text-sm leading-6 text-[var(--app-text-secondary)]">
-                Reflection preferences now persist directly inside FlowMail with no separate
-                journal codepath to maintain.
+                Reflection preferences now persist directly inside FlowMail with
+                no separate journal codepath to maintain.
               </p>
             </div>
           </div>
@@ -250,7 +276,9 @@ export default function Settings() {
               <Mail className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-[var(--app-text)]">Connect your email</h3>
+              <h3 className="text-base font-semibold text-[var(--app-text)]">
+                Connect your email
+              </h3>
               <p className="text-sm text-[var(--app-text-secondary)]">
                 Test credentials first, then pull in fresh inbox items.
               </p>
@@ -265,7 +293,7 @@ export default function Settings() {
                   <SelectValue placeholder="Select your email provider" />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.keys(providers || {}).map((provider) => (
+                  {Object.keys(providers || {}).map(provider => (
                     <SelectItem key={provider} value={provider}>
                       {provider.charAt(0).toUpperCase() + provider.slice(1)}
                     </SelectItem>
@@ -281,7 +309,7 @@ export default function Settings() {
                 type="email"
                 placeholder="your-email@example.com"
                 value={emailAddress}
-                onChange={(event) => setEmailAddress(event.target.value)}
+                onChange={event => setEmailAddress(event.target.value)}
                 className="mt-2"
               />
             </div>
@@ -293,12 +321,12 @@ export default function Settings() {
                 type="password"
                 placeholder="Use an app password when your provider supports it"
                 value={password}
-                onChange={(event) => setPassword(event.target.value)}
+                onChange={event => setPassword(event.target.value)}
                 className="mt-2"
               />
               <p className="mt-2 text-xs text-[var(--app-text-secondary)]">
-                Gmail, Outlook, and Yahoo should use app-specific passwords instead of your primary
-                login password.
+                Gmail, Outlook, and Yahoo should use app-specific passwords
+                instead of your primary login password.
               </p>
             </div>
 
@@ -338,8 +366,8 @@ export default function Settings() {
             {!emailProvider ? (
               <div className="app-shell-panel-soft px-4 py-4">
                 <p className="text-sm leading-6 text-[var(--app-text-secondary)]">
-                  Want a dry run before connecting a real mailbox? Seed the inbox with demo emails
-                  and test the swipe flow first.
+                  Want a dry run before connecting a real mailbox? Seed the
+                  inbox with demo emails and test the swipe flow first.
                 </p>
                 <Button
                   variant="outline"
@@ -347,24 +375,33 @@ export default function Settings() {
                   className="mt-3"
                   onClick={() => {
                     void fetch('/api/seed', { method: 'POST' })
-                      .then(async (response) => {
+                      .then(async response => {
                         if (!response.ok) {
-                          const errorMessage = (await response.text()) || 'Failed to seed demo emails.';
+                          const errorMessage =
+                            (await response.text()) ||
+                            'Failed to seed demo emails.';
                           throw new Error(errorMessage);
                         }
 
-                        queryClient.invalidateQueries({ queryKey: ['/api/emails/status/inbox'] });
-                        queryClient.invalidateQueries({ queryKey: ['/api/stats'] });
+                        queryClient.invalidateQueries({
+                          queryKey: ['/api/emails/status/inbox'],
+                        });
+                        queryClient.invalidateQueries({
+                          queryKey: ['/api/stats'],
+                        });
                         toast({
                           title: 'Demo emails added',
-                          description: 'The inbox now has sample data for swipe testing.',
+                          description:
+                            'The inbox now has sample data for swipe testing.',
                         });
                       })
                       .catch((error: unknown) => {
                         toast({
                           title: 'Unable to add demo emails',
                           description:
-                            error instanceof Error ? error.message : 'Please try again.',
+                            error instanceof Error
+                              ? error.message
+                              : 'Please try again.',
                           variant: 'destructive',
                         });
                       });
@@ -383,34 +420,44 @@ export default function Settings() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, delay: 0.1 }}
         >
-          <h3 className="text-base font-semibold text-[var(--app-text)]">Provider checklist</h3>
+          <h3 className="text-base font-semibold text-[var(--app-text)]">
+            Provider checklist
+          </h3>
           <p className="mt-2 text-sm leading-6 text-[var(--app-text-secondary)]">
             App passwords are the safest route for providers that support them.
           </p>
 
           {selectedGuide ? (
-            <div className={`mt-4 rounded-3xl border px-5 py-5 ${selectedGuide.accentClass}`}>
+            <div
+              className={`mt-4 rounded-3xl border px-5 py-5 ${selectedGuide.accentClass}`}
+            >
               <h4 className="text-sm font-semibold uppercase tracking-[0.18em] text-[var(--app-text)]">
                 {selectedGuide.title}
               </h4>
               <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-6 text-[var(--app-text-secondary)]">
-                {selectedGuide.steps.map((step) => (
+                {selectedGuide.steps.map(step => (
                   <li key={step}>{step}</li>
                 ))}
               </ol>
               {selectedGuide.note ? (
-                <p className="mt-3 text-xs text-[var(--app-text-secondary)]">{selectedGuide.note}</p>
+                <p className="mt-3 text-xs text-[var(--app-text-secondary)]">
+                  {selectedGuide.note}
+                </p>
               ) : null}
             </div>
           ) : (
             <div className="mt-4 rounded-3xl border border-dashed border-[var(--app-panel-border)] px-5 py-5 text-sm leading-6 text-[var(--app-text-secondary)]">
-              Choose a provider above to see a setup checklist tailored to that mailbox.
+              Choose a provider above to see a setup checklist tailored to that
+              mailbox.
             </div>
           )}
 
           <div className="mt-4 space-y-2 text-sm text-[var(--app-text-secondary)]">
             <p>Always use app passwords when possible.</p>
-            <p>Most providers require two-factor authentication before app passwords unlock.</p>
+            <p>
+              Most providers require two-factor authentication before app
+              passwords unlock.
+            </p>
             <p>Generated passwords are often 16 characters without spaces.</p>
           </div>
         </motion.section>
@@ -428,7 +475,9 @@ export default function Settings() {
               <BarChart3 className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-[var(--app-text)]">Statistics</h3>
+              <h3 className="text-base font-semibold text-[var(--app-text)]">
+                Statistics
+              </h3>
               <p className="text-sm text-[var(--app-text-secondary)]">
                 A quick snapshot of the inbox workflow.
               </p>
@@ -439,23 +488,33 @@ export default function Settings() {
             <div className="app-shell-panel-soft flex items-center justify-between px-4 py-4">
               <div className="flex items-center gap-3">
                 <CheckCircle className="h-4 w-4 text-primary" />
-                <span className="text-sm text-[var(--app-text)]">Processed today</span>
+                <span className="text-sm text-[var(--app-text)]">
+                  Processed today
+                </span>
               </div>
-              <span className="text-lg font-semibold">{stats?.processedToday || 0}</span>
+              <span className="text-lg font-semibold">
+                {stats?.processedToday || 0}
+              </span>
             </div>
             <div className="app-shell-panel-soft flex items-center justify-between px-4 py-4">
               <div className="flex items-center gap-3">
                 <Clock className="h-4 w-4 text-emerald-500" />
-                <span className="text-sm text-[var(--app-text)]">Saved for later</span>
+                <span className="text-sm text-[var(--app-text)]">
+                  Saved for later
+                </span>
               </div>
-              <span className="text-lg font-semibold">{stats?.forLater || 0}</span>
+              <span className="text-lg font-semibold">
+                {stats?.forLater || 0}
+              </span>
             </div>
             <div className="app-shell-panel-soft flex items-center justify-between px-4 py-4">
               <div className="flex items-center gap-3">
                 <Archive className="h-4 w-4 text-rose-500" />
                 <span className="text-sm text-[var(--app-text)]">Archived</span>
               </div>
-              <span className="text-lg font-semibold">{stats?.archived || 0}</span>
+              <span className="text-lg font-semibold">
+                {stats?.archived || 0}
+              </span>
             </div>
           </div>
         </motion.section>
@@ -471,7 +530,9 @@ export default function Settings() {
               <Activity className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="text-base font-semibold text-[var(--app-text)]">Recent activity</h3>
+              <h3 className="text-base font-semibold text-[var(--app-text)]">
+                Recent activity
+              </h3>
               <p className="text-sm text-[var(--app-text-secondary)]">
                 The latest movement across the inbox queue.
               </p>
@@ -480,7 +541,7 @@ export default function Settings() {
 
           <div className="space-y-3">
             {activities.length > 0 ? (
-              activities.slice(0, 6).map((activity) => (
+              activities.slice(0, 6).map(activity => (
                 <div
                   key={activity.id}
                   className="app-shell-panel-soft flex items-start gap-3 px-4 py-4"
@@ -496,8 +557,8 @@ export default function Settings() {
                   />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm leading-6 text-[var(--app-text)]">
-                      <span className="capitalize">{activity.action}</span> "{activity.emailSubject}
-                      " from {activity.emailSender}
+                      <span className="capitalize">{activity.action}</span> "
+                      {activity.emailSubject}" from {activity.emailSender}
                     </p>
                     <p className="text-xs text-[var(--app-text-secondary)]">
                       {formatTimeAgo(activity.timestamp)}
@@ -519,15 +580,17 @@ export default function Settings() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.45, delay: 0.15 }}
         >
-          <h3 className="text-base font-semibold text-[var(--app-text)]">Shared workflow</h3>
+          <h3 className="text-base font-semibold text-[var(--app-text)]">
+            Shared workflow
+          </h3>
           <div className="mt-4 space-y-3">
             <div className="app-shell-panel-soft px-4 py-4 text-sm leading-6 text-[var(--app-text-secondary)]">
-              Inbox is for fast action decisions. Journal is for context, energy, and follow-up
-              planning.
+              Inbox is for fast action decisions. Journal is for context,
+              energy, and follow-up planning.
             </div>
             <div className="app-shell-panel-soft px-4 py-4 text-sm leading-6 text-[var(--app-text-secondary)]">
-              Use the same theme, shell, and routing model across both surfaces now that the apps
-              are merged.
+              Use the same theme, shell, and routing model across both surfaces
+              now that the apps are merged.
             </div>
           </div>
         </motion.section>

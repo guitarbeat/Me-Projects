@@ -69,7 +69,10 @@ function deserializeEntry(entry: StoredJournalEntry): JournalEntry | null {
 }
 
 export function loadJournalSettings(): JournalSettings {
-  const storedSettings = readJsonStorage<Partial<JournalSettings>>(journalStorageKeys.settings, {});
+  const storedSettings = readJsonStorage<Partial<JournalSettings>>(
+    journalStorageKeys.settings,
+    {}
+  );
 
   return {
     ...defaultJournalSettings,
@@ -82,7 +85,10 @@ export function saveJournalSettings(settings: JournalSettings) {
 }
 
 export function loadJournalEvents(): JournalEntry[] {
-  const storedEntries = readJsonStorage<StoredJournalEntry[]>(journalStorageKeys.events, []);
+  const storedEntries = readJsonStorage<StoredJournalEntry[]>(
+    journalStorageKeys.events,
+    []
+  );
 
   return storedEntries
     .map(deserializeEntry)
@@ -92,6 +98,6 @@ export function loadJournalEvents(): JournalEntry[] {
 export function saveJournalEvents(entries: JournalEntry[]) {
   writeJsonStorage(
     journalStorageKeys.events,
-    entries.map((entry) => serializeEntry(entry))
+    entries.map(entry => serializeEntry(entry))
   );
 }

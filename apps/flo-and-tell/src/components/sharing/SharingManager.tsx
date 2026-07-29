@@ -48,8 +48,8 @@ export const SharingManager: React.FC = () => {
 
   const filteredAvailableUsers = useMemo(
     () =>
-      availableUsers.filter((user) => {
-        const isAlreadyShared = sharedWith.some((s) => s.id === user.id);
+      availableUsers.filter(user => {
+        const isAlreadyShared = sharedWith.some(s => s.id === user.id);
         if (isAlreadyShared) {
           return false;
         }
@@ -70,8 +70,8 @@ export const SharingManager: React.FC = () => {
   // Combined users for unified list - available users NOT shared with yet
   const allUsersWithShareStatus = useMemo(
     () => [
-      ...sharedWith.map((u) => ({ ...u, isShared: true })),
-      ...filteredAvailableUsers.map((u) => ({ ...u, isShared: false })),
+      ...sharedWith.map(u => ({ ...u, isShared: true })),
+      ...filteredAvailableUsers.map(u => ({ ...u, isShared: false })),
     ],
     [sharedWith, filteredAvailableUsers]
   );
@@ -235,7 +235,7 @@ export const SharingManager: React.FC = () => {
                   <Input
                     placeholder="Search people to share with..."
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={e => setSearchQuery(e.target.value)}
                     className="pl-9"
                     autoFocus
                   />

@@ -6,11 +6,11 @@ const DYNAMIC_CACHE = 'flo-dynamic-v3';
 const urlsToCache = ['/', '/index.html', '/flo.png', '/manifest.json'];
 
 // Install event - cache static resources
-self.addEventListener('install', (event) => {
+self.addEventListener('install', event => {
   console.log('Service Worker installing');
   event.waitUntil(
     Promise.all([
-      caches.open(STATIC_CACHE).then((cache) => {
+      caches.open(STATIC_CACHE).then(cache => {
         console.log('Caching static resources');
         return cache.addAll(urlsToCache);
       }),
@@ -21,14 +21,14 @@ self.addEventListener('install', (event) => {
 });
 
 // Activate event - clean up old caches
-self.addEventListener('activate', (event) => {
+self.addEventListener('activate', event => {
   console.log('Service Worker activating');
   event.waitUntil(
     Promise.all([
       // Clean up old caches
-      caches.keys().then((cacheNames) => {
+      caches.keys().then(cacheNames => {
         return Promise.all(
-          cacheNames.map((cacheName) => {
+          cacheNames.map(cacheName => {
             if (
               cacheName !== STATIC_CACHE &&
               cacheName !== DYNAMIC_CACHE &&
@@ -47,7 +47,7 @@ self.addEventListener('activate', (event) => {
 });
 
 // Fetch event - implement caching strategies
-self.addEventListener('fetch', (event) => {
+self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
 
@@ -123,7 +123,7 @@ self.addEventListener('fetch', (event) => {
         // Strategy 3: Stale-While-Revalidate for other same-origin requests
         const cachedResponse = await caches.match(request);
         const fetchPromise = fetch(request)
-          .then(async (networkResponse) => {
+          .then(async networkResponse => {
             if (networkResponse && networkResponse.ok) {
               const cache = await caches.open(DYNAMIC_CACHE);
               cache.put(request, networkResponse.clone());
@@ -147,7 +147,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 // Background sync for offline actions
-self.addEventListener('sync', (event) => {
+self.addEventListener('sync', event => {
   if (event.tag === 'background-sync') {
     console.log('Background sync triggered');
     event.waitUntil(
@@ -158,7 +158,7 @@ self.addEventListener('sync', (event) => {
 });
 
 // Push notifications (placeholder for future implementation)
-self.addEventListener('push', (event) => {
+self.addEventListener('push', event => {
   console.log('Push notification received');
   // Handle push notifications here
 });

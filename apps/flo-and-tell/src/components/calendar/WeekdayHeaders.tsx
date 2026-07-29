@@ -10,7 +10,7 @@ export const WeekdayHeaders = memo(() => (
       marginBottom: 'var(--space-xs)',
     }}
   >
-    {DAYS.map((day) => (
+    {DAYS.map(day => (
       <div
         key={day}
         className="text-center font-semibold font-quicksand text-muted-foreground smooth-resize"

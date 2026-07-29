@@ -78,7 +78,7 @@ export const useExistingUsers = () => {
           (p): p is typeof p & { id: string; username: string } =>
             p.id !== null && p.username !== null
         )
-        .map((p) => ({
+        .map(p => ({
           id: p.id,
           username: p.username,
           display_name: p.display_name || undefined,

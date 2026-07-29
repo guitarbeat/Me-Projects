@@ -5,20 +5,23 @@ import { componentTagger } from 'lovable-tagger';
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  server: {
-    host: '::',
-    port: 8080,
-    strictPort: false,
-  },
-  plugins: [react(), mode === 'development' && componentTagger()].filter(
-    Boolean
-  ),
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
+    dedupe: ['react', 'react-dom'],
   },
-  // Build optimization
+  server: {
+    host: '::',
+    port: 8080,
+    strictPort: false,
+    fs: {
+      allow: ['..', path.resolve(__dirname, '../../packages/ui')],
+    },
+  },
+  plugins: [react(), mode === 'development' && componentTagger()].filter(
+    Boolean
+  ),
   build: {
     target: 'esnext',
     minify: 'esbuild',
@@ -26,7 +29,10 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('node_modules/react-dom') || id.includes('node_modules/react/')) {
+          if (
+            id.includes('node_modules/react-dom') ||
+            id.includes('node_modules/react/')
+          ) {
             return 'vendor';
           }
           if (id.includes('node_modules/@radix-ui/react-dialog')) {
@@ -36,7 +42,6 @@ export default defineConfig(({ mode }) => ({
       },
     },
   },
-  // Optimize dependencies
   optimizeDeps: {
     include: [
       'react',
@@ -44,6 +49,7 @@ export default defineConfig(({ mode }) => ({
       '@supabase/supabase-js',
       'date-fns',
       'lucide-react',
+      '@me-projects/ui',
     ],
   },
 }));

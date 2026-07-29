@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="utf-8" />
@@ -6,8 +6,14 @@
     <title>Year Grid Generator</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+      rel="stylesheet"
+    />
     <style>
       /* Base Theme overrides */
       body {
@@ -18,41 +24,51 @@
       }
 
       /* Custom Scrollbar */
-      ::-webkit-scrollbar { width: 6px; height: 6px; }
-      ::-webkit-scrollbar-track { background: #111; }
-      ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
-      ::-webkit-scrollbar-thumb:hover { background: #444; }
+      ::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #111;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #333;
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #444;
+      }
 
       /* Custom Range Slider */
-      input[type=range] {
+      input[type='range'] {
         -webkit-appearance: none;
         background: transparent;
         width: 100%;
         height: 24px;
         cursor: pointer;
       }
-      input[type=range]::-webkit-slider-runnable-track {
+      input[type='range']::-webkit-slider-runnable-track {
         width: 100%;
         height: 4px;
         background: #333;
         border-radius: 2px;
       }
-      input[type=range]::-webkit-slider-thumb {
+      input[type='range']::-webkit-slider-thumb {
         -webkit-appearance: none;
         height: 16px;
         width: 16px;
         border-radius: 50%;
         background: #fff;
         margin-top: -6px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
         transition: transform 0.1s;
       }
-      input[type=range]::-webkit-slider-thumb:hover {
+      input[type='range']::-webkit-slider-thumb:hover {
         transform: scale(1.1);
       }
 
       /* Custom Color Input */
-      input[type="color"] {
+      input[type='color'] {
         -webkit-appearance: none;
         border: none;
         width: 32px;
@@ -62,19 +78,23 @@
         overflow: hidden;
         cursor: pointer;
       }
-      input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-      input[type="color"]::-webkit-color-swatch { border: none; }
+      input[type='color']::-webkit-color-swatch-wrapper {
+        padding: 0;
+      }
+      input[type='color']::-webkit-color-swatch {
+        border: none;
+      }
     </style>
-  <script type="importmap">
-{
-  "imports": {
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "react": "https://esm.sh/react@^19.2.3"
-  }
-}
-</script>
-</head>
+    <script type="importmap">
+      {
+        "imports": {
+          "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+          "react/": "https://esm.sh/react@^19.2.3/",
+          "react": "https://esm.sh/react@^19.2.3"
+        }
+      }
+    </script>
+  </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>

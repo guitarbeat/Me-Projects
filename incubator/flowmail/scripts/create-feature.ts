@@ -1,5 +1,11 @@
 #!/usr/bin/env tsx
-import { readFileSync, writeFileSync, mkdirSync, readdirSync, statSync } from 'fs';
+import {
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  readdirSync,
+  statSync,
+} from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -39,7 +45,11 @@ function validateFeatureName(name: string): boolean {
   return kebabCaseRegex.test(name);
 }
 
-function copyDirectory(src: string, dest: string, replacements: Record<string, string>): void {
+function copyDirectory(
+  src: string,
+  dest: string,
+  replacements: Record<string, string>
+): void {
   // Create destination directory
   mkdirSync(dest, { recursive: true });
 
@@ -57,7 +67,7 @@ function copyDirectory(src: string, dest: string, replacements: Record<string, s
     } else {
       // Copy and process files
       let content = readFileSync(srcPath, 'utf-8');
-      
+
       // Replace all placeholders
       for (const [placeholder, value] of Object.entries(replacements)) {
         content = content.replace(new RegExp(placeholder, 'g'), value);
@@ -122,10 +132,14 @@ function main() {
   console.log('');
   console.log('Next steps:');
   console.log(`1. Add feature to App.tsx:`);
-  console.log(`   import { ${toPascalCase(featureName)}Page, ${toCamelCase(featureName)}Feature } from './features/${featureName}';`);
+  console.log(
+    `   import { ${toPascalCase(featureName)}Page, ${toCamelCase(featureName)}Feature } from './features/${featureName}';`
+  );
   console.log('');
   console.log('2. Add route to your router:');
-  console.log(`   <Route path="/${featureName}" component={${toPascalCase(featureName)}Page} />`);
+  console.log(
+    `   <Route path="/${featureName}" component={${toPascalCase(featureName)}Page} />`
+  );
   console.log('');
   console.log('3. Start building your feature in:');
   console.log(`   client/src/features/${featureName}/`);

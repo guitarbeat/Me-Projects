@@ -15,7 +15,11 @@ import { db } from './db';
 export interface IStorage {
   // Email operations
   getAllEmails(limit?: number, offset?: number): Promise<Email[]>;
-  getEmailsByStatus(status: string, limit?: number, offset?: number): Promise<Email[]>;
+  getEmailsByStatus(
+    status: string,
+    limit?: number,
+    offset?: number
+  ): Promise<Email[]>;
   getEmail(id: number): Promise<Email | undefined>;
   createEmail(email: InsertEmail): Promise<Email>;
   updateEmailStatus(id: number, status: string): Promise<Email | undefined>;
@@ -46,19 +50,25 @@ export class DatabaseStorage implements IStorage {
   async getAllEmails(limit?: number, offset?: number): Promise<Email[]> {
     const base = db.select().from(emails).orderBy(desc(emails.timestamp));
     const withLimit = typeof limit === 'number' ? base.limit(limit) : base;
-    const withOffset = typeof offset === 'number' ? withLimit.offset(offset) : withLimit;
+    const withOffset =
+      typeof offset === 'number' ? withLimit.offset(offset) : withLimit;
     const allEmails = await withOffset;
     return allEmails;
   }
 
-  async getEmailsByStatus(status: string, limit?: number, offset?: number): Promise<Email[]> {
+  async getEmailsByStatus(
+    status: string,
+    limit?: number,
+    offset?: number
+  ): Promise<Email[]> {
     const base = db
       .select()
       .from(emails)
       .where(eq(emails.status, status))
       .orderBy(desc(emails.timestamp));
     const withLimit = typeof limit === 'number' ? base.limit(limit) : base;
-    const withOffset = typeof offset === 'number' ? withLimit.offset(offset) : withLimit;
+    const withOffset =
+      typeof offset === 'number' ? withLimit.offset(offset) : withLimit;
     const emailsByStatus = await withOffset;
     return emailsByStatus;
   }
@@ -87,8 +97,11 @@ export class DatabaseStorage implements IStorage {
     return email;
   }
 
-  async updateEmailStatus(id: number, status: string): Promise<Email | undefined> {
-    return db.transaction(async (tx) => {
+  async updateEmailStatus(
+    id: number,
+    status: string
+  ): Promise<Email | undefined> {
+    return db.transaction(async tx => {
       const [updatedEmail] = await tx
         .update(emails)
         .set({ status })
@@ -110,9 +123,14 @@ export class DatabaseStorage implements IStorage {
           .update(stats)
           .set({
             processedToday: (currentStats.processedToday || 0) + 1,
-            forLater: status === 'later' ? (currentStats.forLater || 0) + 1 : currentStats.forLater,
+            forLater:
+              status === 'later'
+                ? (currentStats.forLater || 0) + 1
+                : currentStats.forLater,
             archived:
-              status === 'archived' ? (currentStats.archived || 0) + 1 : currentStats.archived,
+              status === 'archived'
+                ? (currentStats.archived || 0) + 1
+                : currentStats.archived,
           })
           .where(eq(stats.id, currentStats.id));
       }
@@ -122,8 +140,11 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteEmail(id: number): Promise<boolean> {
-    return db.transaction(async (tx) => {
-      const [existing] = await tx.select().from(emails).where(eq(emails.id, id));
+    return db.transaction(async tx => {
+      const [existing] = await tx
+        .select()
+        .from(emails)
+        .where(eq(emails.id, id));
       if (!existing) return false;
 
       const deletedRows = await tx.delete(emails).where(eq(emails.id, id));
@@ -197,7 +218,9 @@ export class DatabaseStorage implements IStorage {
   async incrementStat(field: keyof InsertStats): Promise<Stats> {
     const [currentStats] = await db.select().from(stats).limit(1);
     if (currentStats) {
-      const increment = { [field]: (currentStats[field] || 0) + 1 } as Partial<InsertStats>;
+      const increment = {
+        [field]: (currentStats[field] || 0) + 1,
+      } as Partial<InsertStats>;
       return this.updateStats(increment);
     }
 
@@ -220,7 +243,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createActivity(insertActivity: InsertActivity): Promise<Activity> {
-    const [activity] = await db.insert(activities).values(insertActivity).returning();
+    const [activity] = await db
+      .insert(activities)
+      .values(insertActivity)
+      .returning();
     return activity;
   }
 
@@ -237,10 +263,14 @@ export class DatabaseStorage implements IStorage {
   ): Promise<Email[]> {
     const whereClauses = [] as any[];
     if (filters.status) whereClauses.push(eq(emails.status, filters.status));
-    if (filters.sender) whereClauses.push(ilike(emails.sender, `%${filters.sender}%`));
-    if (filters.subject) whereClauses.push(ilike(emails.subject, `%${filters.subject}%`));
-    if (filters.startDate) whereClauses.push(gte(emails.timestamp, new Date(filters.startDate)));
-    if (filters.endDate) whereClauses.push(lte(emails.timestamp, new Date(filters.endDate)));
+    if (filters.sender)
+      whereClauses.push(ilike(emails.sender, `%${filters.sender}%`));
+    if (filters.subject)
+      whereClauses.push(ilike(emails.subject, `%${filters.subject}%`));
+    if (filters.startDate)
+      whereClauses.push(gte(emails.timestamp, new Date(filters.startDate)));
+    if (filters.endDate)
+      whereClauses.push(lte(emails.timestamp, new Date(filters.endDate)));
 
     const base = db
       .select()
@@ -249,7 +279,8 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(emails.timestamp));
 
     const withLimit = typeof limit === 'number' ? base.limit(limit) : base;
-    const withOffset = typeof offset === 'number' ? withLimit.offset(offset) : withLimit;
+    const withOffset =
+      typeof offset === 'number' ? withLimit.offset(offset) : withLimit;
 
     const results = await withOffset;
     return results;

@@ -57,7 +57,7 @@ describe('PinLockOverlay Security Test', () => {
     // Function to enter a PIN
     const enterPin = () => {
       const inputs = screen.getAllByLabelText(/Digit/i);
-      inputs.forEach((input) => {
+      inputs.forEach(input => {
         fireEvent.change(input, { target: { value: '1' } });
       });
     };

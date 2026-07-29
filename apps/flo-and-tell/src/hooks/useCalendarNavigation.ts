@@ -8,7 +8,7 @@ export const useCalendarNavigation = (initialDate: Date = new Date()) => {
   const [currentDate, setCurrentDate] = useState(initialDate);
 
   const navigateMonth = useCallback((direction: 'prev' | 'next') => {
-    setCurrentDate((prev) => adjustMonth(prev, direction));
+    setCurrentDate(prev => adjustMonth(prev, direction));
   }, []);
 
   const goToToday = useCallback(() => {

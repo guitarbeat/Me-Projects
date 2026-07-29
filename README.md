@@ -8,7 +8,7 @@ Personal monorepo of finished apps and incubator work.
 |------|------|
 | `apps/` | Finished applications |
 | `incubator/` | Work in progress |
-| `.jules/` | Shared agent notes (lowercase) |
+| `.jules/` | **Single SoT** for agent journals, plans, and specs (see [`.jules/README.md`](.jules/README.md)) |
 
 ## Apps
 
@@ -46,9 +46,12 @@ Requires Node ≥ 18 and npm ≥ 8.
 | Hooks | `useCamelCase.ts` | `useToast.ts` |
 | shadcn `components/ui` | kebab (library) | `alert-dialog.tsx` |
 | Utils / lib | `camelCase.ts` | `n8nClient.ts` |
-| Agent config dirs | `.jules/` | lowercase only |
+| Agent notes | Root `.jules/` only | `shared/`, `apps/<folder>/`, `incubator/<folder>/` |
+
+Do not recreate per-app `.jules/`, `.lovable/`, or `.kiro/` content trees. Redirect stubs may remain at old tool paths.
 
 ### Other
 
 - Visual / ad-hoc verification assets live under `__tests__/`
 - App docs belong in each app’s `docs/` (keep root `README.md`)
+- CI stays in `.github/`; IDE settings (e.g. `incubator/.vscode/`) stay out of `.jules/`

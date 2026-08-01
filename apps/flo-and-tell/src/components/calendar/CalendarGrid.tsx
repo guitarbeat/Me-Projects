@@ -9,12 +9,43 @@ interface CalendarGridProps {
   disabled?: boolean;
 }
 
-// Helper to format local date quickly without timezone bugs of toISOString
+const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+const isLeapYear = (y: number) => (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+
+const getDaysInMonth = (y: number, m: number) => {
+  if (m === 1) return isLeapYear(y) ? 29 : 28;
+  return DAYS_IN_MONTH[m];
+};
+
+// ⚡ Bolt: Helper to format local date quickly without Date instantiation overhead
 const formatDate = (y: number, m: number, d: number) => {
-  const date = new Date(y, m, d);
-  const yy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, '0');
-  const dd = String(date.getDate()).padStart(2, '0');
+  let year = y;
+  let month = m;
+  let day = d;
+
+  if (day <= 0) {
+    month--;
+    if (month < 0) {
+      month = 11;
+      year--;
+    }
+    day += getDaysInMonth(year, month);
+  } else {
+    const daysThisMonth = getDaysInMonth(year, month);
+    if (day > daysThisMonth) {
+      day -= daysThisMonth;
+      month++;
+      if (month > 11) {
+        month = 0;
+        year++;
+      }
+    }
+  }
+
+  const yy = year;
+  const mm = String(month + 1).padStart(2, '0');
+  const dd = String(day).padStart(2, '0');
   return `${yy}-${mm}-${dd}`;
 };
 
@@ -32,7 +63,8 @@ export const CalendarGrid = memo(
     const month = currentDate.getMonth();
 
     const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    // ⚡ Bolt: Optimize date math to prevent multiple Date allocations per render
+    const daysInMonth = getDaysInMonth(year, month);
     const today = useMemo(() => new Date(), []);
     const isCurrentMonth =
       today.getFullYear() === year && today.getMonth() === month;

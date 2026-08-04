@@ -83,7 +83,11 @@ export default function YearGridApp() {
     const map: Record<string, number> = {};
     activities.forEach(activity => {
       if (!activity.timestamp) return;
-      const dateKey = new Date(activity.timestamp).toISOString().split('T')[0];
+      // ⚡ Bolt: Optimize date string parsing to avoid new Date() allocations
+      const ts = activity.timestamp as string | Date;
+      const dateKey = typeof ts === 'string' && ts.length >= 10
+        ? ts.substring(0, 10)
+        : new Date(ts).toISOString().split('T')[0];
       map[dateKey] = (map[dateKey] || 0) + 1;
     });
     return map;
@@ -93,9 +97,15 @@ export default function YearGridApp() {
   const selectedActivities = useMemo(() => {
     if (!selectedDate) return [];
     return activities.filter(
-      a =>
-        a.timestamp &&
-        new Date(a.timestamp).toISOString().split('T')[0] === selectedDate
+      a => {
+        if (!a.timestamp) return false;
+        // ⚡ Bolt: Optimize date string parsing to avoid new Date() allocations
+        const ts = a.timestamp as string | Date;
+        const dateStr = typeof ts === 'string' && ts.length >= 10
+          ? ts.substring(0, 10)
+          : new Date(ts).toISOString().split('T')[0];
+        return dateStr === selectedDate;
+      }
     );
   }, [activities, selectedDate]);
 

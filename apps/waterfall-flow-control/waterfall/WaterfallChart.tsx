@@ -161,50 +161,61 @@ export const WaterfallChart = memo(
 
     const waterfallData = useMemo(() => {
       if (chartMode === 'summary') {
-        // Group all income into one bar, expenses by name
-        const income = data.filter(d => d.amount > 0);
-        const expenses = data.filter(d => d.amount < 0);
-        const groupedExpenses = expenses.reduce(
-          (acc, curr) => {
-            if (!acc[curr.name]) acc[curr.name] = 0;
-            acc[curr.name] += curr.amount;
-            return acc;
-          },
-          {} as Record<string, number>
-        );
-        // Order: income, then each expense group in order of first appearance
+        // ⚡ Bolt Performance Optimization: Replaced O(N²) multiple-pass filtering/finding
+        // with a single O(N) loop to drastically improve chart rendering time for large datasets.
+        let totalIncome = 0;
+        let firstIncomeDate = '';
+        const groupedExpenses: Record<string, number> = {};
+        const firstExpenseDate: Record<string, string> = {};
         const expenseOrder: string[] = [];
-        expenses.forEach(e => {
-          if (!expenseOrder.includes(e.name)) expenseOrder.push(e.name);
-        });
+
+        for (let i = 0; i < data.length; i++) {
+          const item = data[i];
+          if (item.amount > 0) {
+            totalIncome += item.amount;
+            if (!firstIncomeDate) firstIncomeDate = item.date;
+          } else if (item.amount < 0) {
+            const name = item.name;
+            if (groupedExpenses[name] === undefined) {
+              groupedExpenses[name] = 0;
+              expenseOrder.push(name);
+              firstExpenseDate[name] = item.date;
+            }
+            groupedExpenses[name] += item.amount;
+          }
+        }
+
         const summaryData: WaterfallChartData[] = [];
-        if (income.length > 0) {
+        if (totalIncome > 0) {
           summaryData.push({
             name: 'Total Income',
-            date: income[0].date,
-            amount: income.reduce((sum, d) => sum + d.amount, 0),
+            date: firstIncomeDate,
+            amount: totalIncome,
             balance: 0, // will be recalculated
             person: '',
             cumulative: 0,
           });
         }
-        expenseOrder.forEach(name => {
+
+        for (let i = 0; i < expenseOrder.length; i++) {
+          const name = expenseOrder[i];
           summaryData.push({
             name,
-            date: expenses.find(e => e.name === name)?.date || '',
+            date: firstExpenseDate[name] || '',
             amount: groupedExpenses[name],
             balance: 0, // will be recalculated
             person: '',
             cumulative: 0,
           });
-        });
+        }
+
         // Recalculate running balance
         let running = 0;
-        summaryData.forEach(d => {
-          running += d.amount;
-          d.balance = running;
-          d.cumulative = running;
-        });
+        for (let i = 0; i < summaryData.length; i++) {
+          running += summaryData[i].amount;
+          summaryData[i].balance = running;
+          summaryData[i].cumulative = running;
+        }
         return processWaterfallData(summaryData);
       } else {
         return processWaterfallData(data);

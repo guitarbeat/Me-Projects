@@ -1,0 +1,3 @@
+## 2026-08-08 - O(N²) array method bottlenecks in hot React renders
+**Learning:** Found deeply nested O(N²) operations hidden inside standard array processing chains (`.forEach` containing `.includes` and `.find`) used during a React component's `useMemo` computation for derived summary data. While conceptually simple, this blocks the main thread severely as datasets grow.
+**Action:** When transforming large arrays in performance-critical areas, replace chained `.filter()`, `.reduce()`, or nested loops with a single-pass O(N) `for` loop utilizing dictionary lookups (Sets/Objects) to track state.

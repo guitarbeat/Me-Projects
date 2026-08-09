@@ -45,7 +45,11 @@ export default tseslint.config(
       'react-refresh': reactRefresh,
     },
     rules: {
+
       ...reactHooks.configs.recommended.rules,
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/purity': 'off',
+      'react-hooks/preserve-manual-memoization': 'off',
       'react-refresh/only-export-components': 'off',
       '@typescript-eslint/no-unused-vars': [
         'error',

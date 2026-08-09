@@ -32,8 +32,8 @@ vi.mock('@/hooks/useCalendarNavigation', () => ({
 vi.mock('@/integrations/supabase/client', () => ({
   supabase: {
     from: () => ({
-      update: () => ({ eq: () => Promise.resolve({ error: null }) }),
-      select: () => Promise.resolve({ data: [], error: null }),
+      update: () => ({ eq: () => Promise.resolve({ error: null, data: [] }) }),
+      select: () => ({ eq: () => Promise.resolve({ data: [], error: null }) }),
     }),
     channel: () => {
       const chan = {

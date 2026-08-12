@@ -32,7 +32,9 @@ export const CalendarGrid = memo(
     const month = currentDate.getMonth();
 
     const firstDay = new Date(year, month, 1).getDay();
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    // ⚡ Bolt Performance: Replace slow new Date() allocation with fast math and lookup
+    const isLeap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+    const daysInMonth = month === 1 && isLeap ? 29 : [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month];
     const today = useMemo(() => new Date(), []);
     const isCurrentMonth =
       today.getFullYear() === year && today.getMonth() === month;

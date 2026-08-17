@@ -19,21 +19,33 @@ export const calculatePeriodInsights = (
   entries: Record<string, boolean>,
   currentDate: Date
 ): PeriodInsights => {
-  const allDates = Object.keys(entries)
-    .filter(date => entries[date])
-    .sort();
+  // ⚡ Bolt: Replace chained .filter().sort() with a single pass to collect active dates before sorting
+  const allDates: string[] = [];
+  for (const date in entries) {
+    if (entries[date]) {
+      allDates.push(date);
+    }
+  }
+  allDates.sort();
 
   // Count days this month (prefix match avoids Date alloc for YYYY-MM-DD keys)
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
   const prefix = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-`;
-  const daysThisMonth = allDates.filter(date => {
+
+  // ⚡ Bolt: Replaced chained .filter().length with an O(N) loop to reduce array allocation overhead
+  let daysThisMonth = 0;
+  for (let i = 0; i < allDates.length; i++) {
+    const date = allDates[i];
     if (date.length === 10) {
-      return date.startsWith(prefix);
+      if (date.startsWith(prefix)) daysThisMonth++;
+    } else {
+      const d = new Date(date);
+      if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+        daysThisMonth++;
+      }
     }
-    const d = new Date(date);
-    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
-  }).length;
+  }
 
   // Total days logged
   const totalDays = allDates.length;

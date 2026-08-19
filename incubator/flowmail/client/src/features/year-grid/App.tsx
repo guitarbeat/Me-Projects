@@ -80,23 +80,33 @@ export default function YearGridApp() {
 
   // Group activities by date
   const activityMap = useMemo(() => {
+    // Optimization: Use string prefix matching instead of parsing Dates to avoid allocation overhead in loops.
     const map: Record<string, number> = {};
-    activities.forEach(activity => {
-      if (!activity.timestamp) return;
-      const dateKey = new Date(activity.timestamp).toISOString().split('T')[0];
+    for (let i = 0; i < activities.length; i++) {
+      const activity = activities[i];
+      if (!activity.timestamp) continue;
+
+      // API returns ISO timestamps. Fast path extraction if it's a string, fallback to Date parsing.
+      const dateKey =
+        typeof activity.timestamp === 'string'
+          ? activity.timestamp.substring(0, 10)
+          : new Date(activity.timestamp).toISOString().substring(0, 10);
+
       map[dateKey] = (map[dateKey] || 0) + 1;
-    });
+    }
     return map;
   }, [activities]);
 
   // Specific activities for selected date
   const selectedActivities = useMemo(() => {
     if (!selectedDate) return [];
-    return activities.filter(
-      a =>
-        a.timestamp &&
-        new Date(a.timestamp).toISOString().split('T')[0] === selectedDate
-    );
+    // Optimization: Fast path filter matching instead of parsing Date per item.
+    return activities.filter(a => {
+      if (!a.timestamp) return false;
+      if (typeof a.timestamp === 'string')
+        return a.timestamp.startsWith(selectedDate);
+      return new Date(a.timestamp).toISOString().startsWith(selectedDate);
+    });
   }, [activities, selectedDate]);
 
   // Unified Analytics

@@ -34,12 +34,20 @@ export const DashboardActivityGrid: React.FC = () => {
   });
 
   const activityMap = useMemo(() => {
+    // Optimization: Use string prefix matching instead of parsing Dates to avoid allocation overhead in loops.
     const map: Record<string, number> = {};
-    activities.forEach(activity => {
-      if (!activity.timestamp) return;
-      const dateKey = new Date(activity.timestamp).toISOString().split('T')[0];
+    for (let i = 0; i < activities.length; i++) {
+      const activity = activities[i];
+      if (!activity.timestamp) continue;
+
+      // API returns ISO timestamps. Fast path extraction if it's a string, fallback to Date parsing.
+      const dateKey =
+        typeof activity.timestamp === 'string'
+          ? activity.timestamp.substring(0, 10)
+          : new Date(activity.timestamp).toISOString().substring(0, 10);
+
       map[dateKey] = (map[dateKey] || 0) + 1;
-    });
+    }
     return map;
   }, [activities]);
 

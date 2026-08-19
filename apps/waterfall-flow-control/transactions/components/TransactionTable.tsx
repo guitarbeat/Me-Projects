@@ -21,6 +21,7 @@ import { TransactionRow } from './TransactionRow';
 import {
   persons,
   formatCurrency,
+  getTodayDateString,
 } from '../utils/transactionUtils';
 import type {
   TransactionSortBy,
@@ -123,7 +124,7 @@ export const TransactionTable = memo(
     const safeTransactions = transactions || [];
     const [newTransaction, setNewTransaction] = useState({
       name: '',
-      date: new Date().toISOString().split('T')[0],
+      date: getTodayDateString(),
       person: '',
       inflow: '',
       outflow: '',
@@ -148,7 +149,7 @@ export const TransactionTable = memo(
 
       setNewTransaction({
         name: '',
-        date: new Date().toISOString().split('T')[0],
+        date: getTodayDateString(),
         person: '',
         inflow: '',
         outflow: '',
@@ -159,7 +160,7 @@ export const TransactionTable = memo(
     const handleCancelAdd = () => {
       setNewTransaction({
         name: '',
-        date: new Date().toISOString().split('T')[0],
+        date: getTodayDateString(),
         person: '',
         inflow: '',
         outflow: '',

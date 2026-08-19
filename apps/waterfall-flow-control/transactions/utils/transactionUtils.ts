@@ -65,6 +65,14 @@ export const formatCurrency = (value: number): string => {
 /**
  * Format date strings for display
  */
+/**
+ * Get today's date in YYYY-MM-DD format efficiently
+ */
+export const getTodayDateString = (): string => {
+  const d = new Date();
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+};
+
 export const formatDate = (dateString: string): string => {
   // Fast path for YYYY-MM-DD format (significantly faster than Date parsing)
   if (dateString.length === 10) {

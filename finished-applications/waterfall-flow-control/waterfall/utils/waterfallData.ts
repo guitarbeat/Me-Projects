@@ -81,9 +81,17 @@ export const processWaterfallData = (
 };
 
 export const calculateChartBounds = (waterfallData: WaterfallDataPoint[]) => {
-  const allValues = waterfallData.flatMap(d => [d.cumulative, d.openValue, 0]);
-  const maxValue = Math.max(...allValues);
-  const minValue = Math.min(...allValues);
+  // ⚡ Bolt: Fast manual loop avoids `flatMap` array allocations and `Math.max(...args)` stack overflow limits
+  let maxValue = 0;
+  let minValue = 0;
+  for (let i = 0; i < waterfallData.length; i++) {
+    const d = waterfallData[i];
+    if (d.cumulative > maxValue) maxValue = d.cumulative;
+    if (d.cumulative < minValue) minValue = d.cumulative;
+    if (d.openValue > maxValue) maxValue = d.openValue;
+    if (d.openValue < minValue) minValue = d.openValue;
+  }
+
   const range = Math.max(maxValue - minValue, 1000);
   const padding = range * 0.2;
 

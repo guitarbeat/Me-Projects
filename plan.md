@@ -1,0 +1,3 @@
+1. **Optimize `UserCalendar.tsx` Handle Move Date Instantiation**: Replace `new Date(..., 0).getDate()` with `getDaysInMonthCount` from `dateUtils.ts` (we'll implement it). This prevents expensive Date object instantiation in keyboard event handler which triggers on every key press in the grid.
+2. **Optimize `CalendarGrid.tsx` loops**: In `CalendarGrid.tsx`, there's `new Date(year, month + 1, 0).getDate()` being used to get days in month. We will replace this with `getDaysInMonthCount(year, month)`.
+3. **Implement `getDaysInMonthCount` in `dateUtils.ts`**: Add a performant utility using a simple array lookup and modulo check for leap years, bypassing Date object parsing.

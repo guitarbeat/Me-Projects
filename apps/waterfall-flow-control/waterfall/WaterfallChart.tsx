@@ -161,43 +161,51 @@ export const WaterfallChart = memo(
 
     const waterfallData = useMemo(() => {
       if (chartMode === 'summary') {
-        // Group all income into one bar, expenses by name
-        const income = data.filter(d => d.amount > 0);
-        const expenses = data.filter(d => d.amount < 0);
-        const groupedExpenses = expenses.reduce(
-          (acc, curr) => {
-            if (!acc[curr.name]) acc[curr.name] = 0;
-            acc[curr.name] += curr.amount;
-            return acc;
-          },
-          {} as Record<string, number>
-        );
-        // Order: income, then each expense group in order of first appearance
+        // ⚡ Bolt: Replace multiple array passes (.filter, .reduce, .includes) with a single O(N) pass
+        let totalIncome = 0;
+        let firstIncomeDate = '';
+
+        const groupedExpenses: Record<string, { amount: number, date: string }> = {};
         const expenseOrder: string[] = [];
-        expenses.forEach(e => {
-          if (!expenseOrder.includes(e.name)) expenseOrder.push(e.name);
-        });
+
+        for (let i = 0; i < data.length; i++) {
+          const d = data[i];
+          if (d.amount > 0) {
+            totalIncome += d.amount;
+            if (!firstIncomeDate) firstIncomeDate = d.date;
+          } else if (d.amount < 0) {
+            if (groupedExpenses[d.name] === undefined) {
+              groupedExpenses[d.name] = { amount: d.amount, date: d.date };
+              expenseOrder.push(d.name);
+            } else {
+              groupedExpenses[d.name].amount += d.amount;
+            }
+          }
+        }
+
         const summaryData: WaterfallChartData[] = [];
-        if (income.length > 0) {
+        if (totalIncome > 0) {
           summaryData.push({
             name: 'Total Income',
-            date: income[0].date,
-            amount: income.reduce((sum, d) => sum + d.amount, 0),
+            date: firstIncomeDate,
+            amount: totalIncome,
             balance: 0, // will be recalculated
             person: '',
             cumulative: 0,
           });
         }
-        expenseOrder.forEach(name => {
+
+        for (let i = 0; i < expenseOrder.length; i++) {
+          const name = expenseOrder[i];
           summaryData.push({
             name,
-            date: expenses.find(e => e.name === name)?.date || '',
-            amount: groupedExpenses[name],
+            date: groupedExpenses[name].date,
+            amount: groupedExpenses[name].amount,
             balance: 0, // will be recalculated
             person: '',
             cumulative: 0,
           });
-        });
+        }
         // Recalculate running balance
         let running = 0;
         summaryData.forEach(d => {

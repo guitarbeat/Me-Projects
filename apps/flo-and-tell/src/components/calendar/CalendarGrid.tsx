@@ -9,13 +9,24 @@ interface CalendarGridProps {
   disabled?: boolean;
 }
 
-// Helper to format local date quickly without timezone bugs of toISOString
+// ⚡ Bolt: Helper to format local date extremely quickly without timezone bugs of toISOString
+// By manually padding string where possible, we bypass ~90x Date allocations in the day loop
 const formatDate = (y: number, m: number, d: number) => {
+  // Fast path: if day is strictly within safe bounds (1-28), skip Date object entirely
+  if (d > 0 && d < 29) {
+    const rawM = m + 1;
+    const mmStr = rawM < 10 ? '0' + rawM : rawM;
+    const ddStr = d < 10 ? '0' + d : d;
+    return `${y}-${mmStr}-${ddStr}`;
+  }
+  // Fallback for edge cases (e.g. day 0, day 31 rolling over) to properly normalize
   const date = new Date(y, m, d);
   const yy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, '0');
-  const dd = String(date.getDate()).padStart(2, '0');
-  return `${yy}-${mm}-${dd}`;
+  const rawM = date.getMonth() + 1;
+  const rawD = date.getDate();
+  const mmStr = rawM < 10 ? '0' + rawM : rawM;
+  const ddStr = rawD < 10 ? '0' + rawD : rawD;
+  return `${yy}-${mmStr}-${ddStr}`;
 };
 
 export const CalendarGrid = memo(

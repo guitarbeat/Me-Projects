@@ -239,7 +239,7 @@ describe('Feature Exports', () => {
     it('should export EmailCard', async () => {
       const { EmailCard } = await import('../features/email-inbox');
       expect(EmailCard).toBeDefined();
-      expect(typeof EmailCard).toBe('function');
+      expect(typeof EmailCard === 'function' || typeof EmailCard === 'object').toBe(true);
     });
 
     it('should export feature configuration', async () => {

@@ -12,6 +12,9 @@ import {
 } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 
+// ⚡ Bolt: Cache Intl.DateTimeFormat to avoid severe performance overhead in render loops
+const DATE_FORMATTER = new Intl.DateTimeFormat();
+
 interface SiteSetting {
   id: string;
   key: string;
@@ -137,7 +140,7 @@ export const AppSettings: React.FC = () => {
                   <span className="text-[10px] text-muted-foreground">
                     by {setting.updated_by} ·{' '}
                     {setting.updated_at
-                      ? new Date(setting.updated_at).toLocaleDateString()
+                      ? DATE_FORMATTER.format(new Date(setting.updated_at))
                       : ''}
                   </span>
                 )}

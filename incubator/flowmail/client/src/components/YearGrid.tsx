@@ -113,12 +113,14 @@ const YearGrid: React.FC<YearGridProps> = React.memo(
             return 1;
           };
 
+          // Cache formatter to avoid expensive toLocaleDateString allocations in loop
+          const dateFormatter = new Intl.DateTimeFormat('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric',
+          });
           const getDayLabel = (d: Date, c: number) => {
-            const dateStr = d.toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            });
+            const dateStr = dateFormatter.format(d);
             return `${dateStr}: ${c} items`;
           };
 

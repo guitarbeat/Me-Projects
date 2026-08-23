@@ -10,7 +10,13 @@ interface CalendarGridProps {
 }
 
 // Helper to format local date quickly without timezone bugs of toISOString
+// ⚡ Bolt: Fast-path for common days (1-28) to avoid expensive Date allocations in hot render loop
 const formatDate = (y: number, m: number, d: number) => {
+  if (d > 0 && d <= 28 && m >= 0 && m <= 11) {
+    const mm = String(m + 1).padStart(2, '0');
+    const dd = String(d).padStart(2, '0');
+    return `${y}-${mm}-${dd}`;
+  }
   const date = new Date(y, m, d);
   const yy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, '0');

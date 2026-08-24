@@ -1,3 +1,4 @@
+import CommandPalette from './CommandPalette';
 import { motion } from 'framer-motion';
 import {
   Inbox,
@@ -7,6 +8,7 @@ import {
   Sun,
   Clock,
   CalendarDays,
+  Search,
 } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';

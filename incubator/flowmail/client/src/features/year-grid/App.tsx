@@ -102,18 +102,34 @@ export default function YearGridApp() {
   // Unified Analytics
   const stats = useMemo(() => {
     const total = activities.length;
-    const values = Object.values(activityMap);
-    const peak = values.length > 0 ? Math.max(...values) : 0;
-    const peakDate = Object.entries(activityMap).find(
-      ([_, v]) => v === peak
-    )?.[0];
 
-    // Active days in last 30 days
+    // ⚡ Bolt Performance Optimization: Single-pass O(N) loop for stats
+    // Avoids spread operator Math.max(...values) which causes stack overflows on large datasets
+    // and eliminates multiple O(N) object iterations (Object.values, Object.entries, Object.keys)
+    let peak = 0;
+    let peakDate: string | undefined;
+    let activeRecent = 0;
+
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const activeRecent = Object.keys(activityMap).filter(
-      date => new Date(date) >= thirtyDaysAgo
-    ).length;
+    const thirtyDaysAgoTime = thirtyDaysAgo.getTime();
+
+    for (const date in activityMap) {
+      const v = activityMap[date];
+      if (v > peak) {
+        peak = v;
+        peakDate = date;
+      }
+
+      // Fast path date comparison avoiding new Date() allocation where possible
+      const dateParts = date.split('-');
+      if (dateParts.length === 3) {
+        const d = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+        if (d.getTime() >= thirtyDaysAgoTime) {
+          activeRecent++;
+        }
+      }
+    }
 
     return { total, peak, peakDate, activeRecent };
   }, [activities, activityMap]);

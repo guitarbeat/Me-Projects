@@ -124,7 +124,11 @@ export default function YearGridApp() {
       // Fast path date comparison avoiding new Date() allocation where possible
       const dateParts = date.split('-');
       if (dateParts.length === 3) {
-        const d = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+        const d = new Date(
+          parseInt(dateParts[0]),
+          parseInt(dateParts[1]) - 1,
+          parseInt(dateParts[2])
+        );
         if (d.getTime() >= thirtyDaysAgoTime) {
           activeRecent++;
         }

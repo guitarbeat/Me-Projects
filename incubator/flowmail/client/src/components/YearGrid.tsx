@@ -12,9 +12,19 @@ const formatDateLocal = (date: Date): string => {
 
 interface YearGridProps {
   config: AppConfig;
+  activityMap?: Record<string, number>;
+  selectedDate?: string | null;
+  onSelectDate?: (date: string) => void;
   className?: string;
   domRef?: React.RefObject<HTMLDivElement>;
 }
+
+// Cache Intl.DateTimeFormat globally to avoid recreation on every render cycle
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+  year: 'numeric',
+});
 
 // Wrapper for content to ensure Z-Index works against watermark
 const ContentWrapper: React.FC<React.PropsWithChildren<unknown>> = ({
@@ -23,7 +33,14 @@ const ContentWrapper: React.FC<React.PropsWithChildren<unknown>> = ({
 
 // Memoize to prevent unnecessary re-renders when parent state (like zoom/pan) changes
 const YearGrid: React.FC<YearGridProps> = React.memo(
-  ({ config, className, domRef }) => {
+  ({
+    config,
+    activityMap = {},
+    selectedDate = null,
+    onSelectDate,
+    className,
+    domRef,
+  }) => {
     const {
       date,
       mode,
@@ -114,11 +131,7 @@ const YearGrid: React.FC<YearGridProps> = React.memo(
           };
 
           const getDayLabel = (d: Date, c: number) => {
-            const dateStr = d.toLocaleDateString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              year: 'numeric',
-            });
+            const dateStr = dateFormatter.format(d);
             return `${dateStr}: ${c} items`;
           };
 

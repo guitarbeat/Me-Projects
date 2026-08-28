@@ -16,7 +16,6 @@ export interface MouseState {
 
 export class BubblePhysics {
   private static readonly ATTRACTION_STRENGTH = 0.8;
-  private static readonly DAMPING = 0.92;
   private static readonly LOG_DAMPING = Math.log(0.92);
   private static readonly MAX_SPEED = 3;
   private static readonly MOUSE_INFLUENCE_RADIUS = 200;

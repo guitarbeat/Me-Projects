@@ -403,7 +403,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         authUser: currentUser || data.user,
         username: cleaned,
         displayName: displayName || cleaned,
-        hasCustomPassword: true as boolean,
+        hasCustomPassword: true,
       });
 
       if (profileError) {
@@ -550,7 +550,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         authUser: session.user,
         username: profile?.username || undefined,
         displayName: profile?.display_name || undefined,
-        hasCustomPassword: true as boolean,
+        hasCustomPassword: true,
       });
 
       if (profileError) {

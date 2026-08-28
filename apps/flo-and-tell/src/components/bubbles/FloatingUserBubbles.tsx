@@ -33,7 +33,7 @@ interface FloatingUserBubblesProps {
 export const FloatingUserBubbles: React.FC<FloatingUserBubblesProps> = memo(
   ({ userProfiles = [], onAutofill, onBubbleClick }) => {
     const containerRef = useRef<HTMLDivElement>(null);
-    const animationRef = useRef<number>(0);
+    const animationRef = useRef<number>();
     const lastTimeRef = useRef<number>(Date.now());
 
     // Use "bubbles" state only for initial rendering/lifecycle, not for animation frames
@@ -59,8 +59,8 @@ export const FloatingUserBubbles: React.FC<FloatingUserBubblesProps> = memo(
     const [isVisible, setIsVisible] = useState(true);
     const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
 
-    const touchTimeoutRef = useRef<NodeJS.Timeout | undefined>();
-    const hintTimerRef = useRef<NodeJS.Timeout | undefined>();
+    const touchTimeoutRef = useRef<NodeJS.Timeout>();
+    const hintTimerRef = useRef<NodeJS.Timeout>();
 
     const isMobile = useMemo(() => {
       if (typeof window === 'undefined') {

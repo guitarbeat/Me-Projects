@@ -46,24 +46,27 @@ export const SharingManager: React.FC = () => {
     }
   }, [isOpen, loadAvailableUsers]);
 
+  // ⚡ Bolt: Use a Set for O(1) lookups instead of O(N) array.some() inside filter loop
   const filteredAvailableUsers = useMemo(
-    () =>
-      availableUsers.filter(user => {
-        const isAlreadyShared = sharedWith.some(s => s.id === user.id);
-        if (isAlreadyShared) {
+    () => {
+      const sharedWithIds = new Set(sharedWith.map(s => s.id));
+      const query = searchQuery ? searchQuery.toLowerCase() : '';
+
+      return availableUsers.filter(user => {
+        if (sharedWithIds.has(user.id)) {
           return false;
         }
 
-        if (!searchQuery) {
+        if (!query) {
           return true;
         }
 
-        const query = searchQuery.toLowerCase();
         return (
           user.username?.toLowerCase().includes(query) ||
           user.display_name?.toLowerCase().includes(query)
         );
-      }),
+      });
+    },
     [availableUsers, sharedWith, searchQuery]
   );
 

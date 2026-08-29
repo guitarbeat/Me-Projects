@@ -175,13 +175,11 @@ export const Calendar = () => {
       if (!user) {
         return;
       }
-      const dateStr = new Date(
-        currentDate.getFullYear(),
-        currentDate.getMonth(),
-        day
-      )
-        .toISOString()
-        .split('T')[0];
+      // ⚡ Bolt: Use manual formatting to avoid Date allocation overhead and prevent local timezone to UTC shift bugs
+      const year = currentDate.getFullYear();
+      const monthStr = String(currentDate.getMonth() + 1).padStart(2, '0');
+      const dayStr = String(day).padStart(2, '0');
+      const dateStr = `${year}-${monthStr}-${dayStr}`;
       await toggleFloDay(dateStr, !isCurrentlyFloDay);
 
       // Mark first day logged for onboarding

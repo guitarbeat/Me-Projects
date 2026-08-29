@@ -11,6 +11,9 @@ const formatDateLocal = (date: Date): string => {
 };
 
 interface YearGridProps {
+  activityMap?: Record<string, number>;
+  selectedDate?: string | null;
+  onSelectDate?: (date: string) => void;
   config: AppConfig;
   className?: string;
   domRef?: React.RefObject<HTMLDivElement>;
@@ -23,7 +26,7 @@ const ContentWrapper: React.FC<React.PropsWithChildren<unknown>> = ({
 
 // Memoize to prevent unnecessary re-renders when parent state (like zoom/pan) changes
 const YearGrid: React.FC<YearGridProps> = React.memo(
-  ({ config, className, domRef }) => {
+  ({ config, activityMap = {}, selectedDate, onSelectDate, className, domRef }) => {
     const {
       date,
       mode,
@@ -209,7 +212,7 @@ const YearGrid: React.FC<YearGridProps> = React.memo(
         startDayOffset: 0,
         year: new Date().getFullYear(),
       };
-    }, [date, granularity, isMondayFirst]);
+    }, [date, granularity, isMondayFirst, activityMap]);
 
     // 2. Month Positions (Dependent on layout params)
 

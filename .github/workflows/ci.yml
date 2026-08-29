@@ -54,11 +54,13 @@ jobs:
       needs.changes.outputs.flo-and-tell == 'true' ||
       needs.changes.outputs.all == 'true'
     runs-on: ubuntu-latest
+    env:
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: npm
       - run: npm ci
       - run: npm run lint --workspace=apps/flo-and-tell
@@ -74,18 +76,22 @@ jobs:
       needs.changes.outputs.nini-earth == 'true' ||
       needs.changes.outputs.all == 'true'
     runs-on: ubuntu-latest
+    env:
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: npm
       - run: npm ci
       - run: npm run build --workspace=apps/nini-earth
         env:
+          ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
           CI: true
       - run: npm test --workspace=apps/nini-earth
         env:
+          ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
           CI: true
 
   flowmail:
@@ -96,11 +102,13 @@ jobs:
       needs.changes.outputs.flowmail == 'true' ||
       needs.changes.outputs.all == 'true'
     runs-on: ubuntu-latest
+    env:
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: npm
       - run: npm ci
       - run: npm run lint --workspace=incubator/flowmail
@@ -118,11 +126,13 @@ jobs:
       needs.changes.outputs.harmonic-studio == 'true' ||
       needs.changes.outputs.all == 'true'
     runs-on: ubuntu-latest
+    env:
+      ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
           cache: npm
       - run: npm ci
       - run: npm run lint --workspace=apps/harmonic-studio

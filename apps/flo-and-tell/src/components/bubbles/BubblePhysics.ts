@@ -51,9 +51,12 @@ export class BubblePhysics {
     }
 
     // Collision avoidance
-    otherBubbles.forEach(other => {
+    // ⚡ Bolt Performance Optimization: Replace .forEach() with a standard for-loop
+    // Eliminates thousands of callback allocations per second in this O(N²) collision check during the 60fps animation loop.
+    for (let i = 0; i < otherBubbles.length; i++) {
+      const other = otherBubbles[i];
       if (other === bubble) {
-        return;
+        continue;
       }
 
       const dx = other.x - bubble.x;
@@ -69,7 +72,7 @@ export class BubblePhysics {
         bubble.vx -= normalX * pushForce * dt;
         bubble.vy -= normalY * pushForce * dt;
       }
-    });
+    }
 
     // Apply damping (exp is faster than pow with fractional exponents)
     const dampingFactor = Math.exp(dt * this.LOG_DAMPING);

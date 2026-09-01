@@ -50,8 +50,9 @@ export class BubblePhysics {
       bubble.isHovered = false;
     }
 
-    // ⚡ Bolt: Use standard for-loop to eliminate callback allocation overhead in 60fps physics loop
     // Collision avoidance
+    // ⚡ Bolt Performance Optimization: Replace .forEach() with a standard for-loop
+    // Eliminates thousands of callback allocations per second in this O(N²) collision check during the 60fps animation loop.
     for (let i = 0; i < otherBubbles.length; i++) {
       const other = otherBubbles[i];
       if (other === bubble) {

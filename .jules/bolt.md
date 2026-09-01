@@ -9,3 +9,7 @@
 ## 2025-01-20 - Array.flatMap and Math.max spread call stack limits
 **Learning:** Using `array.flatMap()` followed by the spread operator `Math.max(...array)` on large datasets creates massive intermediate allocations and risks "Maximum call stack size exceeded" errors.
 **Action:** Use a single-pass `for` loop to track min/max on large arrays instead of relying on flatMap and spread syntax.
+
+## 2024-03-12 - Eliminate callback allocations in 60fps requestAnimationFrame loops
+**Learning:** Using array methods like `.forEach()` or `.map()` in tight, high-frequency animation loops (like `requestAnimationFrame` physics simulations) creates significant overhead from callback allocation and invocation on every frame, which can cause micro-stutters.
+**Action:** When writing 60fps update loops (e.g., in `BubblePhysics.updateBubble` or `FloatingUserBubbles` animation), always use standard `for` loops and pre-allocated arrays (e.g. `new Array(length)`) instead of higher-order array methods.

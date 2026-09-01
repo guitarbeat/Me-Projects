@@ -50,10 +50,12 @@ export class BubblePhysics {
       bubble.isHovered = false;
     }
 
+    // ⚡ Bolt: Use standard for-loop to eliminate callback allocation overhead in 60fps physics loop
     // Collision avoidance
-    otherBubbles.forEach(other => {
+    for (let i = 0; i < otherBubbles.length; i++) {
+      const other = otherBubbles[i];
       if (other === bubble) {
-        return;
+        continue;
       }
 
       const dx = other.x - bubble.x;
@@ -69,7 +71,7 @@ export class BubblePhysics {
         bubble.vx -= normalX * pushForce * dt;
         bubble.vy -= normalY * pushForce * dt;
       }
-    });
+    }
 
     // Apply damping (exp is faster than pow with fractional exponents)
     const dampingFactor = Math.exp(dt * this.LOG_DAMPING);

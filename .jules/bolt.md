@@ -9,3 +9,7 @@
 ## 2025-01-20 - Array.flatMap and Math.max spread call stack limits
 **Learning:** Using `array.flatMap()` followed by the spread operator `Math.max(...array)` on large datasets creates massive intermediate allocations and risks "Maximum call stack size exceeded" errors.
 **Action:** Use a single-pass `for` loop to track min/max on large arrays instead of relying on flatMap and spread syntax.
+
+## 2024-05-18 - [Intl Formatters in Loops]
+**Learning:** Calling `.toLocaleString()` or `.toLocaleDateString()` with options repeatedly inside loops or frequently rendered components (like formatting hundreds of chart tooltips or table rows) causes severe performance overhead. The JavaScript engine internally instantiates a new `Intl` formatter object for each call, which is expensive.
+**Action:** Always cache and reuse `Intl.DateTimeFormat` and `Intl.NumberFormat` instances at the module level when formatting data within loops or frequent render cycles to significantly reduce execution time.

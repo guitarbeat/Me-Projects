@@ -16,6 +16,8 @@ import { SankeyEmptyState } from './SankeyEmptyState';
 import { SankeyLegend } from './SankeyLegend';
 import { SankeyToolbar } from './SankeyToolbar';
 
+const numberFormatter = new Intl.NumberFormat('en-US');
+
 interface SankeyChartProps {
   transactions: Transaction[];
   chartMode: 'detailed' | 'summary';
@@ -796,7 +798,7 @@ export const SankeyChart = memo(
               d.category === 'expense' &&
               groupedExpenseTotals[d.name]
             ) {
-              return `${d.name} ($${groupedExpenseTotals[d.name].toLocaleString()})`;
+              return `${d.name} ($${numberFormatter.format(groupedExpenseTotals[d.name])})`;
             }
             return d.name;
           })

@@ -54,12 +54,17 @@ export const persons = [
   'IRS/Other',
 ];
 
+const numberFormatter = new Intl.NumberFormat('en-US', {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
 /**
  * Format currency values for display
  */
 export const formatCurrency = (value: number): string => {
   if (value === 0) return '';
-  return `$${value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  return `$${numberFormatter.format(value)}`;
 };
 
 /**
@@ -73,6 +78,11 @@ export const getTodayDateString = (): string => {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
 };
 
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'numeric',
+  day: 'numeric',
+});
+
 export const formatDate = (dateString: string): string => {
   // Fast path for YYYY-MM-DD format (significantly faster than Date parsing)
   if (dateString.length === 10) {
@@ -83,10 +93,9 @@ export const formatDate = (dateString: string): string => {
       return `${m}/${d}`;
     }
   }
-  return new Date(dateString).toLocaleDateString('en-US', {
-    month: 'numeric',
-    day: 'numeric',
-  });
+  const date = new Date(dateString);
+  if (isNaN(date.getTime())) return 'Invalid Date';
+  return dateFormatter.format(date);
 };
 
 /**

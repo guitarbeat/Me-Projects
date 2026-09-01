@@ -23,6 +23,8 @@ import { toast } from 'sonner';
 import { useReducedMotion } from '@/hooks/useReducedMotion';
 import { useIsMobile } from '@/hooks/useMobile';
 
+const numberFormatter = new Intl.NumberFormat('en-US');
+
 interface TooltipProps {
   active?: boolean;
   payload?: Array<{
@@ -69,13 +71,13 @@ const CustomTooltip = ({ active, payload }: TooltipProps) => {
             <span
               className={`font-mono text-sm font-medium ${isIncome ? 'text-primary' : 'text-destructive'}`}
             >
-              {isIncome ? '+' : '-'}${Math.abs(data.amount).toLocaleString()}
+              {isIncome ? '+' : '-'}${numberFormatter.format(Math.abs(data.amount))}
             </span>
           </div>
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">Running Total</span>
             <span className="font-mono text-sm font-medium">
-              ${data.cumulative.toLocaleString()}
+              ${numberFormatter.format(data.cumulative)}
             </span>
           </div>
         </div>

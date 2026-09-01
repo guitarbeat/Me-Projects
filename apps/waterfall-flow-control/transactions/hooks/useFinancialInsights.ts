@@ -6,6 +6,12 @@ interface FinancialInsight {
   emoji?: string;
 }
 
+const currencyFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  maximumFractionDigits: 0,
+});
+
 interface UseFinancialInsightsOptions {
   totalInflow: number;
   totalOutflow: number;
@@ -52,11 +58,7 @@ export const useFinancialInsights = ({
 
     // Positive net
     if (netAmount > 0) {
-      const ahead = Math.abs(netAmount).toLocaleString('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        maximumFractionDigits: 0,
-      });
+      const ahead = currencyFormatter.format(Math.abs(netAmount));
       return {
         message: `You're ${ahead} ahead. Nice work!`,
         type: 'positive',
@@ -75,11 +77,7 @@ export const useFinancialInsights = ({
 
     // Slightly negative
     if (netAmount < 0) {
-      const behind = Math.abs(netAmount).toLocaleString('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        maximumFractionDigits: 0,
-      });
+      const behind = currencyFormatter.format(Math.abs(netAmount));
       return {
         message: `You're ${behind} behind. Small adjustments can help!`,
         type: 'negative',
@@ -104,11 +102,7 @@ export const getTransactionFeedback = (
   amount: number,
   currentNetAmount: number
 ): string => {
-  const formattedAmount = amount.toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    maximumFractionDigits: 0,
-  });
+  const formattedAmount = currencyFormatter.format(amount);
 
   if (isInflow) {
     if (currentNetAmount > 0) {

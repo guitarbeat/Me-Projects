@@ -22,14 +22,21 @@ export interface WaterfallDataPoint {
   openValue: number;
 }
 
+const numberFormatter = new Intl.NumberFormat('en-US');
+
 export const formatCurrency = (value: number): string => {
   if (Math.abs(value) >= 1000000) return `$${(value / 1000000).toFixed(1)}M`;
   if (Math.abs(value) >= 1000) return `$${(value / 1000).toFixed(0)}k`;
-  return `$${Math.abs(value).toLocaleString()}`;
+  return `$${numberFormatter.format(Math.abs(value))}`;
 };
 
 // Fast lookup for month abbreviations to avoid slow toLocaleDateString formatting
 const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+const dateFormatter = new Intl.DateTimeFormat('en-US', {
+  month: 'short',
+  day: 'numeric',
+});
 
 export const formatShortDate = (dateString: string): string => {
   // Fast path for YYYY-MM-DD format (significantly faster than Date parsing)
@@ -42,10 +49,8 @@ export const formatShortDate = (dateString: string): string => {
     }
   }
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  });
+  if (isNaN(date.getTime())) return 'Invalid Date';
+  return dateFormatter.format(date);
 };
 
 export const processWaterfallData = (

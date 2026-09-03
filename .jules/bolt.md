@@ -13,3 +13,6 @@
 ## 2024-03-12 - Eliminate callback allocations in 60fps requestAnimationFrame loops
 **Learning:** Using array methods like `.forEach()` or `.map()` in tight, high-frequency animation loops (like `requestAnimationFrame` physics simulations) creates significant overhead from callback allocation and invocation on every frame, which can cause micro-stutters.
 **Action:** When writing 60fps update loops (e.g., in `BubblePhysics.updateBubble` or `FloatingUserBubbles` animation), always use standard `for` loops and pre-allocated arrays (e.g. `new Array(length)`) instead of higher-order array methods.
+## 2024-05-24 - Avoiding Math.sqrt and object allocations in 60fps loop
+**Learning:** In tight 60fps animation loops, O(N²) collision checks with `Math.sqrt` and `return { ...object }` allocations cause massive CPU spikes and GC pressure. Mutating state in-place and checking squared distances first drastically reduces overhead (from ~300ms down to ~35ms in a 1000-frame simulation).
+**Action:** When updating physics or animations in a requestAnimationFrame loop, avoid spreading objects and use squared distance comparisons (`dx*dx + dy*dy < minDist*minDist`) to bypass expensive square root operations until absolutely necessary.

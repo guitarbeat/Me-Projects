@@ -61,10 +61,13 @@ export class BubblePhysics {
 
       const dx = other.x - bubble.x;
       const dy = other.y - bubble.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
+      const distSq = dx * dx + dy * dy;
       const minDistance = bubble.radius + other.radius + 10;
+      const minDistanceSq = minDistance * minDistance;
 
-      if (distance < minDistance && distance > 0) {
+      // ⚡ Bolt Performance Optimization: Compare squared distances to avoid Math.sqrt in the hot loop
+      if (distSq < minDistanceSq && distSq > 0) {
+        const distance = Math.sqrt(distSq);
         const pushForce = (minDistance - distance) * 0.1;
         const normalX = dx / distance;
         const normalY = dy / distance;
@@ -80,8 +83,9 @@ export class BubblePhysics {
     bubble.vy *= dampingFactor;
 
     // Limit speed
-    const speed = Math.sqrt(bubble.vx * bubble.vx + bubble.vy * bubble.vy);
-    if (speed > this.MAX_SPEED) {
+    const speedSq = bubble.vx * bubble.vx + bubble.vy * bubble.vy;
+    if (speedSq > this.MAX_SPEED * this.MAX_SPEED) {
+      const speed = Math.sqrt(speedSq);
       const scale = this.MAX_SPEED / speed;
       bubble.vx *= scale;
       bubble.vy *= scale;

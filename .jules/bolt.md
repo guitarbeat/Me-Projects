@@ -13,3 +13,6 @@
 ## 2024-03-12 - Eliminate callback allocations in 60fps requestAnimationFrame loops
 **Learning:** Using array methods like `.forEach()` or `.map()` in tight, high-frequency animation loops (like `requestAnimationFrame` physics simulations) creates significant overhead from callback allocation and invocation on every frame, which can cause micro-stutters.
 **Action:** When writing 60fps update loops (e.g., in `BubblePhysics.updateBubble` or `FloatingUserBubbles` animation), always use standard `for` loops and pre-allocated arrays (e.g. `new Array(length)`) instead of higher-order array methods.
+## 2026-09-03 - React Referential Equality in High-Frequency Loops
+**Learning:** While eliminating object spread allocations (e.g., `return { ...object }`) by mutating state in-place reduces GC overhead in tight 60fps loops, it can break UI rendering if downstream React components or imperative handles rely on referential equality to trigger updates or re-renders.
+**Action:** Always verify how the returned object is used before optimizing away object allocations. If React state or `memo` relies on the new reference, prioritize optimizations like caching, debouncing, or refactoring the state management over mutating in-place.

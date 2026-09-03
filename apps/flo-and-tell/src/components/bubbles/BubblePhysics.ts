@@ -32,19 +32,25 @@ export class BubblePhysics {
   ): BubbleState {
     const dt = Math.min(deltaTime / 16, 2); // Normalize to 60fps, cap at 2x
 
+    // ⚡ Bolt: Eliminate Math.sqrt where possible by comparing squared distances
     // Mouse attraction
     if (mouse.isActive) {
       const dx = mouse.x - bubble.x;
       const dy = mouse.y - bubble.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
+      const distSq = dx * dx + dy * dy;
 
-      bubble.lastMouseDistance = distance;
-      bubble.isHovered = distance < bubble.radius + 50; // Larger hover zone for easier touch
+      const hoverRadius = bubble.radius + 50;
+      bubble.isHovered = distSq < hoverRadius * hoverRadius; // Larger hover zone for easier touch
 
-      if (distance < this.MOUSE_INFLUENCE_RADIUS && distance > 1) {
-        const force = this.ATTRACTION_STRENGTH / Math.max(distance * 0.01, 1);
-        bubble.vx += (dx / distance) * force * dt;
-        bubble.vy += (dy / distance) * force * dt;
+      if (distSq > 0) {
+        const distance = Math.sqrt(distSq);
+        bubble.lastMouseDistance = distance;
+
+        if (distance < this.MOUSE_INFLUENCE_RADIUS && distance > 1) {
+          const force = this.ATTRACTION_STRENGTH / Math.max(distance * 0.01, 1);
+          bubble.vx += (dx / distance) * force * dt;
+          bubble.vy += (dy / distance) * force * dt;
+        }
       }
     } else {
       bubble.isHovered = false;
@@ -61,10 +67,14 @@ export class BubblePhysics {
 
       const dx = other.x - bubble.x;
       const dy = other.y - bubble.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      const minDistance = bubble.radius + other.radius + 10;
 
-      if (distance < minDistance && distance > 0) {
+      // ⚡ Bolt: Avoid expensive Math.sqrt by checking squared distance first
+      const distSq = dx * dx + dy * dy;
+      const minDistance = bubble.radius + other.radius + 10;
+      const minDistSq = minDistance * minDistance;
+
+      if (distSq < minDistSq && distSq > 0) {
+        const distance = Math.sqrt(distSq);
         const pushForce = (minDistance - distance) * 0.1;
         const normalX = dx / distance;
         const normalY = dy / distance;
@@ -80,8 +90,10 @@ export class BubblePhysics {
     bubble.vy *= dampingFactor;
 
     // Limit speed
-    const speed = Math.sqrt(bubble.vx * bubble.vx + bubble.vy * bubble.vy);
-    if (speed > this.MAX_SPEED) {
+    // ⚡ Bolt: Avoid Math.sqrt for speed limit check
+    const speedSq = bubble.vx * bubble.vx + bubble.vy * bubble.vy;
+    if (speedSq > this.MAX_SPEED * this.MAX_SPEED) {
+      const speed = Math.sqrt(speedSq);
       const scale = this.MAX_SPEED / speed;
       bubble.vx *= scale;
       bubble.vy *= scale;
@@ -110,6 +122,7 @@ export class BubblePhysics {
       bubble.vy = -Math.abs(bubble.vy) * this.COLLISION_DAMPING;
     }
 
-    return { ...bubble };
+    // ⚡ Bolt: Mutate bubble in-place instead of creating a new object on every frame
+    return bubble;
   }
 }

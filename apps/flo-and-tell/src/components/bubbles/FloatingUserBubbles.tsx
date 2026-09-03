@@ -279,13 +279,12 @@ export const FloatingUserBubbles: React.FC<FloatingUserBubblesProps> = memo(
 
         // Only update if deltaTime is reasonable (prevents huge jumps)
         if (deltaTime > 8 && deltaTime < 100) {
-          // ⚡ Bolt: Use standard for-loops and pre-allocate array to eliminate callback allocation and array resizing overhead in 60fps animation loop
+          // ⚡ Bolt: Use standard for-loops and mutate in place to eliminate callback allocation and object creation overhead in 60fps animation loop
           // Update physics state in ref
           const currentBubbles = bubblesPhysicsRef.current;
-          const nextBubbles = new Array(currentBubbles.length);
           for (let i = 0; i < currentBubbles.length; i++) {
             const bubble = currentBubbles[i];
-            const updated = BubblePhysics.updateBubble(
+            BubblePhysics.updateBubble(
               bubble,
               mouseStateRef.current, // Use ref here
               containerSize,
@@ -294,17 +293,14 @@ export const FloatingUserBubbles: React.FC<FloatingUserBubblesProps> = memo(
             );
             // Slow down bubbles when touch is active
             if (isTouchActive) {
-              updated.vx *= 0.15;
-              updated.vy *= 0.15;
+              bubble.vx *= 0.15;
+              bubble.vy *= 0.15;
             }
-            nextBubbles[i] = updated;
           }
 
-          bubblesPhysicsRef.current = nextBubbles;
-
           // Apply updates to DOM via refs
-          for (let index = 0; index < nextBubbles.length; index++) {
-            const bubble = nextBubbles[index];
+          for (let index = 0; index < currentBubbles.length; index++) {
+            const bubble = currentBubbles[index];
             // Update bubble component
             const bubbleHandle = bubbleRefs.current[index];
             if (bubbleHandle) {

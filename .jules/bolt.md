@@ -16,3 +16,7 @@
 ## 2024-05-24 - Avoiding Math.sqrt and object allocations in 60fps loop
 **Learning:** In tight 60fps animation loops, O(N²) collision checks with `Math.sqrt` and `return { ...object }` allocations cause massive CPU spikes and GC pressure. Mutating state in-place and checking squared distances first drastically reduces overhead (from ~300ms down to ~35ms in a 1000-frame simulation).
 **Action:** When updating physics or animations in a requestAnimationFrame loop, avoid spreading objects and use squared distance comparisons (`dx*dx + dy*dy < minDist*minDist`) to bypass expensive square root operations until absolutely necessary.
+
+## 2024-05-18 - [Intl Formatters in Loops]
+**Learning:** Calling `.toLocaleString()` or `.toLocaleDateString()` with options repeatedly inside loops or frequently rendered components (like formatting hundreds of chart tooltips or table rows) causes severe performance overhead. The JavaScript engine internally instantiates a new `Intl` formatter object for each call, which is expensive.
+**Action:** Always cache and reuse `Intl.DateTimeFormat` and `Intl.NumberFormat` instances at the module level when formatting data within loops or frequent render cycles to significantly reduce execution time.

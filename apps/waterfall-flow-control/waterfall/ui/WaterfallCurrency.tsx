@@ -8,6 +8,21 @@ import { cn } from '@/lib/utils';
 // CURRENCY DISPLAY COMPONENT
 // ============================================
 
+// ⚡ Bolt Performance Optimization: Cache Intl formatters by decimal places to avoid object allocation in render
+const formattersCache = new Map<number, Intl.NumberFormat>();
+const getFormatter = (decimals: number) => {
+  if (!formattersCache.has(decimals)) {
+    formattersCache.set(
+      decimals,
+      new Intl.NumberFormat('en-US', {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      })
+    );
+  }
+  return formattersCache.get(decimals)!;
+};
+
 const waterfallCurrencyVariants = cva(
   'font-mono tabular-nums font-semibold transition-colors',
   {
@@ -138,10 +153,7 @@ const WaterfallCurrency = React.forwardRef<HTMLDivElement, WaterfallCurrencyProp
     }, [value, animated, animationDuration]);
 
     // Format the display value
-    const formattedValue = new Intl.NumberFormat('en-US', {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    }).format(displayValue);
+    const formattedValue = getFormatter(decimals).format(displayValue);
 
     // Build the display string
     const isPositive = value > 0;

@@ -15,6 +15,15 @@ import { Email, Activity } from '@shared/schema';
 import { loadJournalEvents } from '../features/journal/lib/storage';
 import { cn } from '@/lib/utils';
 
+// ⚡ Bolt Performance Optimization: Cache Intl.DateTimeFormat to avoid slow string conversions on every search stroke
+const dateFormatter = new Intl.DateTimeFormat();
+
+const safeFormatDate = (dateVal: string | Date): string => {
+  const d = new Date(dateVal);
+  if (isNaN(d.getTime())) return 'Invalid Date';
+  return dateFormatter.format(d);
+};
+
 interface CommandPaletteProps {
   isOpen: boolean;
   onClose: () => void;
@@ -72,7 +81,7 @@ export default function CommandPalette({
           type: 'email',
           title: email.subject,
           subtitle: `from ${email.sender}`,
-          date: new Date(email.timestamp || '').toLocaleDateString(),
+          date: safeFormatDate(email.timestamp || ''),
           original: email,
         });
       }
@@ -89,7 +98,7 @@ export default function CommandPalette({
           type: 'journal',
           title: entry.title,
           subtitle: entry.notes || 'No notes',
-          date: entry.start.toLocaleDateString(),
+          date: safeFormatDate(entry.start),
           original: entry,
         });
       }
@@ -106,7 +115,7 @@ export default function CommandPalette({
           type: 'activity',
           title: `${activity.action.toUpperCase()}: ${activity.emailSubject}`,
           subtitle: `Activity log entry`,
-          date: new Date(activity.timestamp || '').toLocaleDateString(),
+          date: safeFormatDate(activity.timestamp || ''),
           original: activity,
         });
       }

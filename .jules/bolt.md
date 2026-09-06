@@ -20,3 +20,7 @@
 ## 2024-05-18 - [Intl Formatters in Loops]
 **Learning:** Calling `.toLocaleString()` or `.toLocaleDateString()` with options repeatedly inside loops or frequently rendered components (like formatting hundreds of chart tooltips or table rows) causes severe performance overhead. The JavaScript engine internally instantiates a new `Intl` formatter object for each call, which is expensive.
 **Action:** Always cache and reuse `Intl.DateTimeFormat` and `Intl.NumberFormat` instances at the module level when formatting data within loops or frequent render cycles to significantly reduce execution time.
+
+## 2025-01-20 - Intl Formatters crash on Invalid Date
+**Learning:** When optimizing React render loops by replacing `new Date().toLocaleDateString()` with a cached `Intl.DateTimeFormat.prototype.format()` module-level instance, passing an invalid date object (like `new Date('')`) to `.format()` throws a `RangeError: Invalid time value` which crashes the application. The original `.toLocaleDateString()` method handles invalid dates safely by silently returning the string `"Invalid Date"`.
+**Action:** Always validate date objects using `isNaN(d.getTime())` before passing them to a cached `Intl.DateTimeFormat` instance. Create a small helper function `safeFormatDate(dateValue)` that returns `"Invalid Date"` when appropriate to prevent crashing downstream render cycles.

@@ -19,6 +19,32 @@ interface CalendarDayProps {
   onKeyDown?: (e: React.KeyboardEvent, day: number) => void;
 }
 
+// ⚡ Bolt: Hoist constant arrays outside the component to avoid re-allocating
+// them whenever the useMemo dependencies change, reducing garbage collection pressure.
+const WEEKDAYS = [
+  'Sunday',
+  'Monday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
+];
+const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+];
+
 export const CalendarDay = memo(
   ({
     day,
@@ -41,29 +67,6 @@ export const CalendarDay = memo(
     // Memoize date formatting to avoid recalculation on every render
     // ⚡ Bolt: Use modulo math with hoisted firstDayOfWeek to avoid Date allocation in loop
     const ariaLabel = useMemo(() => {
-      const WEEKDAYS = [
-        'Sunday',
-        'Monday',
-        'Tuesday',
-        'Wednesday',
-        'Thursday',
-        'Friday',
-        'Saturday',
-      ];
-      const MONTHS = [
-        'January',
-        'February',
-        'March',
-        'April',
-        'May',
-        'June',
-        'July',
-        'August',
-        'September',
-        'October',
-        'November',
-        'December',
-      ];
       const weekday = WEEKDAYS[(firstDayOfWeek + day - 1) % 7];
       const month = MONTHS[currentDate.getMonth()];
       return `${weekday}, ${month} ${day}, ${currentDate.getFullYear()}${isFloDay ? ', Period logged' : ''}`;

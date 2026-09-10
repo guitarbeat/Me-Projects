@@ -8,6 +8,38 @@ import { Button } from '@/components/ui/button';
 import { NotebookPen, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// ⚡ Bolt Performance Optimization: Cache Intl formatters to avoid slow instantiation in loops and renders
+const timeFormatter = new Intl.DateTimeFormat(undefined, {
+  hour: '2-digit',
+  minute: '2-digit',
+});
+
+const summaryDateFormatter = new Intl.DateTimeFormat('en-US', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+});
+
+const exportDateFormatter = new Intl.DateTimeFormat('en-US', {
+  weekday: 'long',
+  month: 'long',
+  day: 'numeric',
+});
+
+const peakDateFormatter = new Intl.DateTimeFormat();
+
+// Fast path helper to extract YYYY-MM-DD from ISO strings directly without new Date() overhead
+const extractDateString = (
+  timestamp: string | Date | number | null
+): string | null => {
+  if (!timestamp) return null;
+  if (typeof timestamp === 'string') {
+    return timestamp.substring(0, 10);
+  }
+  return new Date(timestamp).toISOString().substring(0, 10);
+};
+
 const DEFAULT_CONFIG: AppConfig = {
   date: new Date().toISOString().split('T')[0],
   mode: 'horizontal',
@@ -82,8 +114,8 @@ export default function YearGridApp() {
   const activityMap = useMemo(() => {
     const map: Record<string, number> = {};
     activities.forEach(activity => {
-      if (!activity.timestamp) return;
-      const dateKey = new Date(activity.timestamp).toISOString().split('T')[0];
+      const dateKey = extractDateString(activity.timestamp);
+      if (!dateKey) return;
       map[dateKey] = (map[dateKey] || 0) + 1;
     });
     return map;
@@ -93,9 +125,7 @@ export default function YearGridApp() {
   const selectedActivities = useMemo(() => {
     if (!selectedDate) return [];
     return activities.filter(
-      a =>
-        a.timestamp &&
-        new Date(a.timestamp).toISOString().split('T')[0] === selectedDate
+      a => extractDateString(a.timestamp) === selectedDate
     );
   }, [activities, selectedDate]);
 
@@ -183,11 +213,7 @@ export default function YearGridApp() {
   const handleExportToJournal = () => {
     if (!selectedDate) return;
 
-    const formattedDate = new Date(selectedDate).toLocaleDateString('en-US', {
-      weekday: 'long',
-      month: 'long',
-      day: 'numeric',
-    });
+    const formattedDate = exportDateFormatter.format(new Date(selectedDate));
 
     const activitySummary = selectedActivities
       .map(
@@ -230,7 +256,7 @@ export default function YearGridApp() {
               label: 'Peak Momentum',
               value: stats.peak,
               sub: stats.peakDate
-                ? new Date(stats.peakDate).toLocaleDateString()
+                ? peakDateFormatter.format(new Date(stats.peakDate))
                 : '--',
               color: 'text-blue-500',
             },
@@ -282,12 +308,7 @@ export default function YearGridApp() {
                       Day Summary
                     </h3>
                     <p className="text-[10px] text-gray-400 uppercase tracking-wider font-mono">
-                      {new Date(selectedDate).toLocaleDateString('en-US', {
-                        weekday: 'long',
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                      })}
+                      {summaryDateFormatter.format(new Date(selectedDate))}
                     </p>
                   </div>
                   <button
@@ -321,12 +342,9 @@ export default function YearGridApp() {
                             </span>
                             <span className="text-gray-600 font-mono">
                               {activity.timestamp
-                                ? new Date(
-                                    activity.timestamp
-                                  ).toLocaleTimeString([], {
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  })
+                                ? timeFormatter.format(
+                                    new Date(activity.timestamp)
+                                  )
                                 : ''}
                             </span>
                           </div>

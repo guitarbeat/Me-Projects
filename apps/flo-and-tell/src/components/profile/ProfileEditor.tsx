@@ -69,6 +69,19 @@ interface ProfileEditorProps {
   onProfileUpdate?: () => void;
 }
 
+// ⚡ Bolt: Cache Intl formatter at module level to avoid expensive per-render allocations
+const DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  year: 'numeric',
+  month: 'numeric',
+  day: 'numeric',
+});
+
+// ⚡ Bolt: Safely format dates and prevent crashes from RangeError: Invalid time value
+const safeFormatDate = (dateValue: string | number | Date) => {
+  const d = new Date(dateValue);
+  return isNaN(d.getTime()) ? 'Invalid Date' : DATE_FORMATTER.format(d);
+};
+
 export const ProfileEditor: React.FC<ProfileEditorProps> = ({
   currentAvatarUrl,
   displayName,
@@ -508,11 +521,11 @@ export const ProfileEditor: React.FC<ProfileEditorProps> = ({
                       Member since
                     </p>
                     <p className="font-medium text-sm">
-                      {new Date(
+                      {safeFormatDate(
                         user?.id
                           ? parseInt(user.id.slice(0, 8), 16) * 1000
                           : Date.now()
-                      ).toLocaleDateString()}
+                      )}
                     </p>
                   </div>
                 </div>

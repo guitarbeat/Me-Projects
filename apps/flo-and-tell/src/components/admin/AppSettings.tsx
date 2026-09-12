@@ -20,6 +20,22 @@ interface SiteSetting {
   updated_by: string | null;
 }
 
+// ⚡ Bolt: Cache Intl formatter at module level to avoid expensive per-render allocations
+const DATE_FORMATTER = new Intl.DateTimeFormat(undefined, {
+  year: 'numeric',
+  month: 'numeric',
+  day: 'numeric',
+});
+
+// ⚡ Bolt: Safely format dates and prevent crashes from RangeError: Invalid time value
+const safeFormatDate = (dateValue: string | null) => {
+  if (!dateValue) {
+    return '';
+  }
+  const d = new Date(dateValue);
+  return isNaN(d.getTime()) ? 'Invalid Date' : DATE_FORMATTER.format(d);
+};
+
 export const AppSettings: React.FC = () => {
   const { toast } = useToast();
   const [settings, setSettings] = useState<SiteSetting[]>([]);
@@ -136,9 +152,7 @@ export const AppSettings: React.FC = () => {
                 {setting.updated_by && (
                   <span className="text-[10px] text-muted-foreground">
                     by {setting.updated_by} ·{' '}
-                    {setting.updated_at
-                      ? new Date(setting.updated_at).toLocaleDateString()
-                      : ''}
+                    {safeFormatDate(setting.updated_at)}
                   </span>
                 )}
               </div>

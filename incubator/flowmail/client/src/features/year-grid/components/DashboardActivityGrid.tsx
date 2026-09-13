@@ -37,7 +37,9 @@ export const DashboardActivityGrid: React.FC = () => {
     const map: Record<string, number> = {};
     activities.forEach(activity => {
       if (!activity.timestamp) return;
-      const dateKey = new Date(activity.timestamp).toISOString().split('T')[0];
+      const dateKey = typeof activity.timestamp === 'string'
+        ? activity.timestamp.substring(0, 10)
+        : new Date(activity.timestamp).toISOString().substring(0, 10);
       map[dateKey] = (map[dateKey] || 0) + 1;
     });
     return map;

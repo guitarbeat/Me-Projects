@@ -8,6 +8,9 @@ import { cn } from '@/lib/utils';
 // Format: { THEME_NAME: CSS_SELECTOR }
 const THEMES = { light: '', dark: '.dark' } as const;
 
+// ⚡ Bolt: Cache NumberFormat to avoid expensive instantiations in hot render loops
+const numberFormatter = new Intl.NumberFormat();
+
 export type ChartConfig = {
   [k in string]: {
     label?: React.ReactNode;
@@ -240,7 +243,7 @@ const ChartTooltipContent = React.forwardRef<
                       </div>
                       {item.value && (
                         <span className="font-mono font-medium tabular-nums text-foreground">
-                          {item.value.toLocaleString()}
+                          {typeof item.value === 'number' ? numberFormatter.format(item.value) : item.value.toLocaleString()}
                         </span>
                       )}
                     </div>
